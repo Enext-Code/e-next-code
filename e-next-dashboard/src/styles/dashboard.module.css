@@ -1,0 +1,864 @@
+/* Dashboard Layout */
+.dashboardContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.contentWrapper {
+  display: flex;
+  flex: 1;
+}
+
+.mainContent {
+  flex: 1;
+  padding: 1.5rem;
+  margin-left: 250px; /* Width of the sidebar */
+  margin-top: 70px; /* Height of the header */
+  min-height: calc(100vh - 70px);
+  background-color: #f8f9fa;
+}
+
+/* Header */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1.5rem;
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  z-index: 1000;
+  height: 70px;
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+.headerLeft, .headerRight {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  margin-right: 1.5rem;
+  width: 220px;
+}
+
+.menuToggle {
+  background: none;
+  border: none;
+  font-size: 3rem;
+  cursor: pointer;
+  color: #666;
+  margin-left: 20px;
+}
+
+.searchBar {
+  position: relative;
+  margin-right: 1.5rem;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #999;
+}
+
+.searchBar input {
+  padding: 0.5rem 0.5rem 0.5rem 2rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  width: 200px;
+  font-size: 0.9rem;
+}
+
+.notification {
+  position: relative;
+  margin-right: 1.5rem;
+  cursor: pointer;
+}
+
+.notificationIcon {
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.notificationBadge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: #f7941d;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.userProfile {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.userName {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.userRole {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  top: 70px; /* Height of the header */
+  left: 0;
+  width: 250px;
+  background-color: #ffffff;
+  height: calc(100vh - 70px);
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+  z-index: 90;
+  overflow-y: auto;
+}
+
+.navMenu {
+  padding: 1rem 0;
+  
+}
+
+.navMenu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  color: #666;
+  text-decoration: none;
+  transition: all 0.2s;
+  cursor: pointer;
+  position: relative;
+  gap: 10px;
+}
+
+.navItem:hover {
+  background-color: #f5f7fa;
+  /* gap: 10px; */
+}
+
+.navItem.active {
+  background-color: #fff0e0;
+  color: #f7941d;
+  border-left: 3px solid #f7941d;
+}
+
+.navIcon {
+  margin-right: 0.75rem;
+  font-size: 1.2rem;
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navLabel {
+  font-size: 0.9rem;
+  font-weight: 500;
+  
+
+}
+
+/* Submenu styles */
+.menuItemWithSubmenu {
+  position: relative;
+}
+
+.navItemContent {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 10px;
+}
+
+.arrow {
+  font-size: 0.75rem;
+  transition: transform 0.2s ease;
+  margin-left: 0.5rem;
+}
+
+.arrow.expanded {
+  transform: rotate(180deg);
+}
+
+.submenu {
+  background-color: #f8f9fa;
+}
+
+.submenu .navItem {
+  padding-left: 3.25rem;
+  font-size: 0.85rem;
+  border-left: none;
+}
+
+.submenu .navIcon {
+  font-size: 1rem;
+}
+
+.submenu .navItem:hover {
+  background-color: #f0f0f0;
+}
+
+.submenu .navItem.active {
+  background-color: #fff0e0;
+  color: #f7941d;
+  border-left: none;
+}
+
+.logoutSection {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem;
+  border-top: 1px solid #eee;
+  background-color: #ffffff;
+}
+
+.logoutButton {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.75rem;
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logoutButton:hover {
+  color: #f7941d;
+}
+
+.logoutIcon {
+  margin-right: 0.75rem;
+  font-size: 1.2rem;
+}
+
+/* Dashboard Header */
+.dashboardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.dashboardHeader h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.dashboardActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  
+}
+
+.dateDisplay {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.monthSelector select {
+  padding: 0.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #fff;
+}
+
+.addPatientBtn {
+  background-color: #f7941d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* Stat Cards */
+.statsCards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.statCard {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.statTitle {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0 0 0.5rem 0;
+  font-weight: normal;
+}
+
+.statValue {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.statTrend {
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+}
+
+.statTrend.positive {
+  color: #27ae60;
+}
+
+.statTrend.negative {
+  color: #e74c3c;
+}
+
+.trendArrow {
+  margin-right: 0.25rem;
+}
+
+.statIcon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+/* Chart Section */
+.chartSection {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.sectionHeader h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.monthFilter select {
+  padding: 0.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #fff;
+}
+
+.chartContainer {
+  height: 300px;
+}
+
+.chart {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.chartArea {
+  flex: 1;
+  position: relative;
+}
+
+.chartLine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.yAxis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  font-size: 0.75rem;
+  color: #999;
+}
+
+.xAxis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #999;
+}
+
+/* Patients Table */
+.patientsTable {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.tableHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.tableHeader h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.patientCount {
+  font-size: 0.8rem;
+  color: #666;
+  margin-left: 0.5rem;
+  font-weight: normal;
+}
+
+.tableActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.moreOptionsBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.patientsTable table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.patientsTable th {
+  text-align: left;
+  padding: 1rem 0.5rem;
+  border-bottom: 1px solid #e0e0e0;
+  color: #666;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.sortIcon {
+  margin-left: 0.25rem;
+  font-size: 0.8rem;
+  color: #999;
+}
+
+.patientsTable td {
+  padding: 1rem 0.5rem;
+  border-bottom: 1px solid #e0e0e0;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.patientInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.patientAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.patientName {
+  font-weight: 500;
+}
+
+.patientRole {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.status.active {
+  background-color: #e6f7ef;
+  color: #27ae60;
+}
+
+.status.active::before {
+  content: "•";
+  margin-right: 0.25rem;
+  color: #27ae60;
+}
+
+.status.inactive {
+  background-color: #feeaea;
+  color: #e74c3c;
+}
+
+.status.inactive::before {
+  content: "•";
+  margin-right: 0.25rem;
+  color: #e74c3c;
+}
+
+.status.discharged {
+  background-color: #e3f2fd;
+  color: #3498db;
+}
+
+.status.discharged::before {
+  content: "•";
+  margin-right: 0.25rem;
+  color: #3498db;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.actionButtons button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #666;
+}
+
+/* Loading and Error States */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 1rem;
+}
+
+.loadingSpinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #f7941d;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 1rem;
+  text-align: center;
+}
+
+.errorIcon {
+  font-size: 3rem;
+  color: #e74c3c;
+}
+
+.errorContainer h3 {
+  color: #e74c3c;
+  margin: 0;
+}
+
+.errorContainer p {
+  color: #666;
+  margin: 0;
+}
+
+.retryButton {
+  background-color: #f7941d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.retryButton:hover {
+  background-color: #e6850e;
+}
+
+/* Filters Container */
+.filtersContainer {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+/* Organisation Selector */
+.organisationSelector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  /* align-items: flex-end; */
+}
+
+.organisationSelector label {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.organisationSelect {
+  padding: 0.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #fff;
+  font-size: 0.9rem;
+  min-width: 200px;
+  max-width: 300px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.organisationSelect:focus {
+  outline: none;
+  border-color: #f7941d;
+  box-shadow: 0 0 0 2px rgba(247, 148, 29, 0.1);
+}
+
+/* Date Range Selector */
+.dateRangeSelector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.quickDateButtons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.quickDateBtn {
+  background-color: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.quickDateBtn:hover {
+  background-color: #e9ecef;
+  border-color: #f7941d;
+  color: #f7941d;
+}
+
+.dateInputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.dateInput {
+  padding: 0.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #fff;
+  font-size: 0.9rem;
+}
+
+.dateInputs span {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.refreshButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #f7941d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.refreshButton:hover:not(:disabled) {
+  background-color: #e6850e;
+  transform: translateY(-1px);
+}
+
+.refreshButton:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.smallSpinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #f7941d;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.refreshButton .smallSpinner {
+  border-top-color: white;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .statsCards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .statsCards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .dashboardActions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .filtersContainer {
+    align-items: flex-start;
+    width: 100%;
+  }
+  
+  .organisationSelector {
+    align-items: flex-start;
+    width: 100%;
+  }
+  
+  .organisationSelect {
+    width: 100%;
+    min-width: auto;
+    max-width: 100%;
+  }
+  
+  .dateRangeSelector {
+    align-items: flex-start;
+    width: 100%;
+  }
+  
+  .quickDateButtons {
+    flex-wrap: wrap;
+  }
+  
+  .dateInputs {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .refreshButton {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .statsCards {
+    grid-template-columns: 1fr;
+  }
+  
+  .dashboardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .dashboardHeader h1 {
+    font-size: 1.25rem;
+  }
+} 

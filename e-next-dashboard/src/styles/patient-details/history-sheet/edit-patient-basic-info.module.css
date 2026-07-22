@@ -1,0 +1,254 @@
+.formContainer {
+    padding: 1.5rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .breadcrumb {
+    display: flex;
+    gap: 0.5rem;
+    color: #666;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+  }
+  
+  .breadcrumb a {
+    color: #2563eb;
+    text-decoration: none;
+  }
+  
+  .breadcrumb a:hover {
+    text-decoration: underline;
+  }
+  
+  .form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .formRow {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+  }
+  
+  .formGroup {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .formGroup label {
+    font-weight: 500;
+    color: #374151;
+    font-size: 0.875rem;
+  }
+  
+  .select,
+  .input {
+    padding: 0.625rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    width: 100%;
+    background: white;
+  }
+  
+  .select:disabled,
+  .input:disabled {
+    background: #f3f4f6;
+    cursor: not-allowed;
+  }
+  
+  .select:focus,
+  .input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+  }
+  
+  .radioGroup {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+  }
+  
+  .radioLabel {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+  }
+  
+  .radioLabel input[type="radio"] {
+    width: 1rem;
+    height: 1rem;
+    margin: 0;
+  }
+  
+  /* Criticality dots */
+  .redDot,
+  .yellowDot,
+  .greenDot {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 0.25rem;
+  }
+  
+  .redDot {
+    background-color: #ef4444;
+  }
+  
+  .yellowDot {
+    background-color: #f59e0b;
+  }
+  
+  .greenDot {
+    background-color: #10b981;
+  }
+  
+  .formActions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+    margin-top: 1rem;
+  }
+  
+  .submitButton {
+    background: #f97316;
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .submitButton:hover {
+    background: #ea580c;
+  }
+  
+  .submitButton:disabled {
+    background: #fdba74;
+    cursor: not-allowed;
+  }
+  
+  /* Error message */
+  .error {
+    color: #dc2626;
+    background: #fee2e2;
+    border: 1px solid #ef4444;
+    padding: 0.75rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+  }
+
+  /* ICD Search Container */
+  .icdSearchContainer {
+    position: relative;
+    width: 100%;
+  }
+
+  /* ICD Dropdown */
+  .icdDropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+    margin-top: 4px;
+  }
+
+  /* ICD Option */
+  .icdOption {
+    padding: 0.75rem;
+    cursor: pointer;
+    border-bottom: 1px solid #f3f4f6;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    transition: background-color 0.15s ease;
+  }
+
+  .icdOption:hover {
+    background-color: #f9fafb;
+  }
+
+  .icdOption:last-child {
+    border-bottom: none;
+  }
+
+  /* ICD Code */
+  .icdCode {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 0.875rem;
+  }
+
+  /* ICD Description */
+  .icdDescription {
+    color: #6b7280;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
+
+  /* Searching Message */
+  .searchingMessage {
+    padding: 0.75rem;
+    text-align: center;
+    color: #6b7280;
+    font-size: 0.875rem;
+  }
+
+  /* Selected ICD Codes */
+  .selectedIcdCodes {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .selectedIcdCode {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #f4f4ff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 14px;
+  }
+
+  .removeIcdCode {
+    background: none;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+  }
+
+  .removeIcdCode:hover {
+    background-color: #e5e7eb;
+    color: #4b5563;
+  } 

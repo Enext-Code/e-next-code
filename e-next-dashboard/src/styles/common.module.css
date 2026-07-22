@@ -1,0 +1,26 @@
+.editButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: transparent;
+  /* border: 2px solid #ff7f50; */
+  border-radius: 4px;
+  color: #ffa038;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.editButton:hover {
+  background-color: #ff7f50;
+  color: white;
+}
+
+.editIcon {
+  font-size: 1.1rem;
+}
+
+.editLabel {
+  font-size: 0.9rem;
+} 

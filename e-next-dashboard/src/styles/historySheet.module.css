@@ -1,0 +1,284 @@
+.container {
+  padding: 1.5rem;
+}
+
+.container h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 1.5rem;
+}
+
+.formCard {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.formHeader {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #f7941d;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.backButton span {
+  font-size: 1.2rem;
+}
+
+.form {
+  padding: 2rem 1.5rem;
+}
+
+.tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 1rem;
+}
+
+.tabs button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  background: none;
+  color: #666;
+  cursor: pointer;
+  font-weight: 500;
+  border-radius: 8px;
+}
+
+.tabActive {
+  background-color: #f7941d !important;
+  color: white !important;
+}
+
+.section {
+  margin-bottom: 2rem;
+}
+
+.section h3 {
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.complaintGrid {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.formGroup label {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.formGroup input {
+  padding: 0.75rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #333;
+}
+
+.radioGroup {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1rem;
+}
+
+.radio {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.radio input[type="radio"] {
+  width: 1.2rem;
+  height: 1.2rem;
+  accent-color: #f7941d;
+}
+
+.checkboxGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.checkbox input[type="checkbox"] {
+  width: 1.2rem;
+  height: 1.2rem;
+  accent-color: #f7941d;
+}
+
+.formActions {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.submitButton {
+  background-color: #f7941d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 2rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submitButton:hover {
+  background-color: #e68a19;
+}
+
+@media (max-width: 768px) {
+  .tabs {
+    flex-wrap: wrap;
+  }
+  
+  .complaintGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .checkboxGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.dataTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-bottom: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.dataTable th,
+.dataTable td {
+  border: 1px solid #e0e0e0;
+  padding: 0.75rem;
+}
+
+.dataTable th {
+  background-color: #f8f9fa;
+  font-weight: 500;
+  text-align: left;
+}
+
+.dataTable input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.tableActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.addRowButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: #f0f0f0;
+  border: none;
+  border-radius: 4px;
+  color: #666;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.addRowButton:hover {
+  background-color: #e0e0e0;
+}
+
+.removeRowButton {
+  background: none;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.removeRowButton:hover {
+  color: #bd2130;
+}
+
+.header {
+  padding: 1.5rem;
+  background-color: white;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.navigationButtons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.navButton {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.active {
+  background-color: #f7941d;
+  color: white;
+}
+
+.inactive {
+  background-color: #fff5e6;
+  color: #666;
+}
+
+.inactive:hover {
+  background-color: #ffe4cc;
+}
+
+@media (max-width: 768px) {
+  .navigationButtons {
+    flex-wrap: wrap;
+  }
+  
+  .navButton {
+    flex: 1 1 calc(50% - 0.5rem);
+    text-align: center;
+  }
+} 

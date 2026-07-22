@@ -1,0 +1,266 @@
+.container {
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+.header {
+  padding: 1.5rem;
+  background: white;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #f7941d;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.content {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.patientBrief {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  gap: 2rem;
+}
+
+.patientIcon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.patientDetails {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.patientDetails label {
+  color: #666;
+  font-size: 0.875rem;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.progressForm {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.dateTimeSection {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.formGroup {
+  margin-bottom: 1rem;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.formGroup select,
+.formGroup input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: white;
+}
+
+.parameterTabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.tabButton {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  background: #fff5e6;
+  color: #666;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.activeTab {
+  background: #f7941d !important;
+  color: white !important;
+}
+
+.gcsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.pupilsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.radioGroup {
+  margin-bottom: 1.5rem;
+}
+
+.radioOptions {
+  display: flex;
+  gap: 2rem;
+  margin-top: 0.5rem;
+}
+
+.radioOptions label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .patientDetails {
+    grid-template-columns: 1fr;
+  }
+
+  .dateTimeSection {
+    grid-template-columns: 1fr;
+  }
+
+  .gcsGrid,
+  .pupilsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.viewMode {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.viewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.editButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #fff5e6;
+  border: none;
+  border-radius: 4px;
+  color: #f7941d;
+  cursor: pointer;
+}
+
+.editButton:hover {
+  background: #ffe4cc;
+}
+
+.viewContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.viewRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.viewRow label {
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.viewRow span {
+  font-weight: 500;
+  color: #333;
+}
+
+.gcsSection,
+.cnsSection,
+.powerSection,
+.otherSection {
+  margin-bottom: 1.5rem;
+}
+
+.gcsSection h4,
+.cnsSection h4,
+.powerSection h4 {
+  margin-bottom: 1rem;
+  color: #333;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.bloodGasesSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.bloodGasesSection .viewRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.bloodGasesSection label {
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.bloodGasesSection span {
+  font-weight: 500;
+  color: #333;
+}
+
+.respiratorySection h4 {
+  margin: 1.5rem 0 1rem;
+  color: #333;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.catheterSection h4 {
+  margin: 2rem 0 1rem;
+  color: #333;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.catheterSection h4:first-child {
+  margin-top: 0;
+} 

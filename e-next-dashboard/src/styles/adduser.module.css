@@ -1,0 +1,130 @@
+.pageHeader {
+  margin-bottom: 2rem;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.breadcrumb a {
+  color: #f7941d;
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.breadcrumb span:not(:last-child)::after {
+  content: ">";
+  margin-left: 0.5rem;
+  color: #999;
+}
+
+.formContainer {
+  background-color: white;
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  /* max-width: 800px; */
+  margin: 0 auto;
+  /* display: grid; */
+}
+.formmanage{
+  display: grid;
+  grid-template-columns: 1fr 1fr  1fr;
+  gap: 20px;
+}
+.error {
+  background-color: #fee2e2;
+  color: #dc2626;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.formGroup input,
+.formGroup select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 1rem;
+  color: #1f2937;
+  transition: border-color 0.2s;
+  appearance: none;
+  
+}
+
+.formGroup input[type="file"] {
+  padding: 0.5rem;
+  cursor: pointer;
+}
+
+.formGroup input[type="file"]:focus {
+  outline: none;
+  border-color: #f7941d;
+  box-shadow: 0 0 0 2px rgba(247, 148, 29, 0.1);
+}
+.dropdown{
+
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='26' height='26' viewBox='0 0 26 26' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M18.5704 9.56632C19.1536 10.1495 19.1536 11.0951 18.5704 11.6783L14.0902 16.1585C13.507 16.7417 12.5614 16.7417 11.9782 16.1585L7.498 11.6783C6.91483 11.0951 6.91483 10.1495 7.498 9.56632C8.08118 8.9831 9.0268 8.9831 9.60998 9.56632L13.0342 12.9905L16.4584 9.56632C17.0416 8.9831 17.9872 8.9831 18.5704 9.56632Z' fill='%23F39B3A'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1.7rem auto;
+}
+.formGroup input:focus,
+.formGroup select:focus {
+  outline: none;
+  border-color: #f7941d;
+  box-shadow: 0 0 0 2px rgba(247, 148, 29, 0.1);
+}
+
+.formGroup input::placeholder {
+  color: #9ca3af;
+}
+/* .formGroup select option{
+  padding: 16px;
+} */
+.formActions {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.submitButton {
+  background-color: #f7941d;
+  color: white;
+  padding: 0.75rem 2rem;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submitButton:hover {
+  background-color: #e88716;
+}
+
+.submitButton:disabled {
+  background-color: #fbd38d;
+  cursor: not-allowed;
+} 

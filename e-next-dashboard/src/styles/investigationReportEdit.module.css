@@ -1,0 +1,152 @@
+.container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #666;
+  font-size: 16px;
+}
+
+.backButton span {
+  font-size: 20px;
+}
+
+.dateInfo {
+  display: flex;
+  gap: 20px;
+  color: #666;
+}
+
+.content {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.patientCard {
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.bedInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.bedIcon {
+  font-size: 24px;
+  color: #666;
+}
+
+.patientInfo {
+  margin-bottom: 20px;
+}
+
+.infoRow {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 10px;
+}
+
+.infoRow div {
+  display: flex;
+  gap: 8px;
+}
+
+.infoRow label {
+  color: #666;
+  font-weight: 500;
+}
+
+.analysisSection {
+  padding: 20px;
+}
+
+.analysisContent {
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  min-height: 400px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px;
+  border-top: 1px solid #eee;
+}
+
+.saveButton {
+  padding: 10px 24px;
+  background-color: #6c5ce7;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.saveButton:hover {
+  background-color: #5f4dd0;
+}
+
+.cancelButton {
+  padding: 10px 24px;
+  background-color: #f1f1f1;
+  color: #666;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.cancelButton:hover {
+  background-color: #e0e0e0;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .infoRow {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .saveButton,
+  .cancelButton {
+    width: 100%;
+    text-align: center;
+  }
+} 

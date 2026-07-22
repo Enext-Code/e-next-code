@@ -1,0 +1,137 @@
+.criticalityCard {
+  background: white;
+  border: 2px solid  #F39B3A;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s ease;
+  /* font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; */
+}
+
+.criticalityCard:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.entryTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.dateInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.vitalSigns {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.vitalItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.vitalItem:last-child {
+  border-bottom: none;
+}
+
+.vitalLabel {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.vitalValue {
+  font-weight: 400;
+  color: #666;
+  font-size: 14px;
+}
+
+.remarksSection {
+  margin-bottom: 20px;
+}
+
+.remarksLabel {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.remarksContent {
+  background: #f8f9fa;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 16px;
+  min-height: 100px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #555;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  /* font-family: inherit; */
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+  border-top: 1px solid #e5e5e5;
+}
+
+.timeInfo {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .criticalityCard {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .cardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .vitalSigns {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .vitalItem {
+    padding: 10px 12px;
+  }
+  
+  .remarksContent {
+    padding: 12px;
+    min-height: 60px;
+  }
+}

@@ -1,0 +1,752 @@
+.container {
+    padding: 0px 20px;
+    /* max-width: 1200px; */
+    /* margin: 0 auto; */
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .backButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: #666;
+    font-size: 16px;
+  }
+  
+  .backButton span {
+    font-size: 20px;
+  }
+  
+  .dateInfo {
+    display: flex;
+    gap: 20px;
+    color: #666;
+    align-items: center;
+  }
+  
+  .dateSelector {
+    margin-right: 20px;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+  }
+  
+  .calendarButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    transition: transform 0.2s;
+  }
+  
+  .calendarButton:hover {
+    transform: scale(1.1);
+  }
+  
+  .datePickerContainer {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 5px;
+    z-index: 1000;
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 5px;
+  }
+  
+  .datePicker {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #333;
+    background-color: white;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    margin-top: 12px;
+  }
+  
+  .datePicker:hover {
+    border-color: #FF9C42;
+  }
+  
+  .datePicker:focus {
+    outline: none;
+    border-color: #FF9C42;
+    box-shadow: 0 0 0 2px rgba(255, 156, 66, 0.1);
+  }
+  
+  .content {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .patientCard {
+    display: flex;
+    flex-direction: row;
+    gap: 1.5rem;
+    justify-content: space-between;
+    /* width: 100%; */
+    /* padding: 20px; */
+    border: 2px solid #eeee;
+    border-radius: 8px;
+  }
+  
+  .bedInfo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    /* margin-bottom: 15px; */
+  }
+  
+  .bedIcon {
+    font-size: 24px;
+    color: #666;
+  }
+  
+  .patientInfo {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    /* justify-content: space-between; */
+    width: 100%;
+    padding: 1rem;
+  }
+  
+  .infoRow {
+    display: flex;
+    gap: 40px;
+    /* margin-bottom: 10px; */
+    flex-direction: column;
+  }
+  
+  .infoRow div {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+  }
+  
+  .infoRow label {
+    color: #666;
+    font-weight: 400;
+    font-size: 14px;
+  }
+  
+  .dateSelector {
+    margin-bottom: 15px;
+  }
+  
+  .dateSelector select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 200px;
+  }
+  
+  .addButtonContainer {
+    justify-content: space-between;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 10px;
+  }
+  
+  .addButton {
+    background-color: #ff9f43;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  
+  .timeSelection {
+    display: flex;
+    gap: 10px;
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+    overflow-x: auto;
+  }
+  
+  .timeSlot {
+    padding: 10px 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  
+  .timeSlot.selected {
+    background-color: #ff9f43;
+    color: white;
+    border-color: #ff9f43;
+  }
+  
+  .reportDate {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .editButton {
+    background-color: #FF9C42;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .sections {
+    padding: 20px;
+  }
+  
+  .tabsContainer {
+    display: flex;
+    gap: 2px;
+    justify-content: center;
+    margin-bottom: 20px;
+    /* border-bottom: 1px solid #eee; */
+    padding: 0 20px;
+  }
+  
+  .tabButton {
+    padding: 12px 24px;
+    border: 2px solid #FFA038;
+    background: #FFF0DF;
+    font-weight: 500;
+    color: #FFA038;
+    cursor: pointer;
+    font-size: 14px;
+    /* color: #666; */
+    position: relative;
+    transition: all 0.3s ease;
+    border-radius: 10px;
+  
+  }
+  
+  .tabButton:hover {
+    /* color: #FF9C42; */
+  }
+  
+  .activeTab {
+    background: #FFA038;
+    color: white;
+    font-weight: 500;
+  }
+  
+  .activeTab::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    /* background-color: #FF9C42; */
+  }
+  
+  .tabContent {
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .section {
+    margin-bottom: 2rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+  
+  .section:last-child {
+    margin-bottom: 0;
+  }
+  
+  .sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .sectionHeader h3 {
+    margin: 0;
+    color: #333;
+  }
+  
+  .sectionHeader > div {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .editButton,
+  .saveButton,
+  .cancelButton,
+  .expandButton {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+  }
+  
+  .editButton {
+    background-color: #6c5ce7;
+    color: white;
+  }
+  
+  .editButton:hover {
+    background-color: #5f4dd0;
+  }
+  
+  .saveButton {
+    background-color: #00b894;
+    color: white;
+  }
+  
+  .saveButton:hover {
+    background-color: #00a885;
+  }
+  
+  .cancelButton {
+    background-color: #ff7675;
+    color: white;
+  }
+  
+  .cancelButton:hover {
+    background-color: #e66767;
+  }
+  
+  .expandButton {
+    background-color: #f1f2f6;
+    color: #666;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  
+  .expandButton:hover {
+    background-color: #dfe4ea;
+  }
+  
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .tableHeader {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #666;
+  }
+  
+  .tableHeader div {
+    padding: 12px 20px;
+    text-align: left;
+  }
+  
+  .tableRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .tableRow div {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+  
+  .tableRow:nth-child(even) {
+    background-color: #fafafa;
+  }
+  
+  .value {
+    color: #333;
+  }
+  
+  .abnormalHigh {
+    color: #e74c3c;
+    font-weight: 500;
+  }
+  
+  .abnormalLow {
+    color: #e67e22;
+    font-weight: 500;
+  }
+  
+  .unit {
+    color: #666;
+    font-size: 12px;
+  }
+  
+  .referenceRange {
+    color: #666;
+    font-size: 13px;
+  }
+  
+  .input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+  }
+  
+  .input:focus {
+    outline: none;
+    border-color: #6c5ce7;
+    box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.1);
+  }
+  
+  .input::placeholder {
+    color: #999;
+  }
+  
+  @media (max-width: 768px) {
+    .container {
+      padding: 10px;
+    }
+  
+    .infoRow {
+      flex-direction: column;
+      gap: 10px;
+    }
+  
+    .timeSelection {
+      padding: 15px;
+    }
+  
+    .tableHeader,
+    .tableRow {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+  
+    .reportDate {
+      flex-direction: column;
+      gap: 15px;
+      align-items: flex-start;
+    }
+  }
+  
+  .addReportForm {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin: 20px 0;
+  }
+  
+  .addReportForm h3 {
+    margin-bottom: 20px;
+    color: #333;
+  }
+  
+  .formGroup {
+    margin-bottom: 15px;
+  }
+  
+  .formGroup label {
+    display: block;
+    margin-bottom: 5px;
+    color: #666;
+    font-weight: 500;
+  }
+  
+  .formGroup input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  
+  .formActions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  
+  .submitButton {
+    background-color: #ff9f43;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  
+  .submitButton:hover {
+    background-color: #f39539;
+  }
+  
+  .reportHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .dateTime {
+    font-size: 14px;
+    color: #333;
+  }
+  
+  .radiologyContent {
+    margin-top: 1rem;
+  }
+  
+  .uploadForm {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+  }
+  
+  .selectGroup {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .select {
+    padding: 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    min-width: 200px;
+  }
+  
+  .fileInput {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px dashed #ced4da;
+    border-radius: 4px;
+    background-color: white;
+  }
+  
+  .imageGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    padding: 1rem;
+  }
+  
+  .imageGroup {
+    background: #fff;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .imageGroup h4 {
+    font-size: 1.1rem;
+    color: #333;
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #f0f0f0;
+  }
+  
+  .images {
+    padding: 1rem;
+    /* display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem; */
+  }
+  
+  .imageContainer {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    /* display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    border: 1px solid #e0e0e0;
+    padding: 1rem;
+    border-radius: 4px;
+    background: #f8f8f8; */
+  }
+  
+  .imageWrapper {
+    position: relative;
+    display: inline-block;
+  }
+
+  .imageContainer img {
+    width: 100%;
+    height: 300px;
+    object-fit: contain;
+    background: #fff;
+    border-radius: 4px;
+    border: 1px solid #e0e0e0;
+  }
+
+  .deleteImageButton {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, transform 0.2s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .deleteImageButton:hover:not(:disabled) {
+    background-color: #c82333;
+    transform: scale(1.1);
+  }
+
+  .deleteImageButton:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .deleteSpinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  
+  .imageInfo {
+    font-size: 0.875rem;
+    color: #666;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    background: #f8f8f8;
+    border-radius: 4px;
+  }
+  
+  .uploadButton {
+    padding: 0.5rem 1rem;
+    background-color: #FFA038;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 0.5rem;
+  }
+  
+  .uploadButton:hover:not(:disabled) {
+    background-color: #218838;
+  }
+
+  .uploadButton:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+  
+  .cancelButton {
+    padding: 0.5rem 1rem;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 0.5rem;
+  }
+  
+  .cancelButton:hover:not(:disabled) {
+    background-color: #c82333;
+  }
+
+  .cancelButton:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .fileInputContainer {
+    position: relative;
+  }
+
+  .fileInput:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .uploadingIndicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    color: #666;
+    font-size: 14px;
+  }
+
+  .loadingSpinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(0, 0, 0, 0.3);
+    border-top: 2px solid #FFA038;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .editButton {
+    background-color: #FFA038;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  
+  .editButton:hover {
+    background-color: #e88b3a;
+  }
+  
+  @media (max-width: 768px) {
+    .images {
+      grid-template-columns: 1fr;
+    }
+  } 

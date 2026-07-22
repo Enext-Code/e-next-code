@@ -1,0 +1,240 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.titleSection h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.metadata {
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.separator {
+  margin: 0 0.5rem;
+  color: #ccc;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #f7941d;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.infoCard {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.patientIdentity {
+  display: flex;
+  gap: 2rem;
+}
+
+.bedInfo {
+  display: flex;
+  align-items: center;
+  margin-right: 16px;
+}
+
+.bedInfo svg {
+  width: 95px;
+  height: 112px;
+  transform: scale(0.6);
+  transform-origin: left center;
+}
+
+.patientDetails {
+  flex: 1;
+}
+
+.detailRow {
+  display: flex;
+  margin-bottom: 1rem;
+}
+
+.label {
+  width: 150px;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.value {
+  color: #333;
+  font-weight: 500;
+}
+
+.allergyInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.allergyRow {
+  display: flex;
+  gap: 1rem;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.actionButton {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  background-color: #fff;
+  color: #f7941d;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.actionButton:hover {
+  background-color: #fff5e6;
+}
+
+.reportsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.reportCard {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.reportIcon {
+  width: 40px;
+  height: 40px;
+  background-color: #e6e7ff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6366f1;
+  font-size: 1.2rem;
+}
+
+.reportTitle {
+  flex: 1;
+  font-weight: 500;
+  color: #6366f1;
+}
+
+.expandButton {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  color: #f7941d;
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+
+@media (max-width: 1024px) {
+  .reportsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .reportsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .patientIdentity {
+    flex-direction: column;
+  }
+}
+
+.actionCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.actionCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(145deg, #F8F7FF 0%, #F3F4FF 100%);
+  padding: 24px;
+  border-radius: 24px;
+  color: #1F2937;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(231, 231, 255, 0.8);
+  box-shadow: 0px 4px 12px rgba(99, 102, 241, 0.05);
+}
+
+.actionCard:hover {
+  transform: translateY(-1px);
+  box-shadow: 0px 6px 16px rgba(99, 102, 241, 0.08);
+}
+
+.cardIcon {
+  width: 41px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16px;
+}
+
+.cardIcon img {
+  width: 48px;
+  height: 48px;
+}
+
+.cardContent {
+  flex: 1;
+}
+
+.cardContent h3 {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+  color: #374151;
+}
+
+.arrowIcon {
+  background-color: #FFF5EB;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 12px;
+}
+
+.arrowIcon svg {
+  color: #F97316;
+  width: 16px;
+  height: 16px;
+} 

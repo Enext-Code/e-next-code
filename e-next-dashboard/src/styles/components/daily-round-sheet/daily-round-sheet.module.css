@@ -1,0 +1,866 @@
+.pageContainer {
+    padding: 24px;
+    /* padding-bottom: 200px; Extra padding to prevent content from being hidden behind sticky bottom element */
+    background-color: #F8F9FE;
+    min-height: 100vh;
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  
+  .headerLeft {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .dateInfo {
+    display: flex;
+    gap: 24px;
+    font-size: 14px;
+    color: #666;
+  }
+  
+  .patientCard {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+  
+  .patientIcon {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    color: #666;
+  }
+  
+  .bedIcon {
+    font-size: 24px;
+  }
+  
+  .patientInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .infoRow {
+    display: flex;
+    gap: 32px;
+    justify-content: space-between;
+  }
+  
+  .infoRow > div {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  
+  .infoRow label {
+    color: #666;
+    font-weight: 500;
+    min-width: 100px;
+  }
+  
+  .progressContainer {
+    background: white;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+  
+  .progressHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  
+  .progressHeader h2 {
+    font-size: 18px;
+    color: #333;
+    margin: 0;
+  }
+  
+  .editButton {
+    padding: 8px 16px;
+    background-color: #FF6B00;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .editButton:hover {
+    background-color: #E65100;
+  }
+  
+  .progressTabs {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 24px;
+    /* border-bottom: 1px solid #eee; */
+    padding-bottom: 8px;
+  }
+  .tabHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #eee;
+  }
+  
+  .tabButton {
+    color: #6b7280;
+    cursor: pointer;
+    background: none;
+    border: 2px solid #ffa038;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all .2s;
+    width: -webkit-fill-available;
+    /* padding: 8px 16px;
+    border: none;
+    background: none;
+    color: #666;
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    background-color: #fff0df;
+    padding: 24px;
+    width: 150px; */
+  }
+  
+  .tabButton:hover {
+    color: #fff;
+    background-color: #ffa038;
+    border: 2px solid #ffa038;
+    border-radius: 8px;
+  }
+  
+  .activeTab {
+    background: #FFA038;
+    color: white;
+  }
+  
+  .activeTab:hover {
+    background: #FFA038;
+  }
+  
+  .tabContentContainer {
+    padding: 24px 0;
+  }
+
+  /* Stacked sections layout */
+  .sectionsStack {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .sectionBlock {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  .sectionTitle {
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #ffa038 0%, #ff8c17 100%);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .sectionContent {
+    padding: 20px 24px;
+    border-top: 2px solid #ffa038;
+  }
+
+  .investigationReportLinkContainer {
+    display: flex;
+    justify-content: center;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #eee;
+  }
+
+  .investigationReportLink {
+    display: inline-flex;
+    align-items: center;
+    padding: 12px 24px;
+    background-color: #ffa038;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+  }
+
+  .investigationReportLink:hover {
+    background-color: #ffa038;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+  }
+
+  .investigationReportLink:active {
+    transform: translateY(0);
+  }
+  
+  .gcsContent {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+  
+  .gcsSection {
+    background: #f8f9fe;
+    padding: 20px;
+    border-radius: 8px;
+  }
+  
+  .gcsSection h3 {
+    color: #333;
+    font-size: 16px;
+    margin: 0 0 16px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .gcsRow {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    gap: 16px;
+  }
+  
+  .gcsRow label {
+    color: #666;
+    font-weight: 500;
+    min-width: 140px;
+  }
+  
+  .gcsRow span {
+    color: #333;
+    font-weight: 500;
+  }
+  
+  .gcsLabel {
+    margin-left: auto;
+    color: #666 !important;
+    font-size: 14px;
+  }
+  
+  .loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-size: 18px;
+    color: #666;
+  }
+  
+  .error {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-size: 18px;
+    color: #dc3545;
+  }
+  
+  .fluidContent {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  
+  .fluidSection {
+    background: #f8f9fe;
+    padding: 20px;
+    border-radius: 8px;
+  }
+  
+  .fluidSection h3 {
+    color: #333;
+    font-size: 16px;
+    margin: 0 0 16px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .subSection {
+    margin-top: 20px;
+  }
+  
+  .subSection h4 {
+    color: #666;
+    font-size: 14px;
+    margin: 0 0 12px 0;
+  }
+  
+  .fluidTable {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .fluidRow {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .fluidRow label {
+    color: #666;
+    font-weight: 500;
+    min-width: 140px;
+  }
+  
+  .fluidRow .content {
+    flex: 1;
+    color: #333;
+  }
+  
+  .fluidRow .number {
+    width: 40px;
+    text-align: right;
+    color: #333;
+  }
+  
+  .fluidRow .yesNo {
+    width: 40px;
+    text-align: right;
+    color: #28a745;
+  }
+  
+  .totalRow {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    margin-top: 8px;
+    border-top: 2px solid #eee;
+    font-weight: 500;
+  }
+  
+  .totalRow label {
+    color: #333;
+  }
+  
+  .totalRow span {
+    color: #333;
+  }
+  
+/* Plan of the Day Styles */
+.planContainer {
+    position: sticky;
+    bottom: 20px;
+    z-index: 1000;
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    /* margin-top: 24px; */
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e0e0e0;
+    backdrop-filter: blur(10px);
+    transition: box-shadow 0.3s ease;
+    width: 100%;
+  }
+
+  .planContainer:hover {
+    box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.2);
+  }
+  
+  .planHeader {
+    margin-bottom: 20px;
+  }
+  
+  .planHeader h2 {
+    color: #333;
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0;
+  }
+  
+  .planContent {
+    /* margin-bottom: 32px; */
+  }
+  
+  .planTextArea {
+    position: relative;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px;
+    min-height: 120px;
+    background: #fafafa;
+  }
+  
+  .planText {
+    color: #333;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 8px;
+  }
+  
+  .microphoneIcon {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+  
+  .microphoneIcon:hover {
+    transform: scale(1.1);
+  }
+  
+  /* Previous Prescriptions */
+  .previousPrescriptions {
+    margin-top: 24px;
+  }
+  
+  .previousPrescriptions h3 {
+    color: #333;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+  }
+  
+  .prescriptionEntry {
+    margin-bottom: 20px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .prescriptionTitle {
+    background: #f8f9fa;
+    padding: 12px 16px;
+    font-weight: 500;
+    color: #333;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .prescriptionContent {
+    padding: 16px;
+    position: relative;
+  }
+  
+  .prescriptionText {
+    color: #333;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 12px;
+    background: white;
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+  }
+  
+  .prescriptionMeta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .prescriptionDate {
+    color: #666;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  .prescriptionTime {
+    color: #666;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  /* Additional Info */
+  .additionalInfo {
+    margin-top: 20px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+  }
+  
+  .infoItem {
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #333;
+  }
+  
+  .infoItem:last-child {
+    margin-bottom: 0;
+  }
+  
+  .infoItem strong {
+    color: #333;
+    font-weight: 600;
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .planContainer {
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .planHeader h2 {
+      font-size: 20px;
+    }
+    
+    .previousPrescriptions h3 {
+      font-size: 18px;
+    }
+    
+    .prescriptionMeta {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    .prescriptionDate,
+    .prescriptionTime {
+      font-size: 11px;
+    }
+
+    .previousPrescriptionsContainer {
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+  }
+
+  
+  .planHeader {
+    margin-bottom: 20px;
+  }
+  
+  .planHeader h2 {
+    color: #333;
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0;
+  }
+  
+  .planContent {
+    /* margin-bottom: 32px; */
+  }
+  
+  .planTextArea {
+    position: relative;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px;
+    min-height: 120px;
+    background: #fafafa;
+  }
+  
+  .planText {
+    color: #333;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 8px;
+  }
+  
+  .microphoneIcon {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+  
+  .microphoneIcon:hover {
+    transform: scale(1.1);
+  }
+  
+  /* Previous Prescriptions */
+  .previousPrescriptions {
+    margin-top: 24px;
+  }
+  
+  .previousPrescriptions h3 {
+    color: #333;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+  }
+  
+  .prescriptionEntry {
+    margin-bottom: 20px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .prescriptionTitle {
+    background: #f8f9fa;
+    padding: 12px 16px;
+    font-weight: 500;
+    color: #333;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .editPrescriptionButton {
+    padding: 6px 12px;
+    background: #ffa038;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .editPrescriptionButton:hover {
+    background: #ffa038;
+  }
+  
+  .editPrescriptionButton:active {
+    transform: scale(0.98);
+  }
+
+    .downloadRoundSheetButton {
+    padding: 6px 12px;
+    background: #ffa038;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .downloadRoundSheetButton:hover {
+    background: #ffa038;
+  }
+  
+  .downloadRoundSheetButton:active {
+    transform: scale(0.98);
+  }
+  .actionButtons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+  .pageDownloadBar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin: 24px 0 40px;
+    padding: 20px 16px;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .downloadFullSheetButton {
+    padding: 12px 28px;
+    background: #ffa038;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+  }
+
+  .downloadFullSheetButton:hover {
+    background: #ffa038;
+  }
+
+  .downloadFullSheetButton:active {
+    transform: scale(0.98);
+  }
+
+  .pageDownloadHint {
+    margin: 0;
+    font-size: 12px;
+    color: #6b7280;
+    text-align: center;
+    max-width: 420px;
+  }
+  
+  .prescriptionContent {
+    padding: 16px;
+    position: relative;
+  }
+  
+  .prescriptionText {
+    color: #333;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 12px;
+    background: white;
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+  }
+  
+  .prescriptionField {
+    margin-bottom: 12px;
+  }
+  
+  .prescriptionFieldLabel {
+    display: block;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+  
+  .prescriptionFieldText {
+    color: #333;
+    font-size: 14px;
+    line-height: 1.5;
+    background: white;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    min-height: 40px;
+  }
+  
+  .prescriptionMeta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .prescriptionDate {
+    color: #666;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  .prescriptionTime {
+    color: #666;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  /* Prescription IDs */
+  .prescriptionIds {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #f0f0f0;
+  }
+  
+  .idItem {
+    color: #666;
+    font-size: 11px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .idItem:last-child {
+    margin-bottom: 0;
+  }
+  
+  .bullet {
+    color: #FF6B35;
+    margin-right: 6px;
+    font-weight: bold;
+  }
+
+  /* Previous Prescriptions Container */
+  .previousPrescriptionsContainer {
+    background: white;
+    /* border-radius: 12px; */
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Inline Plan Form */
+  .inlinePlanForm {
+    border: 2px solid #ffa038;
+    border-radius: 10px;
+    margin-bottom: 24px;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  .inlinePlanFormHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px;
+    background: #ffa038;
+    color: #fff;
+  }
+
+  .inlinePlanFormHeader h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .inlinePlanFormBody {
+    padding: 20px;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .planContainer {
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .planHeader h2 {
+      font-size: 20px;
+    }
+    
+    .previousPrescriptions h3 {
+      font-size: 18px;
+    }
+    
+    .prescriptionMeta {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    .prescriptionDate,
+    .prescriptionTime {
+      font-size: 11px;
+    }
+
+    .previousPrescriptionsContainer {
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+  }

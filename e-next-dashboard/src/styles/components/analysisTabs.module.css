@@ -1,0 +1,38 @@
+.tabsContainer {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 0 20px;
+}
+
+.tab {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  background-color: #f1f1f1;
+  color: #666;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab:hover {
+  background-color: #e0e0e0;
+}
+
+.tab.active {
+  background-color: #ff9f43;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .tabsContainer {
+    overflow-x: auto;
+    padding-bottom: 10px;
+  }
+
+  .tab {
+    white-space: nowrap;
+    padding: 10px 20px;
+  }
+} 

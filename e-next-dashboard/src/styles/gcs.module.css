@@ -1,0 +1,205 @@
+.gcsForm {
+  width: 100%;
+  padding: 20px;
+}
+
+/* View mode styles */
+.gcsViewContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.gcsSection {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.gcsSection h3 {
+  color: #333;
+  font-size: 14px;
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+
+.gcsRow {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.gcsItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.gcsItem:last-child {
+  border-bottom: none;
+}
+
+.gcsItem label {
+  color: #666;
+  font-size: 14px;
+}
+
+.gcsItem span {
+  color: #333;
+  font-size: 14px;
+}
+
+/* Edit mode styles */
+.gcsEditSection {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.gcsEditSection h3 {
+  color: #333;
+  font-size: 14px;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.gcsEditGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.gcsEditItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gcsEditItem label {
+  color: #666;
+  font-size: 14px;
+}
+
+.select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #374151;
+  background-color: #fff;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='26' height='26' viewBox='0 0 26 26' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M18.5704 9.56632C19.1536 10.1495 19.1536 11.0951 18.5704 11.6783L14.0902 16.1585C13.507 16.7417 12.5614 16.7417 11.9782 16.1585L7.498 11.6783C6.91483 11.0951 6.91483 10.1495 7.498 9.56632C8.08118 8.9831 9.0268 8.9831 9.60998 9.56632L13.0342 12.9905L16.4584 9.56632C17.0416 8.9831 17.9872 8.9831 18.5704 9.56632Z' fill='%23F39B3A'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 36px;
+}
+
+.gcsScore {
+  grid-column: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.gcsScore label {
+  color: #666;
+  font-size: 14px;
+}
+
+.gcsScore span {
+  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.radioItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.radioItem label {
+  color: #666;
+  font-size: 14px;
+}
+
+.radioOptions {
+  display: flex;
+  gap: 24px;
+}
+
+.radioOptions label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #374151;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.radioOptions input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #F39B3A;
+  cursor: pointer;
+}
+
+.formActions {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid #E5E7EB;
+}
+
+.submitButton {
+  background-color: #F39B3A;
+  color: white;
+  border: none;
+  padding: 8px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.submitButton:hover:not(:disabled) {
+  background-color: #E88716;
+}
+
+.submitButton:disabled {
+  background-color: #FBD38D;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.loadingSpinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+} 

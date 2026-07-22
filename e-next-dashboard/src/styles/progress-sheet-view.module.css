@@ -1,0 +1,316 @@
+.pageContainer {
+  padding: 24px;
+  background-color: #F8F9FE;
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dateInfo {
+  display: flex;
+  gap: 24px;
+  font-size: 14px;
+  color: #666;
+}
+
+.patientCard {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.patientIcon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  color: #666;
+}
+
+.bedIcon {
+  font-size: 24px;
+}
+
+.patientInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.infoRow {
+  display: flex;
+  gap: 32px;
+  justify-content: space-between;
+}
+
+.infoRow > div {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.infoRow label {
+  color: #666;
+  font-weight: 500;
+  min-width: 100px;
+}
+
+.progressContainer {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.progressHeader h2 {
+  font-size: 18px;
+  color: #333;
+  margin: 0;
+}
+
+.editButton {
+  padding: 8px 16px;
+  background-color: #FF6B00;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.editButton:hover {
+  background-color: #E65100;
+}
+
+.progressTabs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  /* border-bottom: 1px solid #eee; */
+  padding-bottom: 8px;
+}
+.tabHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #eee;
+}
+
+.tabButton {
+  color: #6b7280;
+  cursor: pointer;
+    background: none;
+    border: 2px solid #ffa038;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all .2s;
+    width: -webkit-fill-available;
+  /* padding: 8px 16px;
+  border: none;
+  background: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  background-color: #fff0df;
+  padding: 24px;
+  width: 150px; */
+}
+
+.tabButton:hover {
+  color: #fff;
+    background-color: #ffa038;
+    border: 2px solid #ffa038;
+    border-radius: 8px;
+    
+  /* background: #FFA038; */
+}
+
+.activeTab {
+  background: #FFA038;
+  color: white;
+}
+
+.activeTab:hover {
+  background: #FFA038;
+}
+
+.tabContentContainer {
+  padding: 24px 0;
+}
+
+.gcsContent {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.gcsSection {
+  background: #f8f9fe;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.gcsSection h3 {
+  color: #333;
+  font-size: 16px;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.gcsRow {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  gap: 16px;
+}
+
+.gcsRow label {
+  color: #666;
+  font-weight: 500;
+  min-width: 140px;
+}
+
+.gcsRow span {
+  color: #333;
+  font-weight: 500;
+}
+
+.gcsLabel {
+  margin-left: auto;
+  color: #666 !important;
+  font-size: 14px;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 18px;
+  color: #666;
+}
+
+.error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 18px;
+  color: #dc3545;
+}
+
+.fluidContent {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.fluidSection {
+  background: #f8f9fe;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.fluidSection h3 {
+  color: #333;
+  font-size: 16px;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.subSection {
+  margin-top: 20px;
+}
+
+.subSection h4 {
+  color: #666;
+  font-size: 14px;
+  margin: 0 0 12px 0;
+}
+
+.fluidTable {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fluidRow {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.fluidRow label {
+  color: #666;
+  font-weight: 500;
+  min-width: 140px;
+}
+
+.fluidRow .content {
+  flex: 1;
+  color: #333;
+}
+
+.fluidRow .number {
+  width: 40px;
+  text-align: right;
+  color: #333;
+}
+
+.fluidRow .yesNo {
+  width: 40px;
+  text-align: right;
+  color: #28a745;
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  margin-top: 8px;
+  border-top: 2px solid #eee;
+  font-weight: 500;
+}
+
+.totalRow label {
+  color: #333;
+}
+
+.totalRow span {
+  color: #333;
+} 

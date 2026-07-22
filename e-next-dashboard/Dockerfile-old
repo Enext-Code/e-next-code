@@ -1,0 +1,29 @@
+# Use the official Node.js 22 image as the base image
+FROM node:22
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy package.json and package-lock.json (or yarn.lock) to the working directory
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the application code to the working directory
+COPY . .
+
+# Remove .next folder if it exists
+RUN rm -rf .next
+
+# Build the Next.js project
+RUN npm run build
+
+# Expose the port the app runs on
+EXPOSE 3000
+
+# Start the Next.js application
+CMD ["npm", "start"]
+
+
+

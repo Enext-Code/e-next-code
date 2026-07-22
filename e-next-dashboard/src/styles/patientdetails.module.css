@@ -1,0 +1,295 @@
+.container {
+  /* padding: 20px; */
+}
+.actionButton {
+  background-color: #ffa038;
+  color: white;
+  border: none;
+  margin-top: 10px;
+  margin-right: 10px;
+  padding: 10px 20px;
+  border-radius: 4px;
+}
+.actionButton:hover {
+  background-color: #ff8c1a;
+}
+.patientFullInfo {
+  display: flex;
+  /* justify-content: space-between; */
+  /* align-items: center; */
+}
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  color: #666;
+}
+
+.breadcrumb a {
+  color: #ff7f50;
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+}
+
+.historyButton {
+  background-color: #ff7f50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s;
+}
+
+.historyButton:hover {
+  background-color: #ff6b3d;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  color: #666;
+}
+
+.error {
+  color: #dc3545;
+  padding: 20px;
+  text-align: center;
+  background-color: #fff5f5;
+  border-radius: 4px;
+  margin: 20px 0;
+}
+
+.patientHeader {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.bedInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.bedLabel {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.icuName {
+  color: #666;
+}
+
+.patientName {
+  margin-bottom: 1.5rem;
+}
+
+.patientName h2 {
+  margin: 0;
+  color: #333;
+}
+
+.patientId {
+  /* color: #666; */
+  font-size: 0.9rem;
+}
+.actionButton {
+  /* display: flex; */
+  /* align-items: center; */
+  /* justify-content: center; */
+  /* gap: 10px; */
+
+  background-color: #ffa038;
+  /* color: white; */
+  /* border: none; */
+  /* margin-top: 10px; */
+  /* margin-right: 10px; */
+}
+.patientInfoButtons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.patientBasicInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-left: 10px;
+  width: 100%;
+}
+.infoItem h2 {
+  color: #666;
+  font-weight: 400;
+  font-size: 14px;
+}
+.infoItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.infoItem label {
+  font-weight: 500;
+  color: #666;
+  margin-right: 0.5rem;
+}
+
+.statusTags {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.tag {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.red {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.yellow {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.green {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.emergent {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.urgent {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.non_urgent {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.actionCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.actionCard {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s;
+}
+
+.actionCard:hover {
+  transform: translateY(-2px);
+}
+
+.cardIcon {
+  font-size: 1.5rem;
+}
+
+.cardContent h3 {
+  margin: 0;
+  color: #333;
+}
+
+.cardContent p {
+  margin: 0.5rem 0 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.patientInfo {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-top: 2rem;
+}
+
+.infoSection {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: 1fr 1fr;
+}
+
+.infoRow {
+  display: grid;
+  /* grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); */
+  gap: 1.5rem;
+}
+
+.statusSection {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #eee;
+  display: flex;
+  gap: 2rem;
+}
+
+.statusItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #666;
+}
+
+.statusIcon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #eee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+}
+
+.completed .statusIcon {
+  background: #dcfce7;
+  color: #16a34a;
+} 

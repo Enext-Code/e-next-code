@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPD Patient Assessment Report</title>
+    <style>
+        @media print {
+            @page {
+                size: A4;
+                margin: 0;
+            }
+            body {
+                margin: 0;
+                padding: 20px;
+            }
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 9pt;
+            line-height: 1.4;
+            color: #000;
+            background: #fff;
+            padding: 20px 50px;
+            max-width: 210mm;
+            margin: 0 auto;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+        
+        .date {
+            font-size: 9pt;
+        }
+        
+        .doc-number {
+            font-size: 9pt;
+        }
+        
+        .title {
+            text-align: center;
+            font-size: 14pt;
+            font-weight: bold;
+            margin-bottom: 18px;
+        }
+        
+        .divider {
+            border-top: 1px solid #000;
+            margin: 12px 0;
+        }
+        
+        .patient-info {
+            margin-bottom: 12px;
+            display: flex;
+            border: 1px solid #000;
+        }
+        
+        .patient-column {
+            flex: 1;
+            padding: 12px;
+            border-right: 1px solid #000;
+        }
+        
+        .patient-column:last-child {
+            border-right: none;
+        }
+        
+        .patient-field {
+            display: flex;
+            margin-bottom: 12px;
+            align-items: baseline;
+        }
+        
+        .patient-field:last-child {
+            margin-bottom: 0;
+        }
+        
+        .patient-label {
+            font-weight: bold;
+            margin-right: 5px;
+            font-size: 9pt;
+        }
+        
+        .patient-value {
+            font-size: 9pt;
+        }
+        
+        .section {
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .section-title {
+            font-weight: bold;
+            font-size: 10pt;
+            margin-bottom: 12px;
+        }
+        
+        .section-content {
+            font-size: 9pt;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        
+        .allergy {
+            margin-bottom: 15px;
+        }
+        
+        .history-row {
+            display: flex;
+            gap: 50px;
+            margin-bottom: 12px;
+        }
+        
+        .history-item {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .past-illness {
+            margin-top: 12px;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        
+        .signature {
+            margin-top: 30px;
+        }
+        
+        .signature-name {
+            font-weight: bold;
+            font-size: 9pt;
+            margin-bottom: 8px;
+        }
+        
+        .signature-designation {
+            font-size: 8pt;
+            font-style: italic;
+        }
+        
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="date">09.12.2025</div>
+        <div class="doc-number">
+            <span>Document Number:</span> 3096803
+        </div>
+    </div>
+    
+    <!-- Title -->
+    <div class="title">OUTPATIENT ASSESSMENT FORM</div>
+    
+    <!-- Divider -->
+    <div class="divider"></div>
+    
+    <!-- Patient Information - 3 Column Layout -->
+    <div class="patient-info">
+        <!-- First Column: Name and Consultant -->
+        <div class="patient-column">
+            <div class="patient-field">
+                <span class="patient-label">Name:</span>
+                <span class="patient-value">Mrs. Madhu Sabharwal</span>
+            </div>
+            <div class="patient-field">
+                <span class="patient-label">Consultant:</span>
+                <span class="patient-value">Dr. Sanjat Chiwane</span>
+            </div>
+        </div>
+        
+        <!-- Second Column: Age/Gender and Speciality -->
+        <div class="patient-column">
+            <div class="patient-field">
+                <span class="patient-label">Age/Gender:</span>
+                <span class="patient-value">60 Y/Female</span>
+            </div>
+            <div class="patient-field">
+                <span class="patient-label">Speciality:</span>
+                <span class="patient-value">CARDIOLOGY</span>
+            </div>
+        </div>
+        
+        <!-- Third Column: UHID and Episode No -->
+        <div class="patient-column">
+            <div class="patient-field">
+                <span class="patient-label">UHID:</span>
+                <span class="patient-value">14259286</span>
+            </div>
+            <div class="patient-field">
+                <span class="patient-label">Episode No:</span>
+                <span class="patient-value">342548/25/1111</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Divider -->
+    <div class="divider"></div>
+    
+    <!-- Allergy -->
+    <div class="allergy">
+        <span class="patient-label">Allergy:</span>
+        <span class="patient-value">No known allergy</span>
+    </div>
+    
+    <!-- Patient History -->
+    <div class="section">
+        <div class="section-title">Patient History</div>
+        
+        <div class="history-row">
+            <div class="history-item">
+                <span class="patient-label">Tobacco Use:</span>
+                <span class="patient-value">No</span>
+            </div>
+            <div class="history-item">
+                <span class="patient-label">Alcohol:</span>
+                <span class="patient-value">No</span>
+            </div>
+            <div class="history-item">
+                <span class="patient-label">Substance Use:</span>
+                <span class="patient-value">No</span>
+            </div>
+        </div>
+        
+        <div class="past-illness">
+            <span class="patient-label">Past Illness/Procedures:</span><br>
+            <div class="section-content">DM TYPE II (Diabetes Mellitus Type II)
+ESSENTIAL HTN (Essential Hypertension)
+AKI ON CKI (Acute Kidney Injury on Chronic Kidney Insufficiency)
+CAD: NATIVE TVD (Coronary Artery Disease: Native Triple Vessel Disease)
+NORMAL LVEF ~55% (Normal Left Ventricular Ejection Fraction approximately 55%)</div>
+        </div>
+    </div>
+    
+    <!-- General Examination -->
+    <div class="section">
+        <div class="section-title">General Examination:</div>
+        <div class="section-content">NAD</div>
+    </div>
+    
+    <!-- Systemic Examination -->
+    <div class="section">
+        <div class="section-title">Systemic Examination:</div>
+        <div class="section-content">NAD</div>
+    </div>
+    
+    <!-- Procedure -->
+    <div class="section">
+        <div class="section-title">Procedure:</div>
+        <div class="section-content">PCI TO LAD AND LCX (Percutaneous Coronary Intervention to Left Anterior Descending and Left Circumflex arteries), IVUS GUIDED (Intravascular Ultrasound Guided), MINIMAL CONTRAST</div>
+    </div>
+    
+    <!-- Treatment Note -->
+    <div class="section">
+        <div class="section-title">Treatment Note:</div>
+        <div class="section-content">CONTINUE ALL MEDICATIONS</div>
+    </div>
+    
+    <!-- Follow-up Note -->
+    <div class="section">
+        <div class="section-title">Follow-up Note:</div>
+        <div class="section-content">CBC/KFT/NT PRO BNP (Complete Blood Count / Kidney Function Test / N-terminal pro-B-type Natriuretic Peptide)</div>
+    </div>
+    
+    <!-- Signature -->
+    <div class="signature">
+        <div class="signature-name">Dr. Sanjat Chiwane</div>
+        <div class="signature-designation">Director Cardiology</div>
+    </div>
+</body>
+</html>
+

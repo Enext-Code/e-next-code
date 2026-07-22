@@ -1,0 +1,152 @@
+.respiratoryForm {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.formGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.section {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.inputGroup {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 100%;
+  /* max-width: fit-content; */
+}
+
+.formGroup label {
+  font-size: 14px;
+  color: #666;
+}
+
+.input {
+  width: 100%;
+  min-width: 200px;
+  padding: 8px 12px;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #F39B3A;
+  box-shadow: 0 0 0 2px rgba(243, 155, 58, 0.1);
+}
+
+.remarksInput {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #374151;
+  resize: vertical;
+}
+
+.remarksInput:focus {
+  outline: none;
+  border-color: #F39B3A;
+  box-shadow: 0 0 0 2px rgba(243, 155, 58, 0.1);
+}
+
+/* View mode styles */
+.viewContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.row label {
+  color: #666;
+  font-size: 14px;
+}
+
+.row span {
+  color: #333;
+  font-size: 14px;
+}
+
+.formActions {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid #E5E7EB;
+}
+
+.submitButton {
+  background-color: #F39B3A;
+  color: white;
+  border: none;
+  padding: 8px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.submitButton:hover:not(:disabled) {
+  background-color: #E88716;
+}
+
+.submitButton:disabled {
+  background-color: #FBD38D;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.loadingSpinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+} 

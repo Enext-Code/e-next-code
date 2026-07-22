@@ -1,0 +1,138 @@
+.container {
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+.header {
+  padding: 1.5rem;
+  background: white;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #f7941d;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.content {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.progressSection {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.progressHeader h2 {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.dateInfo {
+  display: flex;
+  gap: 1rem;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.timeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 1rem;
+}
+
+.timeSlot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: #fff5e6;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.timeSlot:hover {
+  background: #ffe4cc;
+}
+
+.selected {
+  background: #f7941d !important;
+  color: white;
+}
+
+.clockIcon {
+  font-size: 1.25rem;
+}
+
+/* Reuse existing patient card styles from progressSheet.module.css */
+.patientCard {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.patientIcon {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.bedIcon {
+  font-size: 1.5rem;
+}
+
+.patientInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.infoRow {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.infoRow label {
+  color: #666;
+  font-size: 0.875rem;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.allergies {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .infoRow {
+    grid-template-columns: 1fr;
+  }
+  
+  .timeGrid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+} 
