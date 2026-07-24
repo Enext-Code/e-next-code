@@ -36,6 +36,7 @@ import ConfirmationModal from '@/components/common/ConfirmationModal';
 import styles from '@/styles/components/daily-round-sheet/daily-round-sheet.module.css';
 import planStyles from '@/styles/plan-fields.module.css';
 import GCSForm, { GCSData } from '@/components/forms/GCSForm';
+import { userService } from '@/services/userService';
 
 type PageParams = {
     id: string;
@@ -530,81 +531,604 @@ const formatValue = (value: unknown): string => {
     return String(value);
   };
 
-  const downloadPrescriptionPDF = (plan: DailyRoundSheetData, index: number) => {
+  // List is newest-first (desc); plan number stays chronological (oldest = 1)
+  const getPlanDayNumber = (index: number) => planData.length - index;
+
+  const loadDoctorSignatureImage = async (
+    doctorId?: string | null
+  ): Promise<{ dataUrl: string; format: 'PNG'; aspectRatio: number } | null> => {
+    if (!doctorId) return null;
+    try {
+      const response = await userService.getSignatureUrl(doctorId);
+      const signatureUrl =
+        (response as any)?.data?.signature_url ?? (response as any)?.signature_url;
+      if (!signatureUrl) return null;
+
+      const res = await fetch(signatureUrl);
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.src = objectUrl;
+      });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(img.naturalWidth || 400, 1);
+      canvas.height = Math.max(img.naturalHeight || 150, 1);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        URL.revokeObjectURL(objectUrl);
+        return null;
+      }
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(objectUrl);
+      return {
+        dataUrl: canvas.toDataURL('image/png'),
+        format: 'PNG',
+        aspectRatio: canvas.width / Math.max(canvas.height, 1),
+      };
+    } catch (err) {
+      console.error('Failed to load doctor signature for PDF:', err);
+      return null;
+    }
+  };
+
+  const downloadPrescriptionPDF = async (plan: DailyRoundSheetData, index: number) => {
+    if (!patient) return;
+
+    let organisationName = '';
+    if (patient.organisation_id) {
+      try {
+        const orgResponse = await fetchApi<{ name?: string }>(
+          `/api/v1/organisations/organisations/detail?organisation_id=${patient.organisation_id}`
+        );
+        const orgData = (orgResponse as any)?.data ?? orgResponse;
+        organisationName = orgData?.name || '';
+      } catch (err) {
+        console.error('Failed to load organisation for emergency PDF:', err);
+      }
+    }
+
+    const doctorSignature = await loadDoctorSignatureImage(patient.doctor_id);
+    const doctorName = patient.doctor_full_name
+      ? patient.doctor_full_name
+          .trim()
+          .split(/\s+/)
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+          .join(' ')
+      : '—';
+
+    // Crisp logo for header
+    let logo: { dataUrl: string; format: 'PNG'; aspectRatio: number } | null = null;
+    try {
+      const res = await fetch('/enext-logo.svg');
+      if (res.ok) {
+        const svgText = await res.text();
+        const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+        const objectUrl = URL.createObjectURL(svgBlob);
+        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const image = new Image();
+          image.onload = () => resolve(image);
+          image.onerror = reject;
+          image.src = objectUrl;
+        });
+        const nativeW = img.naturalWidth || 191;
+        const nativeH = img.naturalHeight || 43;
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(nativeW * 8);
+        canvas.height = Math.round(nativeH * 8);
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          logo = {
+            dataUrl: canvas.toDataURL('image/png'),
+            format: 'PNG',
+            aspectRatio: nativeW / nativeH,
+          };
+        }
+        URL.revokeObjectURL(objectUrl);
+      }
+    } catch {
+      // logo optional
+    }
+
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    let y = 20;
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const marginX = 14;
+    const contentWidth = pageWidth - marginX * 2;
+    let y = 0;
 
+    const ensureSpace = (needed = 20) => {
+      if (y + needed > pageHeight - 18) {
+        doc.addPage();
+        // thin top accent on continuation pages
+        doc.setFillColor(180, 30, 30);
+        doc.rect(0, 0, pageWidth, 3, 'F');
+        y = 14;
+      }
+    };
+
+    const drawDivider = () => {
+      ensureSpace(6);
+      doc.setDrawColor(210);
+      doc.setLineWidth(0.3);
+      doc.line(marginX, y, pageWidth - marginX, y);
+      y += 6;
+    };
+
+    const formatPdfDate = (value?: string | null) => {
+      if (!value) return '—';
+      const raw = String(value).trim();
+      const ymd = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (ymd) return `${ymd[3]}/${ymd[2]}/${ymd[1]}`;
+      const parsed = new Date(raw);
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' });
+      }
+      return raw;
+    };
+
+    const formatPdfTime = (value?: string | null) => {
+      if (!value) return '—';
+      const cleaned = String(value).trim().replace(/Z$/i, '');
+      const match = cleaned.match(/^(\d{1,2}):(\d{2})(?::\d{2})?/);
+      if (!match) return cleaned;
+      const hours = parseInt(match[1], 10);
+      const minutes = match[2];
+      const period = hours >= 12 ? 'PM' : 'AM';
+      const h12 = hours % 12 || 12;
+      return `${String(h12).padStart(2, '0')}:${minutes} ${period}`;
+    };
+
+    const capitalizeText = (value?: string | null) => {
+      if (!value) return '—';
+      return String(value)
+        .trim()
+        .split(/\s+/)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+    };
+
+    const sentenceCase = (value?: string | null) => {
+      if (!value) return 'Not recorded';
+      const cleaned = String(value).replace(/\s+/g, ' ').trim();
+      if (!cleaned) return 'Not recorded';
+      return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+    };
+
+    // ——— Professional emergency header ———
+    doc.setFillColor(170, 20, 20);
+    doc.rect(0, 0, pageWidth, 28, 'F');
+    // dark strip under red for depth
+    doc.setFillColor(120, 10, 10);
+    doc.rect(0, 28, pageWidth, 1.2, 'F');
+
+    if (logo) {
+      const logoW = 34;
+      const logoH = logoW / logo.aspectRatio;
+      try {
+        // white plate behind logo for contrast on red
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(marginX - 1, 5, logoW + 2, logoH + 2, 1, 1, 'F');
+        doc.addImage(logo.dataUrl, logo.format, marginX, 6, logoW, logoH, undefined, 'NONE');
+      } catch {
+        // ignore logo failure
+      }
+    }
+
+    doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.text('PLAN OF THE DAY', pageWidth / 2, y, { align: 'center' });
-    y += 8;
+    doc.setFontSize(15);
+    doc.text('EMERGENCY', pageWidth / 2, 12, { align: 'center' });
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(100);
-    doc.text('Confidential — For clinical use only', pageWidth / 2, y, { align: 'center' });
+    doc.text('MEDICAL ROUND SHEET', pageWidth / 2, 19, { align: 'center' });
+    if (organisationName) {
+      doc.setFontSize(8);
+      doc.text(organisationName, pageWidth / 2, 25, { align: 'center' });
+    }
+    doc.setTextColor(0);
+    y = 36;
+
+    const dayNumber = Math.ceil(
+      (new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })).getTime() -
+        new Date(patient.admission_date).getTime()) /
+        (1000 * 60 * 60 * 24)
+    );
+    const reportDate = new Date().toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' });
+    const planDayNo = getPlanDayNumber(index);
+
+    // Meta strip
+    doc.setFillColor(220, 220, 224);
+    doc.roundedRect(marginX, y - 3, contentWidth, 9, 1, 1, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(55);
+    doc.text(`Plan of Day ${planDayNo}`, marginX + 3, y + 2.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text(
+      `Report Date: ${reportDate}  |  Hospital Day: ${dayNumber}`,
+      pageWidth - marginX - 3,
+      y + 2.5,
+      { align: 'right' }
+    );
     doc.setTextColor(0);
     y += 12;
 
-    const addSection = (title: string, content: string) => {
-      if (y > 270) {
-        doc.addPage();
-        y = 20;
-      }
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.text(title, 14, y);
-      y += 6;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      const lines = doc.splitTextToSize(content || 'Not recorded', 182);
-      doc.text(lines, 14, y);
-      y += lines.length * 5 + 8;
-    };
+    // ——— Patient details card ———
+    const detailsStartY = y;
+    doc.setFillColor(190, 190, 194);
+    doc.roundedRect(marginX, y, contentWidth, 8, 1, 1, 'F');
+    doc.setTextColor(35, 35, 35);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text('PATIENT DETAILS', marginX + 3, y + 5.2);
+    doc.setTextColor(0);
+    y += 12;
 
-    if (patient) {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.text(
-        `Patient: ${patient.first_name} ${patient.last_name}  |  ID: ${patient.unique_id}`,
-        14,
-        y
-      );
-      y += 10;
+    const detailRows: Array<[string, string]> = [
+      ['Patient Name', capitalizeText(`${patient.first_name} ${patient.last_name}`)],
+      ['Patient ID', patient.unique_id || '—'],
+      ['Patient Age', String(patient.age) || '—'],
+      ['Patient Gender', capitalizeText(patient.gender)],
+      ['Date of Admission', formatPdfDate(patient.admission_date)],
+      ['Time of Admission', formatPdfTime(patient.admission_time)],
+      ['Organisation', organisationName || '—'],
+      ['Date', reportDate],
+      ['Day', String(dayNumber)],
+      ['Bed No', formatValue(patient.organisation_icu_bed_number)],
+      ['Tele ICU Date', formatPdfDate(patient.tele_icu_date)],
+      ['Latest Entry Date', reportDate],
+      ['Latest Entry Time', entry?.time || '—'],
+    ];
+
+    const colWidth = contentWidth / 2;
+    doc.setFontSize(8.5);
+    for (let i = 0; i < detailRows.length; i += 2) {
+      ensureSpace(7);
+      for (let c = 0; c < 2; c++) {
+        const row = detailRows[i + c];
+        if (!row) continue;
+        const x = marginX + 2 + c * colWidth;
+        const label = `${row[0]}: `;
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(50, 50, 50);
+        const labelWidth = doc.getTextWidth(label);
+        doc.text(label, x, y);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(20);
+        const valueLines = doc.splitTextToSize(row[1] || '—', colWidth - labelWidth - 6);
+        doc.text(valueLines, x + labelWidth, y);
+      }
+      y += 5.5;
     }
 
-    addSection(`Plan of Day ${index + 1}`, plan.prescription);
-    addSection('Current Issue', plan.current_issue);
-    addSection('Current Treatment', plan.current_treatment);
+    // light border around details block
+    const detailsBoxH = y - detailsStartY + 2;
+    doc.setDrawColor(170);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(marginX, detailsStartY, contentWidth, detailsBoxH, 1, 1, 'S');
+    y += 8;
 
+    // ——— Clinical content sections ———
+    const addClinicalSection = (title: string, content: string, asList = false) => {
+      ensureSpace(22);
+      // section title bar — darker gray
+      doc.setFillColor(210, 210, 214);
+      doc.setDrawColor(120, 120, 125);
+      doc.setLineWidth(0.8);
+      doc.rect(marginX, y - 4, contentWidth, 8, 'F');
+      doc.line(marginX, y - 4, marginX, y + 4);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(40, 40, 40);
+      doc.text(title.toUpperCase(), marginX + 3, y + 1.5);
+      doc.setTextColor(0);
+      y += 9;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.5);
+
+      if (asList) {
+        const items = String(content || '')
+          .split(/\n+/)
+          .map((s) => s.trim())
+          .filter(Boolean);
+        if (items.length === 0) {
+          doc.setTextColor(120);
+          doc.text('Not recorded', marginX + 3, y);
+          doc.setTextColor(0);
+          y += 7;
+          return;
+        }
+        items.forEach((item, idx) => {
+          const bullet = `${idx + 1}.`;
+          const lines = doc.splitTextToSize(item, contentWidth - 10);
+          ensureSpace(lines.length * 4.5 + 3);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(55, 55, 55);
+          doc.text(bullet, marginX + 2, y);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(30);
+          doc.text(lines, marginX + 9, y);
+          y += lines.length * 4.5 + 1.5;
+        });
+        y += 4;
+        return;
+      }
+
+      const text = sentenceCase(content);
+      const lines = doc.splitTextToSize(text, contentWidth - 4);
+      for (const line of lines) {
+        ensureSpace(6);
+        doc.setTextColor(30);
+        doc.text(line, marginX + 2, y);
+        y += 4.5;
+      }
+      y += 6;
+    };
+
+    addClinicalSection('Current Issue', plan.current_issue, false);
+    addClinicalSection('Current Treatment', plan.current_treatment, true);
+    addClinicalSection(`Plan of Day ${planDayNo}`, plan.prescription, false);
+
+    // ——— Doctor signature block (bottom) ———
+    ensureSpace(42);
+    y += 4;
+    doc.setDrawColor(190);
+    doc.setLineWidth(0.3);
+    doc.line(marginX, y, pageWidth - marginX, y);
+    y += 8;
+
+    const signBoxW = 55;
+    const signBoxH = 22;
+    const signBoxX = pageWidth - marginX - signBoxW;
+
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
-    doc.setTextColor(120);
-    doc.text(
-      `Generated: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`,
-      14,
-      285
-    );
+    doc.setTextColor(80);
+    doc.text('Doctor Signature', signBoxX, y);
+    y += 3;
 
-    doc.save(`Plan-Day-${index + 1}-${patient?.unique_id || 'patient'}.pdf`);
+    if (doctorSignature) {
+      const maxW = signBoxW - 4;
+      const maxH = signBoxH - 4;
+      let imgW = maxW;
+      let imgH = imgW / doctorSignature.aspectRatio;
+      if (imgH > maxH) {
+        imgH = maxH;
+        imgW = imgH * doctorSignature.aspectRatio;
+      }
+      try {
+        doc.addImage(
+          doctorSignature.dataUrl,
+          doctorSignature.format,
+          signBoxX + (signBoxW - imgW) / 2,
+          y,
+          imgW,
+          imgH,
+          undefined,
+          'NONE'
+        );
+      } catch (err) {
+        console.error('Failed to add doctor signature image:', err);
+        doc.setDrawColor(180);
+        doc.line(signBoxX, y + signBoxH - 6, signBoxX + signBoxW, y + signBoxH - 6);
+      }
+      y += signBoxH;
+    } else {
+      doc.setDrawColor(160);
+      doc.setLineWidth(0.4);
+      doc.line(signBoxX, y + 14, signBoxX + signBoxW, y + 14);
+      y += 20;
+    }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(30);
+    doc.text(doctorName, signBoxX + signBoxW / 2, y, { align: 'center' });
+    y += 4;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(100);
+    doc.text('Attending Doctor', signBoxX + signBoxW / 2, y, { align: 'center' });
+    doc.setTextColor(0);
+    y += 6;
+
+    drawDivider();
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(7.5);
+    doc.setTextColor(130);
+    doc.text('Confidential — For clinical use only', marginX, y);
+    y += 4;
+
+    // Footers on all pages
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setDrawColor(200);
+      doc.setLineWidth(0.3);
+      doc.line(marginX, pageHeight - 12, pageWidth - marginX, pageHeight - 12);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(120);
+      doc.text(
+        `Generated ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}  |  ${patient.unique_id}  |  Page ${i} of ${pageCount}`,
+        pageWidth / 2,
+        pageHeight - 7,
+        { align: 'center' }
+      );
+      doc.setTextColor(0);
+    }
+
+    doc.save(`Emergency-Plan-${planDayNo}-${patient.unique_id || 'patient'}.pdf`);
   };
 
   const downloadFullDailyRoundPDF = async () => {
     if (!patient || !entry) return;
 
     let organisationName = '';
-    let organisationLocation = '';
     if (patient.organisation_id) {
       try {
-        const orgResponse = await fetchApi<{ name?: string; location?: string }>(
+        const orgResponse = await fetchApi<{ name?: string }>(
           `/api/v1/organisations/organisations/detail?organisation_id=${patient.organisation_id}`
         );
         const orgData = (orgResponse as any)?.data ?? orgResponse;
         organisationName = orgData?.name || '';
-        organisationLocation = orgData?.location || '';
       } catch (err) {
         console.error('Failed to load organisation for PDF:', err);
       }
     }
+
+    const doctorSignature = await loadDoctorSignatureImage(patient.doctor_id);
+    const doctorName = patient.doctor_full_name
+      ? patient.doctor_full_name
+          .trim()
+          .split(/\s+/)
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+          .join(' ')
+      : '—';
+
+    // Health history: ICD + presenting complaints from patient info API
+    // (same source as Patient History page — not available on daily-round patient alone)
+    const toTitleCase = (value: string) =>
+      String(value)
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+
+    const formatIcdList = (codes: Array<{ code: string; description: string }>) =>
+      codes
+        .map((icd) => `${icd.code} - ${toTitleCase(icd.description || '')}`)
+        .join(', ');
+
+    let icdCodesText = '—';
+    let presentingComplaintsText = '—';
+    try {
+      const infoResponse = await patientService.getPatientInfo(patient.id);
+      if (infoResponse.success && infoResponse.data) {
+        const basicIcd = infoResponse.data.basic_details?.icd_codes;
+        if (Array.isArray(basicIcd) && basicIcd.length > 0) {
+          icdCodesText = formatIcdList(basicIcd);
+        } else if (patient.icd_codes?.length) {
+          icdCodesText = formatIcdList(patient.icd_codes);
+        }
+
+        const complaints = infoResponse.data.past_medical_history?.presenting_complaints;
+        if (Array.isArray(complaints) && complaints.length > 0) {
+          presentingComplaintsText = complaints
+            .map((c) => toTitleCase(c.complaint || ''))
+            .filter(Boolean)
+            .join(', ');
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load patient health history for PDF:', err);
+      if (patient.icd_codes?.length) {
+        icdCodesText = formatIcdList(patient.icd_codes);
+      }
+    }
+
+    // Prefer crisp local SVG (high-DPI raster) — S3 JPEG looks pixelated when scaled in PDF
+    const loadLocalSvgLogoAsPng = async (): Promise<{
+      dataUrl: string;
+      format: 'PNG';
+      aspectRatio: number;
+    } | null> => {
+      try {
+        const res = await fetch('/enext-logo.svg');
+        if (!res.ok) return null;
+        const svgText = await res.text();
+        const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+        const objectUrl = URL.createObjectURL(svgBlob);
+        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const image = new Image();
+          image.onload = () => resolve(image);
+          image.onerror = reject;
+          image.src = objectUrl;
+        });
+
+        // Native SVG viewBox is 191×43 — render at high DPI for sharp PDF output
+        const nativeW = img.naturalWidth || 191;
+        const nativeH = img.naturalHeight || 43;
+        const scale = 8;
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(nativeW * scale);
+        canvas.height = Math.round(nativeH * scale);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          URL.revokeObjectURL(objectUrl);
+          return null;
+        }
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(objectUrl);
+
+        return {
+          dataUrl: canvas.toDataURL('image/png'),
+          format: 'PNG',
+          aspectRatio: nativeW / nativeH,
+        };
+      } catch {
+        return null;
+      }
+    };
+
+    const loadRasterLogoAsDataUrl = async (
+      url: string
+    ): Promise<{ dataUrl: string; format: 'JPEG' | 'PNG'; aspectRatio: number } | null> => {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        const blob = await res.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const image = new Image();
+          image.onload = () => resolve(image);
+          image.onerror = reject;
+          image.src = objectUrl;
+        });
+
+        // Upscale onto a high-res canvas so PDF embedding stays sharp
+        const targetW = Math.max(img.naturalWidth, 1200);
+        const scale = targetW / img.naturalWidth;
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.naturalWidth * scale);
+        canvas.height = Math.round(img.naturalHeight * scale);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          URL.revokeObjectURL(objectUrl);
+          return null;
+        }
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(objectUrl);
+
+        return {
+          dataUrl: canvas.toDataURL('image/png'),
+          format: 'PNG',
+          aspectRatio: img.naturalWidth / img.naturalHeight,
+        };
+      } catch {
+        return null;
+      }
+    };
+
+    const logo =
+      (await loadLocalSvgLogoAsPng()) ||
+      (await loadRasterLogoAsDataUrl(
+        'https://enext-assets.s3.ap-south-1.amazonaws.com/assets/icons/WhatsApp+Image+2025-12-13+at+16.49.10.jpeg'
+      ));
 
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -639,71 +1163,127 @@ const formatValue = (value: unknown): string => {
       y += 10;
     };
 
+    const addSubHeading = (title: string) => {
+      ensureSpace(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(35, 55, 90);
+      doc.text(title, marginX, y);
+      doc.setTextColor(0);
+      y += 6;
+    };
+
     const addKeyValueRows = (rows: Array<[string, string]>, columns = 2) => {
-      doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
       const colWidth = contentWidth / columns;
       for (let i = 0; i < rows.length; i += columns) {
-        ensureSpace(8);
+        ensureSpace(7);
+        let maxLines = 1;
         for (let c = 0; c < columns; c++) {
           const row = rows[i + c];
           if (!row) continue;
           const x = marginX + c * colWidth;
+          const label = `${row[0]}: `;
           doc.setFont('helvetica', 'bold');
-          doc.text(`${row[0]}:`, x, y);
+          const labelWidth = doc.getTextWidth(label);
+          doc.text(label, x, y);
           doc.setFont('helvetica', 'normal');
-          const valueLines = doc.splitTextToSize(row[1], colWidth - 4);
-          doc.text(valueLines, x, y + 4);
+          const valueWidth = Math.max(colWidth - labelWidth - 2, 20);
+          const valueLines = doc.splitTextToSize(row[1] || '—', valueWidth);
+          doc.text(valueLines, x + labelWidth, y);
+          maxLines = Math.max(maxLines, valueLines.length);
         }
-        y += 12;
+        y += maxLines * 4.2 + 2;
       }
     };
 
     const addWrappedBlock = (label: string, text: string) => {
-      ensureSpace(16);
+      ensureSpace(12);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9);
       doc.text(label, marginX, y);
       y += 5;
       doc.setFont('helvetica', 'normal');
-      const lines = doc.splitTextToSize(text || 'Not recorded', contentWidth);
-      ensureSpace(lines.length * 4.5 + 4);
-      doc.text(lines, marginX, y);
-      y += lines.length * 4.5 + 6;
+      const lines = doc.splitTextToSize(text || '—', contentWidth);
+      // Write line-by-line so long text continues on the same page
+      // instead of jumping the whole block to the next page
+      const lineHeight = 4.5;
+      for (const line of lines) {
+        ensureSpace(lineHeight + 2);
+        doc.text(line, marginX, y);
+        y += lineHeight;
+      }
+      y += 4;
     };
 
-    // ——— Header ———
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
-    doc.setTextColor(35, 55, 90);
-    doc.text('ICU DAILY ROUND SHEET', pageWidth / 2, y, { align: 'center' });
-    y += 6;
-    if (organisationName) {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.setTextColor(50, 50, 50);
-      doc.text(organisationName, pageWidth / 2, y, {
-        align: 'center',
-      });
-      y += 5;
-      if (organisationLocation) {
-        doc.setFont('helvetica', 'normal');
+    type FluidItem = { name?: string | null; quantity?: number | null };
+    const addFluidItemRows = (items: FluidItem[] | undefined | null) => {
+      const list = (items || []).filter((item) => item?.name || item?.quantity != null);
+      if (list.length === 0) {
+        doc.setFont('helvetica', 'italic');
         doc.setFontSize(8);
-        doc.setTextColor(100);
-        doc.text(organisationLocation, pageWidth / 2, y, {
-          align: 'center',
-        });
-        y += 5;
+        doc.text('—', marginX + 2, y);
+        y += 6;
+        return;
+      }
+      addKeyValueRows(
+        list.map((item) => [
+          item.name || 'Item',
+          item.quantity != null ? `${item.quantity} ml` : '—',
+        ]),
+        2
+      );
+    };
+
+    // ——— Header: logo left, title tightly beside it ———
+    const logoWidth = 40; // mm
+    const logoHeight = logo ? logoWidth / logo.aspectRatio : 9;
+    const logoGap = 10;
+    const headerTop = y;
+    const textLeft = logo ? marginX + logoWidth + logoGap : marginX;
+    const textMaxWidth = pageWidth - marginX - textLeft;
+
+    if (logo) {
+      try {
+        doc.addImage(
+          logo.dataUrl,
+          logo.format,
+          marginX,
+          headerTop,
+          logoWidth,
+          logoHeight,
+          undefined,
+          'NONE'
+        );
+      } catch (err) {
+        console.error('Failed to add logo to PDF:', err);
       }
     }
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(100);
-    doc.text('Clinical progress note — Confidential patient information', pageWidth / 2, y, {
-      align: 'center',
-    });
+
+    // Title + org stacked next to logo (left-aligned to close the gap)
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    const titleLines = doc.splitTextToSize('HOSPITAL MEDICAL ROUND SHEET', textMaxWidth);
+    const titleBlockHeight = titleLines.length * 5;
+    const orgBlockHeight = organisationName ? 5 : 0;
+    const textBlockHeight = titleBlockHeight + (organisationName ? 2 + orgBlockHeight : 0);
+    let textY = headerTop + Math.max(0, (logoHeight - textBlockHeight) / 2) + 4;
+
+    doc.setTextColor(35, 55, 90);
+    doc.text(titleLines, textLeft, textY, { align: 'left' });
+    textY += titleBlockHeight + 1;
+
+    if (organisationName) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(50, 50, 50);
+      const orgLines = doc.splitTextToSize(organisationName, textMaxWidth);
+      doc.text(orgLines, textLeft, textY, { align: 'left' });
+      textY += orgLines.length * 4.5;
+    }
+
     doc.setTextColor(0);
-    y += 8;
+    y = Math.max(headerTop + logoHeight, textY) + 4;
     drawDivider();
 
     const dayNumber = Math.ceil(
@@ -713,97 +1293,224 @@ const formatValue = (value: unknown): string => {
     );
     const reportDate = new Date().toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' });
 
-    addHeading('PATIENT IDENTIFICATION');
+    const formatPdfDate = (value?: string | null) => {
+      if (!value) return '—';
+      const raw = String(value).trim();
+      const ymd = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (ymd) return `${ymd[3]}/${ymd[2]}/${ymd[1]}`;
+      const parsed = new Date(raw);
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' });
+      }
+      return raw;
+    };
+
+    const formatPdfTime = (value?: string | null) => {
+      if (!value) return '—';
+      const cleaned = String(value).trim().replace(/Z$/i, '');
+      const match = cleaned.match(/^(\d{1,2}):(\d{2})(?::\d{2})?/);
+      if (!match) return cleaned;
+      const hours = parseInt(match[1], 10);
+      const minutes = match[2];
+      const period = hours >= 12 ? 'PM' : 'AM';
+      const h12 = hours % 12 || 12;
+      return `${String(h12).padStart(2, '0')}:${minutes} ${period}`;
+    };
+
+    const capitalizeText = (value?: string | null) => {
+      if (!value) return '—';
+      return String(value)
+        .trim()
+        .split(/\s+/)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+    };
+
+    // Match UI patient card fields
+    addHeading('PATIENT DETAILS');
     addKeyValueRows([
-      ['Patient Name', `${patient.first_name} ${patient.last_name}`],
+      ['Patient Name', capitalizeText(`${patient.first_name} ${patient.last_name}`)],
       ['Patient ID', patient.unique_id || '—'],
+      ['Patient Age', String(patient.age) || '—'],
+      ['Patient Gender', capitalizeText(patient.gender)],
+      ['Date of Admission', formatPdfDate(patient.admission_date)],
+      ['Time of Admission', formatPdfTime(patient.admission_time)],
       ['Organisation', formatValue(organisationName)],
-      ['Location', formatValue(organisationLocation)],
+      ['Date', reportDate],
+      ['Day', String(dayNumber)],
       ['Bed No', formatValue(patient.organisation_icu_bed_number)],
-      ['ICU', formatValue(patient.organisation_icu_name)],
-      ['Admission Date', patient.admission_date
-        ? new Date(patient.admission_date).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' })
-        : '—'],
-      ['Hospital Day', String(dayNumber)],
-      ['Report Date', reportDate],
+      ['Tele ICU Date', formatPdfDate(patient.tele_icu_date)],
+     
+      ['Latest Entry Date', reportDate],
       ['Latest Entry Time', entry.time || '—'],
     ]);
 
     if (apacheScore) {
       addKeyValueRows([
-        ['APACHE II Score', String(apacheScore.apache_ii_score)],
-        ['Predicted Mortality', `${apacheScore.predicted_mortality_percent.toFixed(2)}%`],
+        ['Apache II Score', String(apacheScore.apache_ii_score)],
+        ['Predicted Mortality Rate', `${apacheScore.predicted_mortality_percent.toFixed(2)}%`],
       ]);
     }
     drawDivider();
 
-    // ——— GCS ———
+    //-------Patient health history
+    addHeading('PATIENT HEALTH HISTORY');
+    addKeyValueRows(
+      [
+        ['Presenting Complaints', presentingComplaintsText],
+        ['ICD Code', icdCodesText],
+
+      ],
+      1
+    );
+    drawDivider();
+    // ——— GCS (match GCSForm view mode) ———
     addHeading('GCS & POWER');
-    const gcs = entry.gcs?.values ?? {};
-    addKeyValueRows([
-      ['Eye Opening', formatValue((gcs as any)['Eye Opening'])],
-      ['Verbal Response', formatValue((gcs as any)['Verbal Response'])],
-      ['Motor Response', formatValue((gcs as any)['Motor Response'])],
-      ['Sedation', formatValue((gcs as any)['Sedation'])],
-      ['Pain', formatValue((gcs as any)['Pain'])],
-      ['Pupil Type', formatValue((gcs as any)['Pupil Type'])],
-      ['Right Pupil Size', formatValue((gcs as any)['Right Pupil Size'])],
-      ['Right Pupil Reaction', formatValue((gcs as any)['Right Pupil Reaction'])],
-      ['Left Pupil Size', formatValue((gcs as any)['Left Pupil Size'])],
-      ['Left Pupil Reaction', formatValue((gcs as any)['Left Pupil Reaction'])],
-      // ['RUL', formatValue((gcs as any)['RUL'])],
-      // ['LUL', formatValue((gcs as any)['LUL'])],
-      // ['RLL', formatValue((gcs as any)['RLL'])],
-      // ['LLL', formatValue((gcs as any)['LLL'])],
-    ]);
-    drawDivider();
-
-    // ——— Fluid ———
-    addHeading('FLUID BALANCE (INPUT / OUTPUT)');
-    const fluid = entry.fluid;
-    addKeyValueRows([
-      ['Total Input', formatValue(fluid?.total_input)],
-      ['Total Output', formatValue(fluid?.total_output)],
-      ['Cumulative Balance', formatValue(fluid?.cumulative_balance)],
-    ]);
-    drawDivider();
-
-    // ——— Vitals ———
-    addHeading('VITALS');
-    const vitals = entry.vitals?.values ?? {};
-    addKeyValueRows([
-      ['Heart Rate', formatValue((vitals as any)['Heart Rate'])],
-      ['Rhythm', formatValue((vitals as any)['Rythm'] ?? (vitals as any)['Rhythm'])],
-      ['Temp Oral', formatValue((vitals as any)['Temp Oral'])],
-      ['CVP', formatValue((vitals as any)['CVP'])],
-      ['Systolic', formatValue((vitals as any)['Systolic'])],
-      ['Diastolic', formatValue((vitals as any)['Diastolic'])],
-    ]);
-    drawDivider();
-
-    // ——— Respiratory ———
-    addHeading('RESPIRATORY / VENTILATOR');
-    const resp = entry.respiratory?.values ?? {};
-    addKeyValueRows([
-      ['Vent Mode', formatValue((resp as any)['Vent Mode'])],
-      ['Rate', formatValue((resp as any)['Rate'])],
-      ['FiO2', formatValue((resp as any)['FiO2'])],
-      ['PEEP', formatValue((resp as any)['PEEP'])],
-      ['Set', formatValue((resp as any)['Set'])],
-      ['Delta P', formatValue((resp as any)['Dalta P (P Plat PEEP)'])],
-      ['AW Pressure', formatValue((resp as any)['AW Pressure'])],
-      ['Ins %', formatValue((resp as any)['Ins %'])],
-      ['Peak Pressure', formatValue((resp as any)['Peak Pressure'])],
-      ['Plateau Pressure', formatValue((resp as any)['Plateau Pressure'])],
-    ]);
-    if ((resp as any)['Remarks']) {
-      addWrappedBlock('Remarks', formatValue((resp as any)['Remarks']));
+    const gcs = (entry.gcs?.values ?? {}) as Record<string, unknown>;
+    const eye = gcs['Eye Opening'] as number | null | undefined;
+    const verbal = gcs['Verbal Response'] as number | null | undefined;
+    const motor = gcs['Motor Response'] as number | null | undefined;
+    const verbalDisplay = verbal === null || verbal === undefined ? '—' : verbal === 6 ? '1' : String(verbal);
+    let gcsScore = '—';
+    if (eye != null && verbal != null && motor != null) {
+      gcsScore = String(eye + (verbal === 6 ? 1 : verbal) + motor);
     }
+
+    addSubHeading('GCS');
+    addKeyValueRows([
+      ['Eye Opening (E)', formatValue(eye)],
+      ['Verbal Response (V)', verbalDisplay],
+      ['Motor Response (M)', formatValue(motor)],
+      ['GCS SCORE', gcsScore],
+    ]);
+
+    addSubHeading('CNS: Pupils');
+    addKeyValueRows([
+      ['Right Pupil Size', formatValue(gcs['Right Pupil Size'])],
+      ['Right Pupil Reaction', formatValue(gcs['Right Pupil Reaction'])],
+      ['Left Pupil Size', formatValue(gcs['Left Pupil Size'])],
+      ['Left Pupil Reaction', formatValue(gcs['Left Pupil Reaction'])],
+    ]);
+
+    // addSubHeading('Lung Fields');
+    // addKeyValueRows([
+    //   ['RUL', formatValue(gcs['RUL'])],
+    //   ['LUL', formatValue(gcs['LUL'])],
+    //   ['LLL', formatValue(gcs['LLL'])],
+    //   ['RLL', formatValue(gcs['RLL'])],
+    // ]);
+
+    addSubHeading('Status');
+    addKeyValueRows([
+      ['Sedation', formatValue(gcs['Sedation'])],
+      ['Pain', formatValue(gcs['Pain'])],
+    ]);
     drawDivider();
 
-    // ——— Catheter ———
-    addHeading('CATHETERS');
+    // ——— Fluid / Input-Output (match FluidForm) ———
+    addHeading('INPUT / OUTPUT');
+    const fluid = entry.fluid;
+    addSubHeading('Infusions');
+    addFluidItemRows(fluid?.infusions);
+    addSubHeading('Other Infusions');
+    addFluidItemRows(fluid?.other_infusions);
+    addSubHeading('Colloids');
+    addFluidItemRows(fluid?.colloids);
+    addSubHeading('Crystalloids');
+    addFluidItemRows(fluid?.crystalloids);
+    addSubHeading('Oral Intake');
+    addFluidItemRows(fluid?.oral_intakes);
+    addSubHeading('Ryles Tube');
+    addFluidItemRows(fluid?.ryles_tubes);
+    addSubHeading('Urine Output');
+    addFluidItemRows(fluid?.urines);
+    addSubHeading('Drainage');
+    addFluidItemRows(fluid?.drainages);
+    addSubHeading('Totals');
+    addKeyValueRows([
+      ['Total Input', fluid?.total_input != null ? `${fluid.total_input} ml` : '—'],
+      ['Total Output', fluid?.total_output != null ? `${fluid.total_output} ml` : '—'],
+      ['Cumulative Balance', fluid?.cumulative_balance != null ? `${fluid.cumulative_balance} ml` : '—'],
+    ]);
+    drawDivider();
+
+    // ——— Vitals (match VitalsForm view mode) ———
+    addHeading('VITALS');
+    const vitals = (entry.vitals?.values ?? {}) as Record<string, unknown>;
+    const systolic = vitals['Systolic'] as number | null | undefined;
+    const diastolic = vitals['Diastolic'] as number | null | undefined;
+    const mapScore =
+      systolic != null && diastolic != null
+        ? String(Math.round(((systolic + 2 * diastolic) / 3) * 10) / 10)
+        : '—';
+
+    addSubHeading('Cardiac');
+    addKeyValueRows([
+      ['Heart Rate', vitals['Heart Rate'] != null ? `${vitals['Heart Rate']} BPM` : '—'],
+      ['Rythm', formatValue(vitals['Rythm'] ?? vitals['Rhythm'])],
+      ['Temp (F) (Oral)', vitals['Temp Oral'] != null ? `${vitals['Temp Oral']} °F` : '—'],
+      ['RBS', vitals['RBS'] != null ? `${vitals['RBS']} mmHg` : '—'],
+      ['SpO2', vitals['SpO2'] != null ? `${vitals['SpO2']} %` : '—'],
+    ]);
+    addSubHeading('Blood Pressure');
+    addKeyValueRows([
+      ['Systolic', systolic != null ? `${systolic} mmHg` : '—'],
+      ['Diastolic', diastolic != null ? `${diastolic} mmHg` : '—'],
+    ]);
+    addSubHeading('MAP Score');
+    addKeyValueRows([['MAP', mapScore]]);
+    drawDivider();
+
+    // ——— Respiratory (match RespiratoryForm view mode) ———
+    addHeading('RESPIRATORY');
+    const resp = (entry.respiratory?.values ?? {}) as Record<string, unknown>;
+    const respType = resp['Type'] as string | null | undefined;
+    addKeyValueRows([['Type', formatValue(respType)]]);
+
+    if (respType === 'oxygen') {
+      addKeyValueRows([
+        ['Oxygen Device', formatValue(resp['Oxygen Device'])],
+        ['Oxygen Flow', formatValue(resp['Oxygen Flow'])],
+      ]);
+    }
+
+    if (respType === 'Ventilator') {
+      addSubHeading('Respiratory');
+      addKeyValueRows([
+        ['Vent Mode', formatValue(resp['Vent Mode'])],
+        ['Rate', formatValue(resp['Rate'])],
+        ['FiO2', formatValue(resp['FiO2'])],
+        ['PEEP', formatValue(resp['PEEP'])],
+        ['I PAP', formatValue(resp['I PAP'])],
+        ['E PAP', formatValue(resp['E PAP'])],
+      ]);
+      addSubHeading('MV');
+      addKeyValueRows([
+        ['Set', formatValue(resp['Set'])],
+        ['Dalta P (P Plat PEEP)', formatValue(resp['Dalta P (P Plat PEEP)'])],
+        ['AW Pressure', formatValue(resp['AW Pressure'])],
+        ['Ins %', formatValue(resp['Ins %'])],
+        ['Peak Pressure', formatValue(resp['Peak Pressure'])],
+        ['Plateau Pressure', formatValue(resp['Plateau Pressure'])],
+        ['ETV', formatValue(resp['ETV'])],
+        ['ITV', formatValue(resp['ITV'])],
+      ]);
+    }
+
+    addWrappedBlock('Remarks', formatValue(resp['Remarks']));
+    drawDivider();
+
+    // ——— Catheter (match CatheterForm view mode) ———
+    addHeading('CATHETER');
     const catheters = catheterData?.entries ?? [];
+    const calculateDaysInUse = (insertionDate: string | null, removalDate: string | null): string => {
+      if (!insertionDate) return '—';
+      const start = new Date(insertionDate);
+      const end = removalDate ? new Date(removalDate) : new Date();
+      const days = Math.ceil(Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      return String(days);
+    };
+
     if (catheters.length === 0) {
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(9);
@@ -811,79 +1518,138 @@ const formatValue = (value: unknown): string => {
       y += 8;
     } else {
       catheters.forEach((c, idx) => {
-        ensureSpace(18);
+        ensureSpace(24);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(9);
-        doc.text(`${idx + 1}. ${c.type || c.catheter_type || 'Catheter'}`, marginX, y);
+        doc.text(`Catheter ${idx + 1}`, marginX, y);
         y += 5;
         addKeyValueRows(
           [
+            ['Catheter Type', formatValue(c.type)],
+            ['Type', formatValue(c.catheter_type)],
             ['Size', formatValue(c.size)],
             ['Site', formatValue(c.site)],
             [
-              'Inserted',
-              c.date_of_insertion
-                ? new Date(c.date_of_insertion).toLocaleDateString('en-GB')
-                : '—',
+              'Date Of Insertion',
+              c.date_of_insertion ? new Date(c.date_of_insertion).toLocaleString() : '—',
             ],
+            ['Days in use', calculateDaysInUse(c.date_of_insertion, c.date_of_removal)],
             [
-              'Removed',
-              c.date_of_removal
-                ? new Date(c.date_of_removal).toLocaleDateString('en-GB')
-                : 'In situ',
+              'Date Of Removal',
+              c.date_of_removal ? new Date(c.date_of_removal).toLocaleString() : '—',
             ],
+            ['Notes', formatValue(c.notes)],
           ],
           2
         );
-        if (c.notes) addWrappedBlock('Notes', c.notes);
       });
     }
     drawDivider();
 
-    // ——— Plans ———
-    addHeading('PLAN OF THE DAY');
+    // ——— Plans (match Previous Prescriptions UI) ———
+    addHeading('PREVIOUS PRESCRIPTIONS / PLAN OF THE DAY');
     if (planData.length === 0) {
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(9);
-      doc.text('No plans recorded for this patient.', marginX, y);
+      doc.text('No daily round sheets found for this patient.', marginX, y);
       y += 8;
     } else {
       planData.forEach((plan, index) => {
-        ensureSpace(30);
+        ensureSpace(36);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
-        doc.text(`Plan ${index + 1}`, marginX, y);
-        y += 5;
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(90);
-        doc.text(
-          `Date: ${new Date(plan.date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`,
-          marginX,
-          y
-        );
-        doc.setTextColor(0);
+        doc.text(`Plan of day ${getPlanDayNumber(index)}`, marginX, y);
         y += 6;
-        addWrappedBlock('Prescription / Plan', plan.prescription);
-        addWrappedBlock('Current Issue', plan.current_issue);
-        addWrappedBlock('Current Treatment', plan.current_treatment);
+        addWrappedBlock('Current Issue', plan.current_issue || 'No current issue described');
+        addWrappedBlock('Current Treatment', plan.current_treatment || 'No current treatment described');
+        addWrappedBlock('Plan of the Day', plan.prescription || 'No prescription available');
+
+
+        const planDay = patient.admission_date
+          ? Math.ceil(
+              (new Date(plan.date).getTime() - new Date(patient.admission_date).getTime()) /
+                (1000 * 60 * 60 * 24)
+            )
+          : '—';
+        const planDate = new Date(plan.date).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' });
+        const planTime = new Date(plan.date).toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+          timeZone: 'Asia/Kolkata',
+        });
+
+        addKeyValueRows(
+          [
+            ['Date', `${planDate} | DAY: ${planDay}`],
+            ['Time', planTime],
+            ['Progress Sheet ID', formatValue(plan.progress_sheet_id)],
+            ['Investigation ID', formatValue(plan.investigation_report_id)],
+          ],
+          2
+        );
+
         if (index < planData.length - 1) drawDivider();
       });
     }
 
-    // ——— Signature block ———
-    // ensureSpace(40);
+    // ——— Doctor signature block (bottom) ———
+    // ensureSpace(42);
     // y += 6;
     // drawDivider();
+    // const signBoxW = 55;
+    // const signBoxH = 22;
+    // const signBoxX = pageWidth - marginX - signBoxW;
+
+    // doc.setFont('helvetica', 'bold');
+    // doc.setFontSize(8);
+    // doc.setTextColor(80);
+    // doc.text('Doctor Signature', signBoxX, y);
+    // y += 3;
+
+    // if (doctorSignature) {
+    //   const maxW = signBoxW - 4;
+    //   const maxH = signBoxH - 4;
+    //   let imgW = maxW;
+    //   let imgH = imgW / doctorSignature.aspectRatio;
+    //   if (imgH > maxH) {
+    //     imgH = maxH;
+    //     imgW = imgH * doctorSignature.aspectRatio;
+    //   }
+    //   try {
+    //     doc.addImage(
+    //       doctorSignature.dataUrl,
+    //       doctorSignature.format,
+    //       signBoxX + (signBoxW - imgW) / 2,
+    //       y,
+    //       imgW,
+    //       imgH,
+    //       undefined,
+    //       'NONE'
+    //     );
+    //   } catch (err) {
+    //     console.error('Failed to add doctor signature image:', err);
+    //     doc.setDrawColor(180);
+    //     doc.line(signBoxX, y + signBoxH - 6, signBoxX + signBoxW, y + signBoxH - 6);
+    //   }
+    //   y += signBoxH;
+    // } else {
+    //   doc.setDrawColor(160);
+    //   doc.setLineWidth(0.4);
+    //   doc.line(signBoxX, y + 14, signBoxX + signBoxW, y + 14);
+    //   y += 20;
+    // }
+
     // doc.setFont('helvetica', 'bold');
     // doc.setFontSize(9);
-    // doc.text('Clinician attestation', marginX, y);
-    // y += 14;
+    // doc.setTextColor(30);
+    // doc.text(doctorName, signBoxX + signBoxW / 2, y, { align: 'center' });
+    // y += 4;
     // doc.setFont('helvetica', 'normal');
-    // doc.setFontSize(9);
-    // doc.text('Name & Signature: _______________________________', marginX, y);
-    // y += 10;
-    // doc.text('Designation: ____________________    Date/Time: ____________________', marginX, y);
+    // doc.setFontSize(7.5);
+    // doc.setTextColor(100);
+    // doc.text('Attending Doctor', signBoxX + signBoxW / 2, y, { align: 'center' });
+    // doc.setTextColor(0);
 
     // Page footers
     const pageCount = doc.getNumberOfPages();
@@ -1170,7 +1936,7 @@ const formatValue = (value: unknown): string => {
             planData.map((plan, index) => (
               <div key={plan.id} className={styles.prescriptionEntry}>
                 {/* <div className={styles.prescriptionTitle}>
-                  <span>Plan of day {index + 1}</span>
+                  <span>Plan of day {getPlanDayNumber(index)}</span>
                   <button
                     type="button"
                     onClick={() => handlePlanEdit(plan.sheet_id)}
@@ -1190,7 +1956,7 @@ const formatValue = (value: unknown): string => {
                 </div> */}
 
                   <div className={styles.prescriptionTitle}>
-                       <span>Plan of day {index + 1}</span>
+                       <span>Plan of day {getPlanDayNumber(index)}</span>
 
                       <div className={styles.actionButtons}>
                         <button
@@ -1405,7 +2171,7 @@ const formatValue = (value: unknown): string => {
             Download Daily Round Sheet (PDF)
           </button>
           <p className={styles.pageDownloadHint}>
-            Includes patient details, GCS, fluid balance, vitals, respiratory, catheters, and all plans of day.
+            Downloads the same fields shown on this page: patient details, GCS, input/output, vitals, respiratory, catheters, and all plans of day.
           </p>
         </div>
         
