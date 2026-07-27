@@ -6,6 +6,7 @@ import shutil
 import sys
 import time
 import uuid
+from contextvars import ContextVar
 from datetime import datetime
 from logging.handlers import TimedRotatingFileHandler
 from typing import Callable
@@ -15,6 +16,19 @@ from fastapi import Request
 
 # Initialize colorama
 init(autoreset=True)
+
+# Per-request id without nesting global LogRecordFactory (avoids RecursionError)
+_request_id_var: ContextVar[str] = ContextVar("request_id", default="-")
+_base_log_record_factory = logging.getLogRecordFactory()
+
+
+def _request_aware_log_record_factory(*args, **kwargs):
+    record = _base_log_record_factory(*args, **kwargs)
+    record.request_id = _request_id_var.get()
+    return record
+
+
+logging.setLogRecordFactory(_request_aware_log_record_factory)
 
 
 class GZipRotator:
@@ -197,16 +211,7 @@ class RequestLogger:
         start_time = time.time()
         request_id = str(uuid.uuid4())[:8]
         request = Request(scope, receive)
-
-        # Add request ID to log record
-        old_factory = logging.getLogRecordFactory()
-
-        def record_factory(*args, **kwargs):
-            record = old_factory(*args, **kwargs)
-            record.request_id = request_id
-            return record
-
-        logging.setLogRecordFactory(record_factory)
+        request_id_token = _request_id_var.set(request_id)
 
         try:
             # Get request details
@@ -259,5 +264,4 @@ class RequestLogger:
             )
             raise
         finally:
-            # Reset log record factory
-            logging.setLogRecordFactory(old_factory)
+            _request_id_var.reset(request_id_token)
