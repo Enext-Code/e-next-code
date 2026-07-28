@@ -955,12 +955,12 @@ const formatValue = (value: unknown): string => {
     doc.setTextColor(0);
     y += 6;
 
-    drawDivider();
-    doc.setFont('helvetica', 'italic');
-    doc.setFontSize(7.5);
-    doc.setTextColor(130);
-    doc.text('Confidential — For clinical use only', marginX, y);
-    y += 4;
+    // drawDivider();
+    // doc.setFont('helvetica', 'italic');
+    // doc.setFontSize(7.5);
+    // doc.setTextColor(130);
+    // doc.text('Confidential — For clinical use only', marginX, y);
+    // y += 4;
 
     // Footers on all pages
     const pageCount = doc.getNumberOfPages();
