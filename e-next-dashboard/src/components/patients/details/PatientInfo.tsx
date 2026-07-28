@@ -8,7 +8,7 @@ interface Props {
 
 export default function PatientInfo({ patient }: Props) {
   const status = patient.status ?? '';
-  console.log(patient);
+  // console.log(patient);
   const statusClass = status ? (styles as Record<string, string>)[status] ?? '' : '';
 
   return (

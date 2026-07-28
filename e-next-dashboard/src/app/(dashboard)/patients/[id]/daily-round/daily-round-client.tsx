@@ -37,6 +37,8 @@ import styles from '@/styles/components/daily-round-sheet/daily-round-sheet.modu
 import planStyles from '@/styles/plan-fields.module.css';
 import GCSForm, { GCSData } from '@/components/forms/GCSForm';
 import { userService } from '@/services/userService';
+import { useAuth } from '@/contexts/AuthContext';
+import { AuthService } from '@/services/auth.service';
 
 type PageParams = {
     id: string;
@@ -48,6 +50,7 @@ type PageParams = {
 export default function ProgressSheetViewPageTimeClient() {
   const params = useParams<PageParams>();
   const router = useRouter();
+  const { user } = useAuth();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [entry, setEntry] = useState<ProgressSheetEntry | null>(null);
   const [catheterData, setCatheterData] = useState<CatheterData | null>(null);
@@ -526,13 +529,27 @@ export default function ProgressSheetViewPageTimeClient() {
 
 
 const formatValue = (value: unknown): string => {
-    if (value === null || value === undefined || value === '') return '—';
+    if (value === null || value === undefined) return 'NIL';
     if (typeof value === 'boolean') return value ? 'Yes' : 'No';
-    return String(value);
+    const text = String(value).trim();
+    if (!text || text === '-' || text === '—') return 'NIL';
+    return text;
   };
 
   // List is newest-first (desc); plan number stays chronological (oldest = 1)
   const getPlanDayNumber = (index: number) => planData.length - index;
+
+  const getLoggedInUserId = (): string | null => {
+    if (user?.id) return user.id;
+    const token = AuthService.getInstance().getAccessToken();
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1] || ''));
+      return payload?.sub || null;
+    } catch {
+      return null;
+    }
+  };
 
   const loadDoctorSignatureImage = async (
     doctorId?: string | null
@@ -544,7 +561,11 @@ const formatValue = (value: unknown): string => {
         (response as any)?.data?.signature_url ?? (response as any)?.signature_url;
       if (!signatureUrl) return null;
 
-      const res = await fetch(signatureUrl);
+      // S3 presigned URL works in <img>, but browser fetch() hits CORS.
+      // Load via same-origin proxy so PDF can read image bytes.
+      const res = await fetch(
+        `/media-proxy?url=${encodeURIComponent(signatureUrl)}`
+      );
       if (!res.ok) return null;
       const blob = await res.blob();
       const objectUrl = URL.createObjectURL(blob);
@@ -591,14 +612,8 @@ const formatValue = (value: unknown): string => {
       }
     }
 
-    const doctorSignature = await loadDoctorSignatureImage(patient.doctor_id);
-    const doctorName = patient.doctor_full_name
-      ? patient.doctor_full_name
-          .trim()
-          .split(/\s+/)
-          .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-          .join(' ')
-      : '—';
+    const doctorSignature = await loadDoctorSignatureImage(getLoggedInUserId());
+    const doctorName = user?.profile?.full_name?.trim() || '—';
 
     // Crisp logo for header
     let logo: { dataUrl: string; format: 'PNG'; aspectRatio: number } | null = null;
@@ -985,14 +1000,9 @@ const formatValue = (value: unknown): string => {
       }
     }
 
-    const doctorSignature = await loadDoctorSignatureImage(patient.doctor_id);
-    const doctorName = patient.doctor_full_name
-      ? patient.doctor_full_name
-          .trim()
-          .split(/\s+/)
-          .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-          .join(' ')
-      : '—';
+    const doctorSignature = await loadDoctorSignatureImage(getLoggedInUserId());
+
+    const doctorName = user?.profile?.full_name?.trim() || '—';
 
     // Health history: ICD + presenting complaints from patient info API
     // (same source as Patient History page — not available on daily-round patient alone)
@@ -1009,8 +1019,8 @@ const formatValue = (value: unknown): string => {
         .map((icd) => `${icd.code} - ${toTitleCase(icd.description || '')}`)
         .join(', ');
 
-    let icdCodesText = '—';
-    let presentingComplaintsText = '—';
+    let icdCodesText = 'NIL';
+    let presentingComplaintsText = 'NIL';
     try {
       const infoResponse = await patientService.getPatientInfo(patient.id);
       if (infoResponse.success && infoResponse.data) {
@@ -1189,7 +1199,7 @@ const formatValue = (value: unknown): string => {
           doc.text(label, x, y);
           doc.setFont('helvetica', 'normal');
           const valueWidth = Math.max(colWidth - labelWidth - 2, 20);
-          const valueLines = doc.splitTextToSize(row[1] || '—', valueWidth);
+          const valueLines = doc.splitTextToSize(row[1] || 'NIL', valueWidth);
           doc.text(valueLines, x + labelWidth, y);
           maxLines = Math.max(maxLines, valueLines.length);
         }
@@ -1204,7 +1214,7 @@ const formatValue = (value: unknown): string => {
       doc.text(label, marginX, y);
       y += 5;
       doc.setFont('helvetica', 'normal');
-      const lines = doc.splitTextToSize(text || '—', contentWidth);
+      const lines = doc.splitTextToSize(text || 'NIL', contentWidth);
       // Write line-by-line so long text continues on the same page
       // instead of jumping the whole block to the next page
       const lineHeight = 4.5;
@@ -1222,14 +1232,14 @@ const formatValue = (value: unknown): string => {
       if (list.length === 0) {
         doc.setFont('helvetica', 'italic');
         doc.setFontSize(8);
-        doc.text('—', marginX + 2, y);
+        doc.text('NIL', marginX + 2, y);
         y += 6;
         return;
       }
       addKeyValueRows(
         list.map((item) => [
           item.name || 'Item',
-          item.quantity != null ? `${item.quantity} ml` : '—',
+          item.quantity != null ? `${item.quantity} ml` : 'NIL',
         ]),
         2
       );
@@ -1294,7 +1304,7 @@ const formatValue = (value: unknown): string => {
     const reportDate = new Date().toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' });
 
     const formatPdfDate = (value?: string | null) => {
-      if (!value) return '—';
+      if (!value) return 'NIL';
       const raw = String(value).trim();
       const ymd = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
       if (ymd) return `${ymd[3]}/${ymd[2]}/${ymd[1]}`;
@@ -1306,7 +1316,7 @@ const formatValue = (value: unknown): string => {
     };
 
     const formatPdfTime = (value?: string | null) => {
-      if (!value) return '—';
+      if (!value) return 'NIL';
       const cleaned = String(value).trim().replace(/Z$/i, '');
       const match = cleaned.match(/^(\d{1,2}):(\d{2})(?::\d{2})?/);
       if (!match) return cleaned;
@@ -1318,7 +1328,7 @@ const formatValue = (value: unknown): string => {
     };
 
     const capitalizeText = (value?: string | null) => {
-      if (!value) return '—';
+      if (!value) return 'NIL';
       return String(value)
         .trim()
         .split(/\s+/)
@@ -1330,8 +1340,8 @@ const formatValue = (value: unknown): string => {
     addHeading('PATIENT DETAILS');
     addKeyValueRows([
       ['Patient Name', capitalizeText(`${patient.first_name} ${patient.last_name}`)],
-      ['Patient ID', patient.unique_id || '—'],
-      ['Patient Age', String(patient.age) || '—'],
+      ['Patient ID', patient.unique_id || 'NIL'],
+      ['Patient Age', String(patient.age) || 'NIL'],
       ['Patient Gender', capitalizeText(patient.gender)],
       ['Date of Admission', formatPdfDate(patient.admission_date)],
       ['Time of Admission', formatPdfTime(patient.admission_time)],
@@ -1342,7 +1352,7 @@ const formatValue = (value: unknown): string => {
       ['Tele ICU Date', formatPdfDate(patient.tele_icu_date)],
      
       ['Latest Entry Date', reportDate],
-      ['Latest Entry Time', entry.time || '—'],
+      ['Latest Entry Time', entry.time || 'NIL'],
     ]);
 
     if (apacheScore) {
@@ -1370,8 +1380,8 @@ const formatValue = (value: unknown): string => {
     const eye = gcs['Eye Opening'] as number | null | undefined;
     const verbal = gcs['Verbal Response'] as number | null | undefined;
     const motor = gcs['Motor Response'] as number | null | undefined;
-    const verbalDisplay = verbal === null || verbal === undefined ? '—' : verbal === 6 ? '1' : String(verbal);
-    let gcsScore = '—';
+    const verbalDisplay = verbal === null || verbal === undefined ? 'NIL' : verbal === 6 ? '1' : String(verbal);
+    let gcsScore = 'NIL';
     if (eye != null && verbal != null && motor != null) {
       gcsScore = String(eye + (verbal === 6 ? 1 : verbal) + motor);
     }
@@ -1428,9 +1438,9 @@ const formatValue = (value: unknown): string => {
     addFluidItemRows(fluid?.drainages);
     addSubHeading('Totals');
     addKeyValueRows([
-      ['Total Input', fluid?.total_input != null ? `${fluid.total_input} ml` : '—'],
-      ['Total Output', fluid?.total_output != null ? `${fluid.total_output} ml` : '—'],
-      ['Cumulative Balance', fluid?.cumulative_balance != null ? `${fluid.cumulative_balance} ml` : '—'],
+      ['Total Input', fluid?.total_input != null ? `${fluid.total_input} ml` : 'NIL'],
+      ['Total Output', fluid?.total_output != null ? `${fluid.total_output} ml` : 'NIL'],
+      ['Cumulative Balance', fluid?.cumulative_balance != null ? `${fluid.cumulative_balance} ml` : 'NIL'],
     ]);
     drawDivider();
 
@@ -1446,16 +1456,16 @@ const formatValue = (value: unknown): string => {
 
     addSubHeading('Cardiac');
     addKeyValueRows([
-      ['Heart Rate', vitals['Heart Rate'] != null ? `${vitals['Heart Rate']} BPM` : '—'],
+      ['Heart Rate', vitals['Heart Rate'] != null ? `${vitals['Heart Rate']} BPM` : 'NIL'],
       ['Rythm', formatValue(vitals['Rythm'] ?? vitals['Rhythm'])],
-      ['Temp (F) (Oral)', vitals['Temp Oral'] != null ? `${vitals['Temp Oral']} °F` : '—'],
-      ['RBS', vitals['RBS'] != null ? `${vitals['RBS']} mmHg` : '—'],
-      ['SpO2', vitals['SpO2'] != null ? `${vitals['SpO2']} %` : '—'],
+      ['Temp (F) (Oral)', vitals['Temp Oral'] != null ? `${vitals['Temp Oral']} °F` : 'NIL'],
+      ['RBS', vitals['RBS'] != null ? `${vitals['RBS']} mmHg` : 'NIL'],
+      ['SpO2', vitals['SpO2'] != null ? `${vitals['SpO2']} %` : 'NIL'],
     ]);
     addSubHeading('Blood Pressure');
     addKeyValueRows([
-      ['Systolic', systolic != null ? `${systolic} mmHg` : '—'],
-      ['Diastolic', diastolic != null ? `${diastolic} mmHg` : '—'],
+      ['Systolic', systolic != null ? `${systolic} mmHg` : 'NIL'],
+      ['Diastolic', diastolic != null ? `${diastolic} mmHg` : 'NIL'],
     ]);
     addSubHeading('MAP Score');
     addKeyValueRows([['MAP', mapScore]]);
@@ -1504,7 +1514,7 @@ const formatValue = (value: unknown): string => {
     addHeading('CATHETER');
     const catheters = catheterData?.entries ?? [];
     const calculateDaysInUse = (insertionDate: string | null, removalDate: string | null): string => {
-      if (!insertionDate) return '—';
+      if (!insertionDate) return 'NIL';
       const start = new Date(insertionDate);
       const end = removalDate ? new Date(removalDate) : new Date();
       const days = Math.ceil(Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
@@ -1531,12 +1541,12 @@ const formatValue = (value: unknown): string => {
             ['Site', formatValue(c.site)],
             [
               'Date Of Insertion',
-              c.date_of_insertion ? new Date(c.date_of_insertion).toLocaleString() : '—',
+              c.date_of_insertion ? new Date(c.date_of_insertion).toLocaleString() : 'NIL',
             ],
             ['Days in use', calculateDaysInUse(c.date_of_insertion, c.date_of_removal)],
             [
               'Date Of Removal',
-              c.date_of_removal ? new Date(c.date_of_removal).toLocaleString() : '—',
+              c.date_of_removal ? new Date(c.date_of_removal).toLocaleString() : 'NIL',
             ],
             ['Notes', formatValue(c.notes)],
           ],
@@ -1594,62 +1604,62 @@ const formatValue = (value: unknown): string => {
     }
 
     // ——— Doctor signature block (bottom) ———
-    // ensureSpace(42);
-    // y += 6;
-    // drawDivider();
-    // const signBoxW = 55;
-    // const signBoxH = 22;
-    // const signBoxX = pageWidth - marginX - signBoxW;
+    ensureSpace(42);
+    y += 6;
+    drawDivider();
+    const signBoxW = 55;
+    const signBoxH = 22;
+    const signBoxX = pageWidth - marginX - signBoxW;
 
-    // doc.setFont('helvetica', 'bold');
-    // doc.setFontSize(8);
-    // doc.setTextColor(80);
-    // doc.text('Doctor Signature', signBoxX, y);
-    // y += 3;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(80);
+    doc.text('Doctor Signature', signBoxX, y);
+    y += 3;
 
-    // if (doctorSignature) {
-    //   const maxW = signBoxW - 4;
-    //   const maxH = signBoxH - 4;
-    //   let imgW = maxW;
-    //   let imgH = imgW / doctorSignature.aspectRatio;
-    //   if (imgH > maxH) {
-    //     imgH = maxH;
-    //     imgW = imgH * doctorSignature.aspectRatio;
-    //   }
-    //   try {
-    //     doc.addImage(
-    //       doctorSignature.dataUrl,
-    //       doctorSignature.format,
-    //       signBoxX + (signBoxW - imgW) / 2,
-    //       y,
-    //       imgW,
-    //       imgH,
-    //       undefined,
-    //       'NONE'
-    //     );
-    //   } catch (err) {
-    //     console.error('Failed to add doctor signature image:', err);
-    //     doc.setDrawColor(180);
-    //     doc.line(signBoxX, y + signBoxH - 6, signBoxX + signBoxW, y + signBoxH - 6);
-    //   }
-    //   y += signBoxH;
-    // } else {
-    //   doc.setDrawColor(160);
-    //   doc.setLineWidth(0.4);
-    //   doc.line(signBoxX, y + 14, signBoxX + signBoxW, y + 14);
-    //   y += 20;
-    // }
+    if (doctorSignature) {
+      const maxW = signBoxW - 4;
+      const maxH = signBoxH - 4;
+      let imgW = maxW;
+      let imgH = imgW / doctorSignature.aspectRatio;
+      if (imgH > maxH) {
+        imgH = maxH;
+        imgW = imgH * doctorSignature.aspectRatio;
+      }
+      try {
+        doc.addImage(
+          doctorSignature.dataUrl,
+          doctorSignature.format,
+          signBoxX + (signBoxW - imgW) / 2,
+          y,
+          imgW,
+          imgH,
+          undefined,
+          'NONE'
+        );
+      } catch (err) {
+        console.error('Failed to add doctor signature image:', err);
+        doc.setDrawColor(180);
+        doc.line(signBoxX, y + signBoxH - 6, signBoxX + signBoxW, y + signBoxH - 6);
+      }
+      y += signBoxH;
+    } else {
+      doc.setDrawColor(160);
+      doc.setLineWidth(0.4);
+      doc.line(signBoxX, y + 14, signBoxX + signBoxW, y + 14);
+      y += 20;
+    }
 
-    // doc.setFont('helvetica', 'bold');
-    // doc.setFontSize(9);
-    // doc.setTextColor(30);
-    // doc.text(doctorName, signBoxX + signBoxW / 2, y, { align: 'center' });
-    // y += 4;
-    // doc.setFont('helvetica', 'normal');
-    // doc.setFontSize(7.5);
-    // doc.setTextColor(100);
-    // doc.text('Attending Doctor', signBoxX + signBoxW / 2, y, { align: 'center' });
-    // doc.setTextColor(0);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(30);
+    doc.text(doctorName, signBoxX + signBoxW / 2, y, { align: 'center' });
+    y += 4;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(100);
+    doc.text('Attending Doctor', signBoxX + signBoxW / 2, y, { align: 'center' });
+    doc.setTextColor(0);
 
     // Page footers
     const pageCount = doc.getNumberOfPages();

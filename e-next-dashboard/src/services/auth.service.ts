@@ -184,7 +184,7 @@ export class AuthService {
       const now = Date.now();
       
           // Debug log: shows expiry vs current time
-      console.log("Token expiry check:", payload.exp, now);
+      // console.log("Token expiry check:", payload.exp, now);
       // Return true if token expires in less than 5 minutes
       return expiryTime - now < 5 * 60 * 1000;
     } catch {

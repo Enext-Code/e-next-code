@@ -444,7 +444,7 @@ export const patientService = {
 
   getById: async (id: string) => {
     debugger
-    console.log("patitent id", id);
+    // console.log("patitent id", id);
     return fetchApi<PatientData>(API_ENDPOINTS.PATIENT.DETAIL(id));
   },
 
