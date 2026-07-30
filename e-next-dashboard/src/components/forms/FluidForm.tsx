@@ -26,7 +26,7 @@ const INFUSION_OPTIONS = [
   "Fentanyl  - (Sedatives)",
   "Midazolam -(Sedatives)",
   "Dexmeditomedine -(Sedatives)",
-  "Atra curium  -(⁠Muscle relaxants )",
+  "Atra curium -(Muscle relaxants)",
   "Adrenaline -(Inotropes)",
   "Dopamine  -(Inotropes)",
   "Noradrenaline - (Vasopressors)",

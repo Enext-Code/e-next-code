@@ -1405,7 +1405,7 @@ class InfusionParameter(str, Enum):
     SEDATIVES_FENTANYL = "Fentanyl  - (Sedatives)"
     SEDATIVES_MIDAZOLAM = "Midazolam -(Sedatives)"
     SEDATIVES_DEXMEDITOMEDINE = "Dexmeditomedine -(Sedatives)"
-    MUSCLE_RELAXANTS = "Atra curium  -(⁠Muscle relaxants )"
+    MUSCLE_RELAXANTS = "Atra curium -(Muscle relaxants)"
     INOTROPES_ADRENALINE     = "Adrenaline -(Inotropes)"
     INOTROPES_DOPAMINE = "Dopamine  -(Inotropes)"
     VASOPRESSORS_NORADRENALINE = "Noradrenaline - (Vasopressors)"
@@ -1415,6 +1415,32 @@ class InfusionParameter(str, Enum):
     # VASOPRESSIN = "Vasopressin"
     # INOTROPES = "Inotropes"
     OTHER_INFUSIONS = "Other Infusions"
+
+    @classmethod
+    def _normalize_name(cls, value: str) -> str:
+        """Strip zero-width chars / collapse spaces so legacy DB values match."""
+        cleaned = (
+            value.replace("\u200b", "")
+            .replace("\u200c", "")
+            .replace("\u200d", "")
+            .replace("\u2060", "")
+            .replace("\ufeff", "")
+            .replace("\u00a0", " ")
+        )
+        cleaned = " ".join(cleaned.split())
+        cleaned = cleaned.replace(" )", ")")
+        return cleaned
+
+    @classmethod
+    def _missing_(cls, value):
+        # Accept legacy stored names (e.g. with U+2060 word joiner) as current enum members
+        if not isinstance(value, str):
+            return None
+        normalized = cls._normalize_name(value)
+        for member in cls:
+            if cls._normalize_name(member.value) == normalized:
+                return member
+        return None
 
 
 INFUSION_PARAMETER_INFO: Dict[InfusionParameter, ParameterInfo] = {

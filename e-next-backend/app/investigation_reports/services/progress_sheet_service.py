@@ -261,6 +261,7 @@ class ProgressSheetService:
                 ),
             }
             entries_schema.append(entry_dict)
+        entries_schema.sort(key=lambda e: e.get("time") or "")
         return entries_schema
 
     @staticmethod
@@ -346,12 +347,15 @@ class ProgressSheetService:
                     logger.info(
                         f"Created progress sheet {sheet_id} for patient {request.patient_id}"
                     )
+                    entries_schema = await ProgressSheetService._convert_entries_to_schema(
+                        progress_sheet.entries
+                    )
                     return PatientProgressSheetDetailSchema(
                         id=progress_sheet.id,
                         sheet_id=progress_sheet.sheet_id,
                         patient_id=progress_sheet.patient_id,
                         date=progress_sheet.date,
-                        entries=progress_sheet.entries,
+                        entries=entries_schema,
                         created_at=progress_sheet.created_at,
                         updated_at=progress_sheet.updated_at,
                     )

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from ..enums import (BloodGasParameter, CatheterType, GCSParameter,
                      InfusionParameter, IntakeType, RespiratoryParameter,
@@ -19,6 +19,13 @@ class InfusionEntrySchema(BaseModel):
 
     name: InfusionParameter
     quantity: Optional[float] = None
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def normalize_infusion_name(cls, value):
+        if isinstance(value, str):
+            return InfusionParameter(value)
+        return value
 
 
 class IntakeEntrySchema(BaseModel):

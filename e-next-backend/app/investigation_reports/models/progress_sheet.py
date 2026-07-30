@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.base.models import (AuditMixin, BaseSchema, DuplicateError, IDMixin,
                              OrganisationMixin, StatusMixin, TimestampMixin)
@@ -20,6 +20,14 @@ class InfusionEntry(BaseModel):
 
     name: InfusionParameter
     quantity: Optional[float] = None
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def normalize_infusion_name(cls, value):
+        # Map legacy DB strings (with U+2060 etc.) onto InfusionParameter via _missing_
+        if isinstance(value, str):
+            return InfusionParameter(value)
+        return value
 
 
 class IntakeEntry(BaseModel):

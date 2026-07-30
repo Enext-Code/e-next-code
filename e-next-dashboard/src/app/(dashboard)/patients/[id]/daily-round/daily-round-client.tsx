@@ -9,7 +9,7 @@ import Breadcrumb from '@/components/common/Breadcrumb';
 import { patientService, Patient } from '@/services/patientService';
 import { progressSheetService, ProgressSheet, ProgressSheetEntry, ProgressSheetListParams } from '@/services/progressSheetService';
 import { catheterService, CatheterEntry } from '@/services/catheterService';
-import { investigationReportService } from '@/services/investigationReportService';
+import { investigationReportService, InvestigationReportData } from '@/services/investigationReportService';
 import { fetchApi } from '@/utils/api';
 import { API_ENDPOINTS } from '@/constants/api';
 
@@ -77,6 +77,7 @@ export default function ProgressSheetViewPageTimeClient() {
   });
   const [savingPlan, setSavingPlan] = useState(false);
   const [latestInvestigationReportDate, setLatestInvestigationReportDate] = useState<string | null>(null);
+  const [investigationReports, setInvestigationReports] = useState<InvestigationReportData[]>([]);
   const [apacheScore, setApacheScore] = useState<{ apache_ii_score: number; predicted_mortality_percent: number } | null>(null);
   const BedIcon = ({ bedNumber }: { bedNumber: number }) => (
     <svg width="95" height="112" viewBox="0 0 95 112" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -116,10 +117,8 @@ export default function ProgressSheetViewPageTimeClient() {
         limit: 1,
         sort_order: 'desc'
       });
-      
       if (sheetResponse.success && sheetResponse.data && sheetResponse.data.items.length > 0) {
         const latestSheet = sheetResponse.data.items[0];
-        // // console.log('Latest progress sheet:', latestSheet);
         
         // Get the latest entry from the sheet
         if (latestSheet.entries && latestSheet.entries.length > 0) {
@@ -172,8 +171,8 @@ export default function ProgressSheetViewPageTimeClient() {
       // Load plan data (investigation report)
       await loadPlanData();
 
-      // Load latest investigation report date for link
-      await loadLatestInvestigationReportDate();
+      // Load all investigation reports (all dates) with full detail
+      await loadInvestigationReports();
 
       // Load last Apache score
       await loadApacheScore();
@@ -220,32 +219,61 @@ export default function ProgressSheetViewPageTimeClient() {
     }
   };
 
-  const loadLatestInvestigationReportDate = async () => {
+  const loadInvestigationReports = async () => {
     try {
-      const investigationResponse = await investigationReportService.listInvestigationReports(params.id, {
+      // 1) All reports for this patient (newest first)
+      const listResponse = await investigationReportService.listInvestigationReports(params.id, {
         page: 1,
-        limit: 1,
+        limit: 100,
         sort_order: 'desc'
       });
 
-      if (investigationResponse.success && investigationResponse.data?.items?.[0]) {
-        const latestReport = investigationResponse.data.items[0];
-        // Extract date from analysis_date (format: YYYY-MM-DD)
-        if (latestReport.analysis_date) {
-          // Check if already in YYYY-MM-DD format
-          if (/^\d{4}-\d{2}-\d{2}$/.test(latestReport.analysis_date)) {
-            setLatestInvestigationReportDate(latestReport.analysis_date);
-          } else {
-            // Parse ISO date string and extract YYYY-MM-DD
-            const date = new Date(latestReport.analysis_date);
-            const formattedDate = date.toISOString().split('T')[0]; // YYYY-MM-DD format
-            setLatestInvestigationReportDate(formattedDate);
-          }
-        }
+      const summaries = listResponse.success ? listResponse.data?.items ?? [] : [];
+      if (summaries.length === 0) {
+        setLatestInvestigationReportDate(null);
+        setInvestigationReports([]);
+        return;
       }
+
+      // Keep newest date for existing "View Investigation Report" link
+      const newest = summaries[0];
+      if (newest.analysis_date) {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(newest.analysis_date)) {
+          setLatestInvestigationReportDate(newest.analysis_date);
+        } else {
+          const date = new Date(newest.analysis_date);
+          setLatestInvestigationReportDate(date.toISOString().split('T')[0]);
+        }
+      } else {
+        setLatestInvestigationReportDate(null);
+      }
+
+      // 2) Full detail for every report (all dates)
+      const details = await Promise.all(
+        summaries.map(async (summary) => {
+          const reportKey = summary.report_id || summary.id;
+          try {
+            const detailResponse = await investigationReportService.getInvestigationReport(reportKey);
+            const reportData =
+              (detailResponse as any)?.data?.data ??
+              (detailResponse as any)?.data ??
+              null;
+            if (detailResponse.success && reportData) {
+              return reportData as InvestigationReportData;
+            }
+          } catch (err) {
+            console.error(`Error loading investigation report ${reportKey}:`, err);
+          }
+          return null;
+        })
+      );
+
+      const loadedReports = details.filter((r): r is InvestigationReportData => r != null);
+      setInvestigationReports(loadedReports);
     } catch (err) {
-      console.error('Error loading latest investigation report date:', err);
-      // Don't set error state as this is optional
+      console.error('Error loading investigation reports:', err);
+      setInvestigationReports([]);
+      // Don't set page error — investigation is optional for daily-round UI
     }
   };
 
@@ -528,10 +556,20 @@ export default function ProgressSheetViewPageTimeClient() {
 
 
 
-const formatValue = (value: unknown): string => {
+  // jsPDF Helvetica breaks on zero-width / special Unicode (shows as &A&t&r&a&...)
+  const sanitizePdfText = (value: unknown): string => {
+    if (value == null) return '';
+    return String(value)
+      .replace(/[\u200B-\u200D\u2060\uFEFF]/g, '')
+      .replace(/\u00A0/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
+  const formatValue = (value: unknown): string => {
     if (value === null || value === undefined) return 'NIL';
     if (typeof value === 'boolean') return value ? 'Yes' : 'No';
-    const text = String(value).trim();
+    const text = sanitizePdfText(value);
     if (!text || text === '-' || text === '—') return 'NIL';
     return text;
   };
@@ -1193,13 +1231,13 @@ const formatValue = (value: unknown): string => {
           const row = rows[i + c];
           if (!row) continue;
           const x = marginX + c * colWidth;
-          const label = `${row[0]}: `;
+          const label = `${sanitizePdfText(row[0])}: `;
           doc.setFont('helvetica', 'bold');
           const labelWidth = doc.getTextWidth(label);
           doc.text(label, x, y);
           doc.setFont('helvetica', 'normal');
           const valueWidth = Math.max(colWidth - labelWidth - 2, 20);
-          const valueLines = doc.splitTextToSize(row[1] || 'NIL', valueWidth);
+          const valueLines = doc.splitTextToSize(sanitizePdfText(row[1]) || 'NIL', valueWidth);
           doc.text(valueLines, x + labelWidth, y);
           maxLines = Math.max(maxLines, valueLines.length);
         }
@@ -1236,13 +1274,35 @@ const formatValue = (value: unknown): string => {
         y += 6;
         return;
       }
-      addKeyValueRows(
-        list.map((item) => [
-          item.name || 'Item',
-          item.quantity != null ? `${item.quantity} ml` : 'NIL',
-        ]),
-        2
-      );
+
+      const formatItem = (item: FluidItem) => {
+        const name = sanitizePdfText(item.name) || 'Item';
+        const qty = item.quantity != null ? `${item.quantity} ml` : 'NIL';
+        return { label: `${name}: `, qty };
+      };
+
+      doc.setFontSize(9);
+      // Max 2 items per line; 3rd+ wrap to next line(s)
+      for (let i = 0; i < list.length; i += 2) {
+        ensureSpace(7);
+        const left = formatItem(list[i]);
+        doc.setFont('helvetica', 'bold');
+        doc.text(left.label, marginX + 2, y);
+        const leftLabelW = doc.getTextWidth(left.label);
+        doc.setFont('helvetica', 'normal');
+        doc.text(left.qty, marginX + 2 + leftLabelW, y);
+
+        if (list[i + 1]) {
+          const right = formatItem(list[i + 1]);
+          const rightX = marginX + contentWidth / 2;
+          doc.setFont('helvetica', 'bold');
+          doc.text(right.label, rightX, y);
+          const rightLabelW = doc.getTextWidth(right.label);
+          doc.setFont('helvetica', 'normal');
+          doc.text(right.qty, rightX + rightLabelW, y);
+        }
+        y += 6;
+      }
     };
 
     // ——— Header: logo left, title tightly beside it ———
