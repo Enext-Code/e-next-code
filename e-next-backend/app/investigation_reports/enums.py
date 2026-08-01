@@ -1980,7 +1980,8 @@ class CatheterType(str, Enum):
     PERIPHERAL_LINE = "Peripheral line"
     
     # Respiratory
-    ET_TRACHEOSTOMY_TUBE = "ET / Tracheostomy Tube"
+    ET_TUBE = "ET Tube"
+    TRACHEOSTOMY_TUBE = "Tracheostomy Tube"
     VENTILATOR_TUBING = "Ventilator Tubing"
     
     # Cardiovascular
@@ -2124,8 +2125,15 @@ CATHETER_PARAMETER_INFO: Dict[CatheterType, ParameterInfo] = {
     ),
     
     # Respiratory
-    CatheterType.ET_TRACHEOSTOMY_TUBE: ParameterInfo(
-        display_name="ET / Tracheostomy Tube",
+    CatheterType.ET_TUBE: ParameterInfo(
+        display_name="ET Tube",
+        reference_range="As needed for ventilation",
+        units="days",
+        min_value=0,
+        max_value=None,
+    ),
+    CatheterType.TRACHEOSTOMY_TUBE: ParameterInfo(
+        display_name="Tracheostomy Tube",
         reference_range="As needed for ventilation",
         units="days",
         min_value=0,

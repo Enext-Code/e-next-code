@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import jsPDF from "jspdf";
-import Link from 'next/link';
+// import Link from 'next/link';
 
 import Breadcrumb from '@/components/common/Breadcrumb';
 import { patientService, Patient } from '@/services/patientService';
@@ -12,6 +12,7 @@ import { catheterService, CatheterEntry } from '@/services/catheterService';
 import { investigationReportService, InvestigationReportData } from '@/services/investigationReportService';
 import { fetchApi } from '@/utils/api';
 import { API_ENDPOINTS } from '@/constants/api';
+import InvestigationCumulativeModal from '@/components/daily-round-progress-sheet/InvestigationCumulativeModal';
 
 interface DailyRoundSheetData {
   id: string;
@@ -78,6 +79,7 @@ export default function ProgressSheetViewPageTimeClient() {
   const [savingPlan, setSavingPlan] = useState(false);
   const [latestInvestigationReportDate, setLatestInvestigationReportDate] = useState<string | null>(null);
   const [investigationReports, setInvestigationReports] = useState<InvestigationReportData[]>([]);
+  const [isInvestigationModalOpen, setIsInvestigationModalOpen] = useState(false);
   const [apacheScore, setApacheScore] = useState<{ apache_ii_score: number; predicted_mortality_percent: number } | null>(null);
   const BedIcon = ({ bedNumber }: { bedNumber: number }) => (
     <svg width="95" height="112" viewBox="0 0 95 112" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -109,7 +111,7 @@ export default function ProgressSheetViewPageTimeClient() {
       if (patientResponse.success && patientResponse.data) {
         setPatient(patientResponse.data as unknown as Patient);
       }
-
+debugger
       // Load latest progress sheet for the patient
       const sheetResponse = await progressSheetService.list({
         patient_id: params.id,
@@ -117,12 +119,14 @@ export default function ProgressSheetViewPageTimeClient() {
         limit: 1,
         sort_order: 'desc'
       });
+      console.log('sheetResponse', sheetResponse);
       if (sheetResponse.success && sheetResponse.data && sheetResponse.data.items.length > 0) {
         const latestSheet = sheetResponse.data.items[0];
-        
+        console.log('latestSheet', latestSheet);
         // Get the latest entry from the sheet
         if (latestSheet.entries && latestSheet.entries.length > 0) {
           const latestEntry = latestSheet.entries[latestSheet.entries.length - 1];
+          console.log('latestEntry', latestEntry);
           setEntry(latestEntry);
         } else {
           // Initialize with empty entry if no entries exist (IST time)
@@ -576,6 +580,19 @@ export default function ProgressSheetViewPageTimeClient() {
 
   // List is newest-first (desc); plan number stays chronological (oldest = 1)
   const getPlanDayNumber = (index: number) => planData.length - index;
+
+  // Plan `date` from API/Mongo is UTC; naive ISO (no Z) must not be treated as local IST.
+  const parsePlanUtcDate = (value: string) => {
+    if (!value) return new Date(NaN);
+    const trimmed = value.trim();
+    if (/[zZ]$|[+-]\d{2}:?\d{2}$/.test(trimmed)) {
+      return new Date(trimmed);
+    }
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(trimmed)) {
+      return new Date(`${trimmed}Z`);
+    }
+    return new Date(trimmed);
+  };
 
   const getLoggedInUserId = (): string | null => {
     if (user?.id) return user.id;
@@ -1635,14 +1652,15 @@ export default function ProgressSheetViewPageTimeClient() {
         addWrappedBlock('Plan of the Day', plan.prescription || 'No prescription available');
 
 
+        const planAt = parsePlanUtcDate(plan.date);
         const planDay = patient.admission_date
           ? Math.ceil(
-              (new Date(plan.date).getTime() - new Date(patient.admission_date).getTime()) /
+              (planAt.getTime() - new Date(patient.admission_date).getTime()) /
                 (1000 * 60 * 60 * 24)
             )
           : '—';
-        const planDate = new Date(plan.date).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' });
-        const planTime = new Date(plan.date).toLocaleTimeString('en-US', {
+        const planDate = planAt.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' });
+        const planTime = planAt.toLocaleTimeString('en-US', {
           hour: '2-digit',
           minute: '2-digit',
           hour12: true,
@@ -2073,17 +2091,24 @@ export default function ProgressSheetViewPageTimeClient() {
                   </div>
                   
                   <div className={styles.prescriptionMeta}>
-                    <div className={styles.prescriptionDate}>
-                      Date: {new Date(plan.date).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' })} | DAY: {Math.ceil((new Date(plan.date).getTime() - new Date(patient?.admission_date || '').getTime()) / (1000 * 60 * 60 * 24))}
-                    </div>
-                    <div className={styles.prescriptionTime}>
-                      Time: {new Date(plan.date).toLocaleTimeString('en-US', { 
-                        hour: '2-digit', 
-                        minute: '2-digit',
-                        hour12: true,
-                        timeZone: 'Asia/Kolkata'
-                      })}
-                    </div>
+                    {(() => {
+                      const planAt = parsePlanUtcDate(plan.date);
+                      return (
+                        <>
+                          <div className={styles.prescriptionDate}>
+                            Date: {planAt.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' })} | DAY: {Math.ceil((planAt.getTime() - new Date(patient?.admission_date || '').getTime()) / (1000 * 60 * 60 * 24))}
+                          </div>
+                          <div className={styles.prescriptionTime}>
+                            Time: {planAt.toLocaleTimeString('en-US', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true,
+                              timeZone: 'Asia/Kolkata',
+                            })}
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                   <div className={styles.prescriptionIds}>
                     <div className={styles.idItem}>
@@ -2215,9 +2240,10 @@ export default function ProgressSheetViewPageTimeClient() {
             <h2>Daily Round Sheet</h2>
           </div>
           {renderAllSections()}
+          {/* Previous page link — kept for reference
           {latestInvestigationReportDate && (
             <div className={styles.investigationReportLinkContainer}>
-              <Link 
+              <Link
                 href={`/patients/${params.id}/investigation-report/date/${latestInvestigationReportDate}`}
                 className={styles.investigationReportLink}
                 target="_blank"
@@ -2227,6 +2253,16 @@ export default function ProgressSheetViewPageTimeClient() {
               </Link>
             </div>
           )}
+          */}
+          <div className={styles.investigationReportLinkContainer}>
+            <button
+              type="button"
+              className={styles.investigationReportLink}
+              onClick={() => setIsInvestigationModalOpen(true)}
+            >
+              View Investigation Report
+            </button>
+          </div>
         </div>
 
         {/* Previous Prescriptions Section */}
@@ -2244,10 +2280,16 @@ export default function ProgressSheetViewPageTimeClient() {
             Downloads the same fields shown on this page: patient details, GCS, input/output, vitals, respiratory, catheters, and all plans of day.
           </p>
         </div>
-        
-        
+
+        <InvestigationCumulativeModal
+          isOpen={isInvestigationModalOpen}
+          onClose={() => setIsInvestigationModalOpen(false)}
+          reports={investigationReports}
+          patientName={
+            patient ? `${patient.first_name || ''} ${patient.last_name || ''}`.trim() : undefined
+          }
+        />
       </div>
-      
     </>
   );
 } 

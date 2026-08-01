@@ -36,7 +36,8 @@ const CATHETER_TYPES = {
     'Ryles Tube'
   ],
   Type2: [
-    'ET / Tracheostomy Tube',
+    'ET Tube',
+    'Tracheostomy Tube',
     'Sheath',
     'Art Line Radial', 
     'Temp. Pacing Lead',
