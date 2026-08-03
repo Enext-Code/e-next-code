@@ -38,6 +38,7 @@ const CATHETER_TYPES = {
   Type2: [
     'ET Tube',
     'Tracheostomy Tube',
+    'ET / Tracheostomy Tube',
     'Sheath',
     'Art Line Radial', 
     'Temp. Pacing Lead',
