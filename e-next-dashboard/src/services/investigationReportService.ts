@@ -380,7 +380,7 @@ export const investigationReportService = {
       created_at: string;
       updated_at: string;
     }>>(
-      `/api/v1/investigation-reports/daily-round-sheets/?sheet_id=${sheetId}`
+      `/api/v1/investigation-reports/daily-round-sheets?sheet_id=${encodeURIComponent(sheetId)}`
     );
   },
 
@@ -404,7 +404,7 @@ export const investigationReportService = {
       created_at: string;
       updated_at: string;
     }>>(
-      `/api/v1/investigation-reports/daily-round-sheets?sheet_id=${sheetId}`,
+      `/api/v1/investigation-reports/daily-round-sheets?sheet_id=${encodeURIComponent(sheetId)}`,
       {
         method: 'PUT',
         headers: {

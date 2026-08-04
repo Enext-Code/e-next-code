@@ -12,7 +12,10 @@ import { catheterService, CatheterEntry } from '@/services/catheterService';
 import { investigationReportService, InvestigationReportData } from '@/services/investigationReportService';
 import { fetchApi } from '@/utils/api';
 import { API_ENDPOINTS } from '@/constants/api';
-import InvestigationCumulativeModal from '@/components/daily-round-progress-sheet/InvestigationCumulativeModal';
+import InvestigationCumulativeModal, {
+  buildCumulativeTable,
+  filterReportsLastNDays,
+} from '@/components/daily-round-progress-sheet/InvestigationCumulativeModal';
 
 interface DailyRoundSheetData {
   id: string;
@@ -534,28 +537,24 @@ debugger
   };
 
 
-  const handlePlanEdit = async (sheetId: string) => {
-    try {
-      const response = await investigationReportService.getDailyRoundSheetBySheetId(sheetId);
-      
-      if (response.success && response.data) {
-        const sheetData = response.data as any;
-        setEditFormData({
-          prescription: sheetData.prescription || '',
-          current_issue: sheetData.current_issue || '',
-          current_treatment: sheetData.current_treatment || ''
-        });
-        setEditingSheetId(sheetData.sheet_id);
-        // Scroll to the edit form
-        setTimeout(() => {
-          planFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
-      } else {
-        alert('Failed to load plan data: ' + (response.error || 'Unknown error'));
-      }
-    } catch (error) {
-      alert('Failed to load plan data: ' + error);
+  const handlePlanEdit = (sheetId: string) => {
+    // Use already-loaded plan list — GET /daily-round-sheets/?sheet_id=... hits 405
+    // (POST-only path vs trailing-slash GET mismatch on that route).
+    const sheetData = planData.find((p) => p.sheet_id === sheetId);
+    if (!sheetData) {
+      alert('Failed to load plan data: plan not found');
+      return;
     }
+
+    setEditFormData({
+      prescription: sheetData.prescription || '',
+      current_issue: sheetData.current_issue || '',
+      current_treatment: sheetData.current_treatment || '',
+    });
+    setEditingSheetId(sheetData.sheet_id);
+    setTimeout(() => {
+      planFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
 
@@ -1630,6 +1629,203 @@ debugger
           2
         );
       });
+    }
+    drawDivider();
+
+    // ——— Investigation Cumulative (same portrait flow as rest of PDF) ———
+    const last3DayReports = filterReportsLastNDays(investigationReports, 3);
+    const {
+      columns: invColumns,
+      dateGroups: invDateGroups,
+      rows: invRows,
+    } = buildCumulativeTable(last3DayReports);
+
+    // Keep heading + table start together (no orphan banner / blank page feel)
+    ensureSpace(invColumns.length === 0 ? 28 : 36);
+    addHeading('INVESTIGATION CUMULATIVE');
+
+    if (invColumns.length === 0 || invRows.length === 0) {
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0);
+      doc.text('No investigation data for the last 3 days.', marginX, y);
+      y += 6;
+    } else {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(90, 90, 90);
+      doc.text('Last 3 days  |  Date groups with time columns', marginX, y);
+      doc.setTextColor(0, 0, 0);
+      y += 4;
+
+      const invMX = marginX;
+      const invCW = contentWidth;
+      const testColW = Math.min(40, invCW * 0.22);
+      const timeColW = Math.max(14, (invCW - testColW) / invColumns.length);
+      const tableW = testColW + invColumns.length * timeColW;
+      const dateHeaderH = 5.2;
+      const timeHeaderH = 4.8;
+      const rowH = 4.6;
+      const bottomY = 278;
+
+      // Match rest of daily-round PDF (navy), not modal orange — feels integrated
+      const headerFill: [number, number, number] = [35, 55, 90];
+      const headerFillAlt: [number, number, number] = [50, 72, 110];
+      const border: [number, number, number] = [170, 180, 195];
+      const sectionFill: [number, number, number] = [55, 75, 110];
+
+      const cellText = (row: (typeof invRows)[0], colKey: string): string => {
+        const cell = row.cells[colKey];
+        if (!cell) return 'Nil';
+        if (cell.imageUrls && cell.imageUrls.length > 0) {
+          return `${cell.imageUrls.length} img`;
+        }
+        if (!cell.value || !String(cell.value).trim()) return 'Nil';
+        let t = String(cell.value).trim();
+        if (cell.flag === 'H') t += ' ^';
+        if (cell.flag === 'L') t += ' v';
+        return sanitizePdfText(t);
+      };
+
+      const drawCell = (
+        x: number,
+        cy: number,
+        w: number,
+        h: number,
+        fill: [number, number, number],
+        text: string,
+        opts?: {
+          bold?: boolean;
+          italic?: boolean;
+          textColor?: [number, number, number];
+          align?: 'left' | 'center';
+          fontSize?: number;
+        }
+      ) => {
+        doc.setDrawColor(border[0], border[1], border[2]);
+        doc.setLineWidth(0.2);
+        doc.setFillColor(fill[0], fill[1], fill[2]);
+        doc.rect(x, cy, w, h, 'FD');
+
+        doc.setFontSize(opts?.fontSize ?? 6);
+        doc.setFont('helvetica', opts?.bold ? 'bold' : opts?.italic ? 'italic' : 'normal');
+        const tc = opts?.textColor ?? [30, 30, 30];
+        doc.setTextColor(tc[0], tc[1], tc[2]);
+
+        const pad = 0.6;
+        const lines = doc.splitTextToSize(text || '', Math.max(w - pad * 2, 3));
+        const line = lines[0] || '';
+        if (opts?.align === 'center') {
+          const tw = doc.getTextWidth(line);
+          doc.text(line, x + Math.max((w - tw) / 2, pad), cy + h * 0.7);
+        } else {
+          doc.text(line, x + pad, cy + h * 0.7);
+        }
+        doc.setTextColor(0, 0, 0);
+      };
+
+      const drawTableHeader = () => {
+        drawCell(invMX, y, testColW, dateHeaderH + timeHeaderH, headerFill, 'Test Name', {
+          bold: true,
+          textColor: [255, 255, 255],
+          fontSize: 6.5,
+        });
+
+        let x = invMX + testColW;
+        invDateGroups.forEach((group) => {
+          const w = group.columns.length * timeColW;
+          drawCell(x, y, w, dateHeaderH, headerFill, sanitizePdfText(group.dateLabel), {
+            bold: true,
+            textColor: [255, 255, 255],
+            align: 'center',
+            fontSize: 6.5,
+          });
+          x += w;
+        });
+
+        const timeY = y + dateHeaderH;
+        x = invMX + testColW;
+        invColumns.forEach((col) => {
+          drawCell(
+            x,
+            timeY,
+            timeColW,
+            timeHeaderH,
+            headerFillAlt,
+            sanitizePdfText(col.timeLabel || '-'),
+            {
+              bold: true,
+              textColor: [255, 255, 255],
+              align: 'center',
+              fontSize: 5,
+            }
+          );
+          x += timeColW;
+        });
+
+        y += dateHeaderH + timeHeaderH;
+      };
+
+      const ensureInvRow = () => {
+        if (y + rowH <= bottomY) return;
+        doc.addPage();
+        y = 16;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(35, 55, 90);
+        doc.text('Investigation Cumulative (continued)', invMX, y);
+        doc.setTextColor(0, 0, 0);
+        y += 4;
+        drawTableHeader();
+      };
+
+      drawTableHeader();
+
+      invRows.forEach((row, rowIndex) => {
+        const showSection =
+          rowIndex === 0 || invRows[rowIndex - 1].section !== row.section;
+
+        if (showSection) {
+          ensureInvRow();
+          drawCell(invMX, y, tableW, rowH, sectionFill, sanitizePdfText(row.section), {
+            bold: true,
+            textColor: [255, 255, 255],
+            fontSize: 6.5,
+          });
+          y += rowH;
+        }
+
+        ensureInvRow();
+        const bg: [number, number, number] =
+          rowIndex % 2 === 0 ? [255, 255, 255] : [245, 247, 250];
+
+        drawCell(invMX, y, testColW, rowH, bg, sanitizePdfText(row.testName), {
+          bold: true,
+          textColor: [30, 30, 30],
+          fontSize: 6,
+        });
+
+        invColumns.forEach((col, i) => {
+          const x = invMX + testColW + i * timeColW;
+          const text = cellText(row, col.key);
+          const cell = row.cells[col.key];
+          let textColor: [number, number, number] = [30, 30, 30];
+          if (cell?.flag === 'H') textColor = [180, 40, 40];
+          else if (cell?.flag === 'L') textColor = [30, 80, 180];
+          else if (text === 'Nil') textColor = [130, 130, 130];
+
+          drawCell(x, y, timeColW, rowH, bg, text, {
+            italic: text === 'Nil',
+            textColor,
+            align: 'center',
+            fontSize: 5.5,
+          });
+        });
+
+        y += rowH;
+      });
+
+      y += 3;
     }
     drawDivider();
 

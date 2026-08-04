@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from app.accounts.api.v1 import (get_current_user,
                                  validate_organisation_access,
@@ -16,33 +16,43 @@ from ....services import daily_round_sheet_service
 router = APIRouter()
 
 
+async def _get_daily_round_sheet_by_id(
+    sheet_id: str,
+    current_user: dict,
+) -> DailyRoundSheetResponseSchema:
+    await validate_resource_access(
+        field_name="sheet_id",
+        field_value=sheet_id,
+        model_class=DailyRoundSheet,
+        current_user=current_user,
+    )
+    return await daily_round_sheet_service.get_daily_round_sheet(sheet_id)
+
+
+@router.get(
+    "",
+    response_model=BaseResponse[DailyRoundSheetResponseSchema],
+    description="Get daily round sheet by ID",
+)
 @router.get(
     "/",
     response_model=BaseResponse[DailyRoundSheetResponseSchema],
     description="Get daily round sheet by ID",
+    include_in_schema=False,
 )
 @format_response(
     response_model=DailyRoundSheetResponseSchema,
     message="Daily round sheet retrieved successfully",
 )
 async def get_daily_round_sheet_by_id(
-    sheet_id: str,
+    sheet_id: str = Query(..., description="Daily round sheet ID"),
     current_user=Depends(get_current_user),
 ) -> DailyRoundSheetResponseSchema:
     """
     Get daily round sheet by ID
     """
     try:
-        await validate_resource_access(
-            field_name="sheet_id",
-            field_value=sheet_id,
-            model_class=DailyRoundSheet,
-            current_user=current_user,
-        )
-        daily_round_sheet = await daily_round_sheet_service.get_daily_round_sheet(
-            sheet_id
-        )
-        return daily_round_sheet
+        return await _get_daily_round_sheet_by_id(sheet_id, current_user)
     except Exception as e:
         raise e
 

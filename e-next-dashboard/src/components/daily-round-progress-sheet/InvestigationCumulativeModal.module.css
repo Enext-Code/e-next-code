@@ -87,20 +87,46 @@
 
 .table thead th {
   position: sticky;
-  top: 0;
   z-index: 2;
   background: #ff911f;
   color: #fff;
   font-weight: 600;
   text-align: center;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border: 1px solid #f3c69a;
   white-space: nowrap;
 }
 
+/* Two-row sticky header: date on top, times below */
+.table thead tr.dateHeaderRow th {
+  top: 0;
+}
+
+.table thead tr.timeHeaderRow th {
+  top: 34px;
+}
+
+.table thead th.dateGroupHeader {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  border-bottom: 1px solid #f8d4ad;
+}
+
+.table thead th.timeHeader {
+  font-size: 11px;
+  font-weight: 500;
+  min-width: 72px;
+  background: #f59e0b;
+}
+
+.table thead th.testNameHeader {
+  vertical-align: middle;
+}
+
 .table thead th.stickyCol {
   left: 0;
-  z-index: 3;
+  z-index: 4;
   text-align: left;
   min-width: 200px;
 }

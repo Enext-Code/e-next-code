@@ -17,13 +17,13 @@ type ParamCell = {
   imageUrls?: string[];
 };
 
-type CumulativeRow = {
+export type CumulativeRow = {
   testName: string;
   section: string;
   cells: Record<string, ParamCell>;
 };
 
-function toDateKey(analysisDate: string): string {
+export function toDateKey(analysisDate: string): string {
   if (!analysisDate) return '';
   if (/^\d{4}-\d{2}-\d{2}/.test(analysisDate)) {
     return analysisDate.slice(0, 10);
@@ -37,6 +37,72 @@ function formatDateHeader(dateKey: string): string {
   const m = dateKey.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!m) return dateKey;
   return `${m[3]}-${m[2]}-${m[1]}`;
+}
+
+/** Wall-clock time from analysis_date (same approach as Select Time list). */
+function formatTimeHeader(analysisDate: string): string {
+  if (!analysisDate) return '';
+  const match = analysisDate.match(/T(\d{2}):(\d{2})/);
+  let hours = 0;
+  let minutes = 0;
+  if (match) {
+    hours = Number(match[1]);
+    minutes = Number(match[2]);
+  } else {
+    const dateString = analysisDate.endsWith('Z') ? analysisDate : `${analysisDate}Z`;
+    const d = new Date(dateString);
+    if (Number.isNaN(d.getTime())) return '';
+    hours = d.getUTCHours();
+    minutes = d.getUTCMinutes();
+  }
+  const displayHours = hours % 12 || 12;
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  return `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+}
+
+export type ColumnMeta = {
+  key: string;
+  sortKey: string;
+  dateKey: string;
+  dateLabel: string;
+  timeLabel: string;
+};
+
+export type DateGroup = {
+  dateKey: string;
+  dateLabel: string;
+  columns: ColumnMeta[];
+};
+
+/** Keep reports from the latest analysis date back through (n - 1) calendar days. */
+export function filterReportsLastNDays(
+  reports: InvestigationReportData[],
+  n = 3
+): InvestigationReportData[] {
+  if (!reports.length || n <= 0) return [];
+
+  const parseKey = (key: string) => {
+    const [y, m, d] = key.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  };
+
+  const dateKeys = reports
+    .map((r) => toDateKey(r.analysis_date))
+    .filter(Boolean)
+    .sort();
+  if (dateKeys.length === 0) return [];
+
+  const latestKey = dateKeys[dateKeys.length - 1];
+  const latest = parseKey(latestKey);
+  const cutoff = new Date(latest);
+  cutoff.setDate(cutoff.getDate() - (n - 1));
+
+  return reports.filter((r) => {
+    const key = toDateKey(r.analysis_date);
+    if (!key) return false;
+    const d = parseKey(key);
+    return d >= cutoff && d <= latest;
+  });
 }
 
 function getFlag(value: unknown, min?: unknown, max?: unknown): 'H' | 'L' | null {
@@ -81,7 +147,7 @@ function upsertCell(
   rowsMap: Map<string, CumulativeRow>,
   testName: string,
   section: string,
-  dateKey: string,
+  columnKey: string,
   value: unknown,
   min?: unknown,
   max?: unknown
@@ -97,13 +163,13 @@ function upsertCell(
   }
 
   const flag = getFlag(value, min, max);
-  const existing = row.cells[dateKey];
+  const existing = row.cells[columnKey];
   if (!existing) {
-    row.cells[dateKey] = { value: display, flag };
+    row.cells[columnKey] = { value: display, flag };
     return;
   }
 
-  row.cells[dateKey] = {
+  row.cells[columnKey] = {
     ...existing,
     value: existing.value ? `${existing.value}, ${display}` : display,
     flag: existing.flag || flag,
@@ -114,7 +180,7 @@ function upsertImageCell(
   rowsMap: Map<string, CumulativeRow>,
   testName: string,
   section: string,
-  dateKey: string,
+  columnKey: string,
   imageUrls: string[]
 ) {
   if (!imageUrls.length) return;
@@ -126,11 +192,11 @@ function upsertImageCell(
     rowsMap.set(key, row);
   }
 
-  const existing = row.cells[dateKey];
+  const existing = row.cells[columnKey];
   const merged = [...(existing?.imageUrls || []), ...imageUrls];
   // de-dupe
   const unique = Array.from(new Set(merged));
-  row.cells[dateKey] = {
+  row.cells[columnKey] = {
     ...existing,
     imageUrls: unique,
     value: existing?.value,
@@ -138,18 +204,28 @@ function upsertImageCell(
   };
 }
 
-function buildCumulativeTable(reports: InvestigationReportData[]) {
-  const dateSet = new Set<string>();
+export function buildCumulativeTable(reports: InvestigationReportData[]) {
+  const columnsMap = new Map<string, ColumnMeta>();
   const rowsMap = new Map<string, CumulativeRow>();
 
   const sortedReports = [...reports].sort((a, b) =>
-    toDateKey(a.analysis_date).localeCompare(toDateKey(b.analysis_date))
+    String(a.analysis_date || '').localeCompare(String(b.analysis_date || ''))
   );
 
   for (const report of sortedReports) {
     const dateKey = toDateKey(report.analysis_date);
     if (!dateKey) continue;
-    dateSet.add(dateKey);
+
+    // One column per report (same date + different time = separate columns)
+    const columnKey = report.report_id || `${dateKey}_${report.analysis_date}`;
+    const timeLabel = formatTimeHeader(report.analysis_date);
+    columnsMap.set(columnKey, {
+      key: columnKey,
+      sortKey: `${dateKey}T${report.analysis_date || ''}`,
+      dateKey,
+      dateLabel: formatDateHeader(dateKey),
+      timeLabel,
+    });
 
     const bloodValues = report.blood_analysis?.values;
     if (bloodValues && typeof bloodValues === 'object') {
@@ -159,7 +235,7 @@ function buildCumulativeTable(reports: InvestigationReportData[]) {
           rowsMap,
           item?.display_name || item?.parameter || name,
           'Blood Analysis',
-          dateKey,
+          columnKey,
           item?.value,
           item?.min_value,
           item?.max_value
@@ -175,7 +251,7 @@ function buildCumulativeTable(reports: InvestigationReportData[]) {
           rowsMap,
           item?.display_name || item?.parameter || name,
           'Arterial Blood Gas Analysis',
-          dateKey,
+          columnKey,
           item?.value,
           item?.min_value,
           item?.max_value
@@ -191,7 +267,7 @@ function buildCumulativeTable(reports: InvestigationReportData[]) {
           rowsMap,
           item?.display_name || item?.parameter || name,
           'Microbiology',
-          dateKey,
+          columnKey,
           item?.value ?? item?.formatted_value,
           item?.min_value,
           item?.max_value
@@ -204,7 +280,7 @@ function buildCumulativeTable(reports: InvestigationReportData[]) {
       microTests.forEach((test: any) => {
         const label = test?.test_type || 'Microbiology Test';
         const detail = [test?.specimen_source, test?.remarks].filter(Boolean).join(' — ') || 'Done';
-        upsertCell(rowsMap, label, 'Microbiology', dateKey, detail);
+        upsertCell(rowsMap, label, 'Microbiology', columnKey, detail);
       });
     }
 
@@ -215,17 +291,45 @@ function buildCumulativeTable(reports: InvestigationReportData[]) {
           : rad.radiology_type || 'Radiology';
         const urls = resolveRadiologyUrls(rad.file_keys, report.presigned_urls);
         if (urls.length > 0) {
-          upsertImageCell(rowsMap, label, 'Radiology', dateKey, urls);
+          upsertImageCell(rowsMap, label, 'Radiology', columnKey, urls);
         } else {
           const detail =
             rad.number_of_images != null ? `${rad.number_of_images} image(s)` : 'Done';
-          upsertCell(rowsMap, label, 'Radiology', dateKey, detail);
+          upsertCell(rowsMap, label, 'Radiology', columnKey, detail);
         }
       });
     }
   }
 
-  const dates = Array.from(dateSet).sort();
+  const isCellFilled = (cell?: ParamCell) => {
+    if (!cell) return false;
+    if (cell.imageUrls && cell.imageUrls.length > 0) return true;
+    if (cell.value != null && String(cell.value).trim() !== '') return true;
+    return false;
+  };
+
+  const unsortedRows = Array.from(rowsMap.values());
+
+  // Drop time columns where every test cell is empty/Nil
+  const columns = Array.from(columnsMap.values())
+    .filter((col) => unsortedRows.some((row) => isCellFilled(row.cells[col.key])))
+    .sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+
+  // Group remaining time columns under a single date header
+  const dateGroups: DateGroup[] = [];
+  for (const col of columns) {
+    const last = dateGroups[dateGroups.length - 1];
+    if (last && last.dateKey === col.dateKey) {
+      last.columns.push(col);
+    } else {
+      dateGroups.push({
+        dateKey: col.dateKey,
+        dateLabel: col.dateLabel,
+        columns: [col],
+      });
+    }
+  }
+
   const sectionOrder = [
     'Arterial Blood Gas Analysis',
     'Blood Analysis',
@@ -311,7 +415,7 @@ function buildCumulativeTable(reports: InvestigationReportData[]) {
     return 0;
   };
 
-  const rows = Array.from(rowsMap.values()).sort((a, b) => {
+  const rows = unsortedRows.sort((a, b) => {
     const si = sectionOrder.indexOf(a.section) - sectionOrder.indexOf(b.section);
     if (si !== 0) return si;
     const ai = testOrderIndex(a.section, a.testName);
@@ -320,7 +424,7 @@ function buildCumulativeTable(reports: InvestigationReportData[]) {
     return a.testName.localeCompare(b.testName);
   });
 
-  return { dates, rows };
+  return { columns, dateGroups, rows };
 }
 
 export default function InvestigationCumulativeModal({
@@ -329,7 +433,7 @@ export default function InvestigationCumulativeModal({
   reports,
   patientName,
 }: InvestigationCumulativeModalProps) {
-  const { dates, rows } = buildCumulativeTable(reports);
+  const { columns, dateGroups, rows } = buildCumulativeTable(reports);
   const [preview, setPreview] = useState<{ urls: string[]; index: number } | null>(null);
 
   if (!isOpen) return null;
@@ -389,23 +493,40 @@ export default function InvestigationCumulativeModal({
         </div>
 
         <div className={styles.tableWrap}>
-          {dates.length === 0 || rows.length === 0 ? (
+          {columns.length === 0 || rows.length === 0 ? (
             <div className={styles.empty}>No investigation data available for this patient.</div>
           ) : (
             <table className={styles.table}>
               <thead>
-                <tr>
-                  <th className={styles.stickyCol}>Test Name</th>
-                  {dates.map((d) => (
-                    <th key={d}>{formatDateHeader(d)}</th>
+                <tr className={styles.dateHeaderRow}>
+                  <th className={`${styles.stickyCol} ${styles.testNameHeader}`} rowSpan={2}>
+                    Test Name
+                  </th>
+                  {dateGroups.map((group) => (
+                    <th
+                      key={group.dateKey}
+                      className={styles.dateGroupHeader}
+                      colSpan={group.columns.length}
+                    >
+                      {group.dateLabel}
+                    </th>
                   ))}
+                </tr>
+                <tr className={styles.timeHeaderRow}>
+                  {dateGroups.flatMap((group) =>
+                    group.columns.map((col) => (
+                      <th key={col.key} className={styles.timeHeader}>
+                        {col.timeLabel || '—'}
+                      </th>
+                    ))
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {rows.map((row, rowIndex) => {
                   const showSectionHeading =
                     rowIndex === 0 || rows[rowIndex - 1].section !== row.section;
-                  const colSpan = dates.length + 1;
+                  const colSpan = columns.length + 1;
 
                   return (
                     <React.Fragment key={`${row.section}-${row.testName}`}>
@@ -420,13 +541,13 @@ export default function InvestigationCumulativeModal({
                         <td className={styles.stickyCol}>
                           <span className={styles.testName}>{row.testName}</span>
                         </td>
-                        {dates.map((d) => {
-                          const cell = row.cells[d];
+                        {columns.map((col) => {
+                          const cell = row.cells[col.key];
                           const hasImages = !!(cell?.imageUrls && cell.imageUrls.length > 0);
                           const hasValue = !!(cell?.value && String(cell.value).trim());
 
                           return (
-                            <td key={d}>
+                            <td key={col.key}>
                               {!cell || (!hasImages && !hasValue) ? (
                                 <span className={styles.nil}>Nil</span>
                               ) : hasImages ? (
@@ -460,7 +581,7 @@ export default function InvestigationCumulativeModal({
                                   {String(cell.value)
                                     .split(',')
                                     .map((part, idx, arr) => (
-                                      <span key={`${d}-${idx}`}>
+                                      <span key={`${col.key}-${idx}`}>
                                         {part.trim()}
                                         {idx < arr.length - 1 ? (
                                           <span className={styles.comma}>, </span>
