@@ -1217,8 +1217,8 @@ debugger
 
     const addHeading = (title: string) => {
       ensureSpace(14);
-      // doc.setFillColor(35, 55, 90);
-      doc.setFillColor(255, 148, 37); // #FF9425
+      doc.setFillColor(35, 55, 90);
+      // doc.setFillColor(255, 148, 37); // #FF9425
       doc.rect(marginX, y - 4, contentWidth, 8, 'F');
       doc.setTextColor(255);
       doc.setFont('helvetica', 'bold');
@@ -1667,18 +1667,18 @@ debugger
       const dateHeaderH = 5.2;
       const timeHeaderH = 4.8;
       const rowH = 4.6;
-      const imageRowH = 12;
-      const thumbSize = 9; // fixed small thumbnail (mm)
+      const imageRowH = 34;
+      const thumbSize = 28; // fixed visible thumbnail (mm)
       const bottomY = 278;
 
       // Match rest of daily-round PDF (navy), not modal orange — feels integrated
-      // const headerFill: [number, number, number] = [35, 55, 90]; // #23375A
-      const headerFill: [number, number, number] = [255, 148, 37]; // #FF9425
-      // const headerFillAlt: [number, number, number] = [50, 72, 110]; // #32486E
-      const headerFillAlt: [number, number, number] = [255, 148, 37]; // #FF9425
+      const headerFill: [number, number, number] = [35, 55, 90]; // #23375A
+      // const headerFill: [number, number, number] = [255, 148, 37]; // #FF9425
+      const headerFillAlt: [number, number, number] = [50, 72, 110]; // #32486E
+      // const headerFillAlt: [number, number, number] = [255, 148, 37]; // #FF9425
       const border: [number, number, number] = [170, 180, 195];
-      // const sectionFill: [number, number, number] = [55, 75, 110];
-      const sectionFill: [number, number, number] = [204, 115, 19]; // #CC7313
+      const sectionFill: [number, number, number] = [55, 75, 110];
+      // const sectionFill: [number, number, number] = [204, 115, 19]; // #CC7313
 
       const cellText = (row: (typeof invRows)[0], colKey: string): string => {
         const cell = row.cells[colKey];
@@ -1687,16 +1687,47 @@ debugger
           return `${cell.imageUrls.length} img`;
         }
         if (!cell.value || !String(cell.value).trim()) return 'Nil';
-        let t = String(cell.value).trim();
-        if (cell.flag === 'H') t += ' ^';
-        if (cell.flag === 'L') t += ' v';
-        return sanitizePdfText(t);
+        // Arrow drawn as shape (Helvetica can't render ⬆⬇ text)
+        return sanitizePdfText(String(cell.value).trim());
       };
 
-      const rowHasImages = (row: (typeof invRows)[0]) =>
-        invColumns.some((col) => (row.cells[col.key]?.imageUrls?.length ?? 0) > 0);
+      /** Tiny filled triangle — looks like ⬆ / ⬇ without Unicode font issues */
+      const drawFlagArrow = (ax: number, ay: number, flag: 'H' | 'L') => {
+        const s = 1.15;
+        if (flag === 'H') {
+          doc.setFillColor(160, 0, 0);
+          doc.triangle(ax, ay - s, ax - s * 0.75, ay + s * 0.55, ax + s * 0.75, ay + s * 0.55, 'F');
+        } else {
+          doc.setFillColor(0, 51, 153);
+          doc.triangle(ax, ay + s, ax - s * 0.75, ay - s * 0.55, ax + s * 0.75, ay - s * 0.55, 'F');
+        }
+      };
 
-      // Preload first radiology thumb per cell (via media-proxy for CORS)
+      const IMAGES_PER_ROW = 2; // 2 side-by-side; more → wrap and grow row height
+      const thumbGap = 2.8; // clear space between 2 photos
+      const imageCellPad = 1.0;
+
+      const getThumbSizeForCount = (cellW: number, count: number) => {
+        if (count <= 1) return Math.min(thumbSize, Math.max(cellW - imageCellPad * 2, 5));
+        return Math.min(
+          thumbSize,
+          Math.max((cellW - imageCellPad * 2 - thumbGap) / IMAGES_PER_ROW, 5)
+        );
+      };
+
+      const getImageBlockHeight = (count: number, size: number) => {
+        if (count <= 0) return imageRowH;
+        const rows = Math.ceil(count / IMAGES_PER_ROW);
+        return imageCellPad * 2 + rows * size + Math.max(rows - 1, 0) * thumbGap;
+      };
+
+      const maxImagesInRow = (row: (typeof invRows)[0]) =>
+        invColumns.reduce(
+          (max, col) => Math.max(max, row.cells[col.key]?.imageUrls?.length ?? 0),
+          0
+        );
+
+      // Preload all radiology thumbs (via media-proxy for CORS)
       const loadPdfThumb = async (url: string): Promise<string | null> => {
         try {
           const fetchUrl =
@@ -1714,7 +1745,8 @@ debugger
             image.src = objectUrl;
           });
           const canvas = document.createElement('canvas');
-          const maxPx = 160;
+          // Sharper small thumbs for PDF readability
+          const maxPx = 320;
           const scale = Math.min(1, maxPx / Math.max(img.naturalWidth, img.naturalHeight, 1));
           canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
           canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
@@ -1723,9 +1755,13 @@ debugger
             URL.revokeObjectURL(objectUrl);
             return null;
           }
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           URL.revokeObjectURL(objectUrl);
-          return canvas.toDataURL('image/jpeg', 0.72);
+          return canvas.toDataURL('image/jpeg', 0.88);
         } catch {
           return null;
         }
@@ -1735,8 +1771,7 @@ debugger
       const urlsToLoad = new Set<string>();
       invRows.forEach((row) => {
         invColumns.forEach((col) => {
-          const first = row.cells[col.key]?.imageUrls?.[0];
-          if (first) urlsToLoad.add(first);
+          (row.cells[col.key]?.imageUrls || []).forEach((url) => urlsToLoad.add(url));
         });
       });
       await Promise.all(
@@ -1759,6 +1794,7 @@ debugger
           textColor?: [number, number, number];
           align?: 'left' | 'center';
           fontSize?: number;
+          flag?: 'H' | 'L' | null;
         }
       ) => {
         doc.setDrawColor(border[0], border[1], border[2]);
@@ -1772,13 +1808,19 @@ debugger
         doc.setTextColor(tc[0], tc[1], tc[2]);
 
         const pad = 0.6;
-        const lines = doc.splitTextToSize(text || '', Math.max(w - pad * 2, 3));
+        const arrowGap = opts?.flag ? 2.2 : 0;
+        const lines = doc.splitTextToSize(text || '', Math.max(w - pad * 2 - arrowGap, 3));
         const line = lines[0] || '';
+        const tw = doc.getTextWidth(line);
+        const textY = cy + h * 0.7;
+        let textX = x + pad;
         if (opts?.align === 'center') {
-          const tw = doc.getTextWidth(line);
-          doc.text(line, x + Math.max((w - tw) / 2, pad), cy + h * 0.7);
-        } else {
-          doc.text(line, x + pad, cy + h * 0.7);
+          const blockW = tw + arrowGap;
+          textX = x + Math.max((w - blockW) / 2, pad);
+        }
+        doc.text(line, textX, textY);
+        if (opts?.flag === 'H' || opts?.flag === 'L') {
+          drawFlagArrow(textX + tw + 1.3, cy + h * 0.52, opts.flag);
         }
         doc.setTextColor(0, 0, 0);
       };
@@ -1789,45 +1831,51 @@ debugger
         w: number,
         h: number,
         fill: [number, number, number],
-        imageUrl: string,
-        extraCount: number
+        imageUrls: string[]
       ) => {
         doc.setDrawColor(border[0], border[1], border[2]);
         doc.setLineWidth(0.2);
         doc.setFillColor(fill[0], fill[1], fill[2]);
         doc.rect(x, cy, w, h, 'FD');
 
-        const dataUrl = thumbCache.get(imageUrl);
-        const size = Math.min(thumbSize, w - 1.5, h - 1.5);
-        if (dataUrl && size > 2) {
-          const ix = x + (w - size) / 2;
-          const iy = cy + (h - size) / 2;
-          try {
-            doc.addImage(dataUrl, 'JPEG', ix, iy, size, size, undefined, 'FAST');
-          } catch {
-            drawCell(x, cy, w, h, fill, 'img', {
-              italic: true,
-              textColor: [130, 130, 130],
-              align: 'center',
-              fontSize: 5,
-            });
-            return;
+        const count = imageUrls.length;
+        const size = getThumbSizeForCount(w, count);
+        const rows = Math.ceil(count / IMAGES_PER_ROW);
+        const gridW =
+          Math.min(count, IMAGES_PER_ROW) * size +
+          Math.max(Math.min(count, IMAGES_PER_ROW) - 1, 0) * thumbGap;
+        const gridH = rows * size + Math.max(rows - 1, 0) * thumbGap;
+        const startX = x + Math.max((w - gridW) / 2, imageCellPad);
+        const startY = cy + Math.max((h - gridH) / 2, imageCellPad);
+
+        imageUrls.forEach((url, idx) => {
+          const colIdx = idx % IMAGES_PER_ROW;
+          const rowIdx = Math.floor(idx / IMAGES_PER_ROW);
+          const ix = startX + colIdx * (size + thumbGap);
+          const iy = startY + rowIdx * (size + thumbGap);
+          const dataUrl = thumbCache.get(url);
+
+          doc.setFillColor(255, 255, 255);
+          doc.setDrawColor(90, 100, 120);
+          doc.setLineWidth(0.35);
+          doc.rect(ix - 0.25, iy - 0.25, size + 0.5, size + 0.5, 'FD');
+
+          if (dataUrl) {
+            try {
+              doc.addImage(dataUrl, 'JPEG', ix, iy, size, size, undefined, 'NONE');
+              return;
+            } catch {
+              // fall through to placeholder
+            }
           }
-          if (extraCount > 0) {
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(5);
-            doc.setTextColor(35, 55, 90);
-            doc.text(`+${extraCount}`, x + w - 3.2, cy + h - 1.2);
-            doc.setTextColor(0, 0, 0);
-          }
-        } else {
-          drawCell(x, cy, w, h, fill, extraCount > 0 ? `img +${extraCount}` : 'img', {
-            italic: true,
-            textColor: [130, 130, 130],
-            align: 'center',
-            fontSize: 5,
-          });
-        }
+          doc.setFillColor(235, 238, 245);
+          doc.rect(ix, iy, size, size, 'F');
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(5);
+          doc.setTextColor(55, 65, 85);
+          doc.text('IMG', ix + size / 2, iy + size * 0.62, { align: 'center' });
+          doc.setTextColor(0, 0, 0);
+        });
       };
 
       const drawTableHeader = () => {
@@ -1890,7 +1938,10 @@ debugger
       invRows.forEach((row, rowIndex) => {
         const showSection =
           rowIndex === 0 || invRows[rowIndex - 1].section !== row.section;
-        const currentRowH = rowHasImages(row) ? imageRowH : rowH;
+        const maxCount = maxImagesInRow(row);
+        const thumbForRow = getThumbSizeForCount(timeColW, Math.max(maxCount, 1));
+        const currentRowH =
+          maxCount > 0 ? getImageBlockHeight(maxCount, thumbForRow) : rowH;
 
         if (showSection) {
           ensureInvRow(rowH);
@@ -1918,21 +1969,25 @@ debugger
           const urls = cell?.imageUrls;
 
           if (urls && urls.length > 0) {
-            drawImageCell(x, y, timeColW, currentRowH, bg, urls[0], urls.length - 1);
+            drawImageCell(x, y, timeColW, currentRowH, bg, urls);
             return;
           }
 
           const text = cellText(row, col.key);
-          let textColor: [number, number, number] = [30, 30, 30];
-          if (cell?.flag === 'H') textColor = [180, 40, 40];
-          else if (cell?.flag === 'L') textColor = [30, 80, 180];
-          else if (text === 'Nil') textColor = [130, 130, 130];
+          // Strong contrast so numbers stay readable in PDF
+          let textColor: [number, number, number] = [0, 0, 0];
+          const flag = cell?.flag === 'H' || cell?.flag === 'L' ? cell.flag : null;
+          if (flag === 'H') textColor = [160, 0, 0];
+          else if (flag === 'L') textColor = [0, 51, 153];
+          else if (text === 'Nil') textColor = [90, 90, 90];
 
           drawCell(x, y, timeColW, currentRowH, bg, text, {
+            bold: text !== 'Nil',
             italic: text === 'Nil',
             textColor,
             align: 'center',
-            fontSize: 5.5,
+            fontSize: 7,
+            flag,
           });
         });
 
