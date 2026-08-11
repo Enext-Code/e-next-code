@@ -862,8 +862,13 @@ class PatientService:
             filter_query["status"] = params.status
 
         skip = (params.page - 1) * params.limit
-        sort_field = params.sort_by or "created_at"
-        sort_order = 1 if params.sort_order == "asc" else -1
+        # Default: bed number ascending (1, 2, 3...). Explicit sort_by still respected.
+        if params.sort_by:
+            sort_field = params.sort_by
+            sort_order = 1 if params.sort_order == "asc" else -1
+        else:
+            sort_field = "sort_bed_number"
+            sort_order = 1
 
         pipeline = [
             {"$match": filter_query},
@@ -1054,7 +1059,7 @@ class PatientService:
                     "as": "investigation_exists",
                 }
             },
-            # Add boolean fields
+            # Add boolean fields + bed sort key (null beds last)
             {
                 "$addFields": {
                     "is_patient_past_medical_history": {
@@ -1063,6 +1068,9 @@ class PatientService:
                     "is_patient_heent": {"$gt": [{"$size": "$heent_exists"}, 0]},
                     "is_patient_investigation": {
                         "$gt": [{"$size": "$investigation_exists"}, 0]
+                    },
+                    "sort_bed_number": {
+                        "$ifNull": ["$icu_bed.bed_number", 999999]
                     },
                 }
             },
