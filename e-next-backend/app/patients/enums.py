@@ -6,12 +6,13 @@ from app.accounts.enums import Gender
 class PatientStatus(str, Enum):
     """Enum for status of a patient"""
 
-    INACTIVE = "inactive"  # 0
-    ADMISSION = "admission"  # 1
-    DISCHARGE = "discharge"  # 2
-    ORPHANE = "orphane"    # 3
-    REFERRED = "referred" # 4
-    
+    INACTIVE = "inactive"  # Step Down (can reactivate to admission)
+    ADMISSION = "admission"
+    DISCHARGE = "discharge"
+    REFERRED = "referred"
+    LAMA = "lama"
+    DECEASED = "deceased"
+
 
 
 class Criticality(str, Enum):

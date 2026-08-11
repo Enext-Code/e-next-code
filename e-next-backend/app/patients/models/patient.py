@@ -143,8 +143,13 @@ class Patient(
 
     @property
     def is_final_status(self) -> bool:
-        """Check if patient has reached a final status (inactive, discharge, orphan, referred)"""
-        return self.status in [PatientStatus.INACTIVE, PatientStatus.DISCHARGE, PatientStatus.ORPHANE, PatientStatus.REFERRED]
+        """Check if patient has reached a final status (no reactivate from these)"""
+        return self.status in [
+            PatientStatus.DISCHARGE,
+            PatientStatus.REFERRED,
+            PatientStatus.LAMA,
+            PatientStatus.DECEASED,
+        ]
 
     def model_dump(self, *args, **kwargs):
         """Dump the model"""

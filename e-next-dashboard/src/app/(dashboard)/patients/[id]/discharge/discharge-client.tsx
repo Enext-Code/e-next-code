@@ -10,7 +10,8 @@ type PageParams = {
   id: string;
 };
 
-type PatientStatus = 'inactive' | 'discharge' | 'orphane';
+/** Final statuses — no Active/reactivate from this page */
+type PatientStatus = 'discharge' | 'lama' | 'deceased' | 'referred';
 
 interface DischargeFormData {
   status: PatientStatus;
@@ -87,11 +88,11 @@ export default function DischargePageClient() {
           router.push(`/patients/${params.id}`);
         }, 2000);
       } else {
-        setError('Failed to update patient status');
+        setError(response.message || 'Failed to update patient status');
       }
     } catch (err) {
       console.error('Error updating patient status:', err);
-      setError('Failed to update patient status');
+      setError(err instanceof Error ? err.message : 'Failed to update patient status');
     } finally {
       setSubmitting(false);
     }
@@ -101,6 +102,12 @@ export default function DischargePageClient() {
     switch (status) {
       case 'discharge':
         return 'Discharge';
+      case 'lama':
+        return 'Lama';
+      case 'deceased':
+        return 'Deceased';
+      case 'referred':
+        return 'Referred';
       default:
         return status;
     }
@@ -155,6 +162,9 @@ export default function DischargePageClient() {
                 required
               >
                 <option value="discharge">Discharge</option>
+                <option value="lama">Lama</option>
+                <option value="deceased">Deceased</option>
+                <option value="referred">Referred</option>
               </select>
             </div>
 

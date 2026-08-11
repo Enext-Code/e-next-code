@@ -153,7 +153,13 @@ export interface PaginatedResponse<T> {
   data: T[];
 }
 
-export type PatientStatus = 'inactive' | 'admission' | 'discharge' | 'orphane' | 'referred';
+export type PatientStatus =
+  | 'inactive'
+  | 'admission'
+  | 'discharge'
+  | 'referred'
+  | 'lama'
+  | 'deceased';
 
 export interface PatientListParams {
   page?: number;

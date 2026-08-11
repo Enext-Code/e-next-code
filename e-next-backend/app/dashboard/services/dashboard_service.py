@@ -1,6 +1,6 @@
 import logging
 from datetime import date, datetime, timezone
-from typing import List
+from typing import List, Optional
 
 from bson import ObjectId
 
@@ -37,6 +37,92 @@ class DashboardService:
     CACHE_TIMEOUT = 300  # 5 minutes
 
     @staticmethod
+    async def _count_patients_by_status(
+        collection,
+        base_filter: dict,
+        status: PatientStatus,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+    ) -> int:
+        """Count patients by status, optionally filtered by status_change_datetime."""
+        status_filter = {**base_filter, "status": status}
+        if start_date or end_date:
+            if start_date:
+                start_datetime = datetime.combine(start_date, datetime.min.time()).replace(
+                    tzinfo=timezone.utc
+                )
+                status_filter["status_change_datetime"] = {"$gte": start_datetime}
+            if end_date:
+                end_datetime = datetime.combine(end_date, datetime.max.time()).replace(
+                    tzinfo=timezone.utc
+                )
+                if "status_change_datetime" in status_filter:
+                    status_filter["status_change_datetime"]["$lte"] = end_datetime
+                else:
+                    status_filter["status_change_datetime"] = {"$lte": end_datetime}
+        return await collection.count_documents(status_filter)
+
+    @staticmethod
+    async def _count_unique_patients_for_period(
+        collection,
+        base_filter: dict,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+    ) -> int:
+        """
+        Unique patients relevant to a date range (never sum of status cards).
+
+        Includes a patient once if any of:
+        - admitted in range
+        - status changed in range (step down / discharge / lama / etc.)
+        - present during range (admitted on/before end, and still admission
+          or left on/after start)
+        """
+        if not start_date and not end_date:
+            return await collection.count_documents(base_filter)
+
+        start_datetime = (
+            datetime.combine(start_date, datetime.min.time()).replace(tzinfo=timezone.utc)
+            if start_date
+            else None
+        )
+        end_datetime = (
+            datetime.combine(end_date, datetime.max.time()).replace(tzinfo=timezone.utc)
+            if end_date
+            else None
+        )
+
+        or_clauses: list[dict] = []
+
+        admission_in_range: dict = {}
+        if start_datetime:
+            admission_in_range["$gte"] = start_datetime
+        if end_datetime:
+            admission_in_range["$lte"] = end_datetime
+        if admission_in_range:
+            or_clauses.append({"admission_date": admission_in_range})
+
+        status_change_in_range: dict = {}
+        if start_datetime:
+            status_change_in_range["$gte"] = start_datetime
+        if end_datetime:
+            status_change_in_range["$lte"] = end_datetime
+        if status_change_in_range:
+            or_clauses.append({"status_change_datetime": status_change_in_range})
+
+        # Present during the period (still admitted, or left after period start)
+        present_during: dict = {}
+        if end_datetime:
+            present_during["admission_date"] = {"$lte": end_datetime}
+        present_or: list[dict] = [{"status": PatientStatus.ADMISSION}]
+        if start_datetime:
+            present_or.append({"status_change_datetime": {"$gte": start_datetime}})
+        present_during["$or"] = present_or
+        or_clauses.append(present_during)
+
+        return await collection.count_documents({**base_filter, "$or": or_clauses})
+
+    @staticmethod
     async def _invalidate_cache():
         """Invalidate dashboard cache"""
         try:
@@ -47,7 +133,7 @@ class DashboardService:
     @staticmethod
     async def get_dashboard_stats(organisation_id: str = None) -> DashboardResponse:
         """Get comprehensive dashboard statistics"""
-        cache_key = f"{DashboardService.CACHE_KEY_PREFIX}:stats:{organisation_id or 'all'}"
+        cache_key = f"{DashboardService.CACHE_KEY_PREFIX}:stats_v2:{organisation_id or 'all'}"
         
         async def fetch_stats():
             try:
@@ -181,13 +267,18 @@ class DashboardService:
             }
             discharged_today = await collection.count_documents(discharged_filter)
 
-            # Get inactive patients
-            inactive_filter = {**filter_dict, "status": PatientStatus.INACTIVE}
-            inactive_patients = await collection.count_documents(inactive_filter)
-
-            # Get orphan patients
-            orphan_filter = {**filter_dict, "status": PatientStatus.ORPHANE}
-            orphan_patients = await collection.count_documents(orphan_filter)
+            lama_patients = await DashboardService._count_patients_by_status(
+                collection, filter_dict, PatientStatus.LAMA
+            )
+            step_down_patients = await DashboardService._count_patients_by_status(
+                collection, filter_dict, PatientStatus.INACTIVE
+            )
+            referred_patients = await DashboardService._count_patients_by_status(
+                collection, filter_dict, PatientStatus.REFERRED
+            )
+            deceased_patients = await DashboardService._count_patients_by_status(
+                collection, filter_dict, PatientStatus.DECEASED
+            )
 
             # Get total discharged patients
             discharged_filter = {**filter_dict, "status": PatientStatus.DISCHARGE}
@@ -199,8 +290,10 @@ class DashboardService:
                 new_admissions_today=new_admissions_today,
                 discharged_today=discharged_today,
                 discharged_patients=discharged_patients,
-                inactive_patients=inactive_patients,
-                orphan_patients=orphan_patients
+                lama_patients=lama_patients,
+                step_down_patients=step_down_patients,
+                referred_patients=referred_patients,
+                deceased_patients=deceased_patients,
             )
             
         except Exception as e:
@@ -211,8 +304,10 @@ class DashboardService:
                 new_admissions_today=0,
                 discharged_today=0,
                 discharged_patients=0,
-                inactive_patients=0,
-                orphan_patients=0
+                lama_patients=0,
+                step_down_patients=0,
+                referred_patients=0,
+                deceased_patients=0,
             )
 
     @staticmethod
@@ -481,7 +576,8 @@ class DashboardService:
         end_date: date = None
     ) -> DetailedCountsResponse:
         """Get detailed counts with date filtering"""
-        cache_key = f"{DashboardService.CACHE_KEY_PREFIX}:detailed_counts:{organisation_id or 'all'}:{start_date or 'all'}:{end_date or 'all'}"
+        # v5: Active = status admission only; Total = date-wise unique
+        cache_key = f"{DashboardService.CACHE_KEY_PREFIX}:detailed_counts_v5:{organisation_id or 'all'}:{start_date or 'all'}:{end_date or 'all'}"
         
         async def fetch_detailed_counts():
             try:
@@ -493,70 +589,10 @@ class DashboardService:
                 # Get collection for direct count operations
                 collection = Patient.get_collection()
 
-                # Get total patients for the organisation (without date filter)
-                total_patients_all = await collection.count_documents(base_filter)
-
-                # Get active patients - with date filter logic
-                if start_date or end_date:
-                    # Calculate patients who were active during the date range
-                    # Logic: Patients admitted before/during the period AND not discharged before start of period
-                    
-                    # Build filter for patients who were active during the time period
-                    active_date_filter = {**base_filter}
-                    
-                    # Patients must be admitted before or during the end date
-                    if end_date:
-                        end_datetime = datetime.combine(end_date, datetime.max.time()).replace(tzinfo=timezone.utc)
-                        active_date_filter["admission_date"] = {"$lte": end_datetime}
-                    
-                    # For patients discharged, they must be discharged after the start date (or still active)
-                    if start_date:
-                        start_datetime = datetime.combine(start_date, datetime.min.time()).replace(tzinfo=timezone.utc)
-                        
-                        # Use aggregation pipeline to handle complex logic
-                        pipeline = [
-                            {"$match": active_date_filter},
-                            {"$addFields": {
-                                "was_active_during_period": {
-                                    "$and": [
-                                        # Patient was admitted before or during end date
-                                        {"$cond": [
-                                            {"$ifNull": ["$admission_date", False]},
-                                            True,
-                                            False
-                                        ]},
-                                        # Either patient is still active OR was discharged after start date
-                                        {"$or": [
-                                            {"$eq": ["$status", "admission"]},  # Still active
-                                            {"$and": [
-                                                {"$eq": ["$status", "discharge"]},
-                                                {"$gte": ["$status_change_datetime", start_datetime]}  # Discharged after start
-                                            ]},
-                                            {"$and": [
-                                                {"$eq": ["$status", "inactive"]},
-                                                {"$gte": ["$status_change_datetime", start_datetime]}  # Became inactive after start
-                                            ]},
-                                            {"$and": [
-                                                {"$eq": ["$status", "orphane"]},
-                                                {"$gte": ["$status_change_datetime", start_datetime]}  # Became orphan after start
-                                            ]}
-                                        ]}
-                                    ]
-                                }
-                            }},
-                            {"$match": {"was_active_during_period": True}},
-                            {"$count": "active_patients_count"}
-                        ]
-                        
-                        result = await collection.aggregate(pipeline).to_list(1)
-                        active_patients = result[0]["active_patients_count"] if result else 0
-                    else:
-                        # If only end_date is provided, count patients admitted before or during end date
-                        active_patients = await collection.count_documents(active_date_filter)
-                else:
-                    # If no date filter, show currently active patients
-                    active_filter = {**base_filter, "status": PatientStatus.ADMISSION}
-                    active_patients = await collection.count_documents(active_filter)
+                # Active = currently admitted only (never Step Down / Lama / Discharge / etc.)
+                active_patients = await collection.count_documents(
+                    {**base_filter, "status": PatientStatus.ADMISSION}
+                )
 
                 # Get discharged patients - with date filter if provided
                 if start_date or end_date:
@@ -580,56 +616,23 @@ class DashboardService:
                     discharged_filter = {**base_filter, "status": PatientStatus.DISCHARGE}
                     discharged_patients = await collection.count_documents(discharged_filter)
 
-                # Get inactive patients - with date filter if provided
-                if start_date or end_date:
-                    # Get patients who became inactive within the date range using status_change_datetime field
-                    inactive_date_filter = {
-                        **base_filter,
-                        "status": PatientStatus.INACTIVE
-                    }
-                    if start_date:
-                        start_datetime = datetime.combine(start_date, datetime.min.time()).replace(tzinfo=timezone.utc)
-                        inactive_date_filter["status_change_datetime"] = {"$gte": start_datetime}
-                    if end_date:
-                        end_datetime = datetime.combine(end_date, datetime.max.time()).replace(tzinfo=timezone.utc)
-                        if "status_change_datetime" in inactive_date_filter:
-                            inactive_date_filter["status_change_datetime"]["$lte"] = end_datetime
-                        else:
-                            inactive_date_filter["status_change_datetime"] = {"$lte": end_datetime}
-                    inactive_patients = await collection.count_documents(inactive_date_filter)
-                else:
-                    # If no date filter, get total inactive patients
-                    inactive_filter = {**base_filter, "status": PatientStatus.INACTIVE}
-                    inactive_patients = await collection.count_documents(inactive_filter)
+                lama_patients = await DashboardService._count_patients_by_status(
+                    collection, base_filter, PatientStatus.LAMA, start_date, end_date
+                )
+                step_down_patients = await DashboardService._count_patients_by_status(
+                    collection, base_filter, PatientStatus.INACTIVE, start_date, end_date
+                )
+                referred_patients = await DashboardService._count_patients_by_status(
+                    collection, base_filter, PatientStatus.REFERRED, start_date, end_date
+                )
+                deceased_patients = await DashboardService._count_patients_by_status(
+                    collection, base_filter, PatientStatus.DECEASED, start_date, end_date
+                )
 
-                # Get orphan patients - with date filter if provided
-                if start_date or end_date:
-                    # Get patients who became orphan within the date range using status_change_datetime field
-                    orphan_date_filter = {
-                        **base_filter,
-                        "status": PatientStatus.ORPHANE
-                    }
-                    if start_date:
-                        start_datetime = datetime.combine(start_date, datetime.min.time()).replace(tzinfo=timezone.utc)
-                        orphan_date_filter["status_change_datetime"] = {"$gte": start_datetime}
-                    if end_date:
-                        end_datetime = datetime.combine(end_date, datetime.max.time()).replace(tzinfo=timezone.utc)
-                        if "status_change_datetime" in orphan_date_filter:
-                            orphan_date_filter["status_change_datetime"]["$lte"] = end_datetime
-                        else:
-                            orphan_date_filter["status_change_datetime"] = {"$lte": end_datetime}
-                    orphan_patients = await collection.count_documents(orphan_date_filter)
-                else:
-                    # If no date filter, get total orphan patients
-                    orphan_filter = {**base_filter, "status": PatientStatus.ORPHANE}
-                    orphan_patients = await collection.count_documents(orphan_filter)
-
-                # Calculate total patients based on date filter logic
-                if start_date or end_date:
-                    # Total patients = active patients + discharged in range + inactive in range + orphan in range
-                    total_patients = active_patients + discharged_patients + inactive_patients + orphan_patients
-                else:
-                    total_patients = total_patients_all
+                # Total = unique patients for the period (date-wise, not sum of cards)
+                total_patients = await DashboardService._count_unique_patients_for_period(
+                    collection, base_filter, start_date, end_date
+                )
 
                 # Get new admissions count
                 if start_date or end_date:
@@ -698,8 +701,10 @@ class DashboardService:
                     total_patients=total_patients,
                     active_patients=active_patients,
                     discharged_patients=discharged_patients,
-                    inactive_patients=inactive_patients,
-                    orphan_patients=orphan_patients,
+                    lama_patients=lama_patients,
+                    step_down_patients=step_down_patients,
+                    referred_patients=referred_patients,
+                    deceased_patients=deceased_patients,
                     new_admissions=new_admissions,
                     total_doctors=staff_count.total_doctors,
                     total_nurses=staff_count.total_nurses,

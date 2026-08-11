@@ -20,8 +20,10 @@ class PatientCount(BaseModel):
     new_admissions_today: int = Field(..., description="Number of new admissions today")
     discharged_today: int = Field(..., description="Number of patients discharged today")
     discharged_patients: int = Field(..., description="Total number of discharged patients")
-    inactive_patients: int = Field(..., description="Number of inactive patients")
-    orphan_patients: int = Field(..., description="Number of orphan patients")
+    lama_patients: int = Field(..., description="Number of lama patients (status=lama)")
+    step_down_patients: int = Field(..., description="Number of step-down patients (status=inactive)")
+    referred_patients: int = Field(..., description="Number of referred patients (status=referred)")
+    deceased_patients: int = Field(..., description="Number of deceased patients (status=deceased)")
 
 
 class RemoteCenterStats(BaseModel):
@@ -102,11 +104,19 @@ class DateFilterParams(BaseModel):
 
 class DetailedCounts(BaseModel):
     """Detailed counts with date filtering"""
-    total_patients: int = Field(..., description="Total patients (current active + discharged in range + inactive in range + orphan in range)")
-    active_patients: int = Field(..., description="Patients who were active during the date range (if filter applied, else currently active)")
+    total_patients: int = Field(
+        ...,
+        description="Unique patients for the selected date range (not sum of status cards)",
+    )
+    active_patients: int = Field(
+        ...,
+        description="Currently admitted patients only (status=admission)",
+    )
     discharged_patients: int = Field(..., description="Patients discharged within date range based on status_change_datetime (if filter applied, else total)")
-    inactive_patients: int = Field(..., description="Patients who became inactive within date range based on status_change_datetime (if filter applied, else total)")
-    orphan_patients: int = Field(..., description="Patients who became orphan within date range based on status_change_datetime (if filter applied, else total)")
+    lama_patients: int = Field(..., description="Lama patients (status=lama)")
+    step_down_patients: int = Field(..., description="Step-down patients (status=inactive)")
+    referred_patients: int = Field(..., description="Referred patients (status=referred)")
+    deceased_patients: int = Field(..., description="Deceased patients (status=deceased)")
     new_admissions: int = Field(..., description="Patients admitted within date range (if filter applied, else today's admissions)")
     total_doctors: int = Field(..., description="Total number of doctors")
     total_nurses: int = Field(..., description="Total number of nurses")

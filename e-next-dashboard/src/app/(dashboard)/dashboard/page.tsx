@@ -265,41 +265,50 @@ export default function Dashboard() {
               icon="👥"
               iconBgColor="#e6efff"
             />
-            
             <StatCard
               title="Active Patients"
               value={dashboardData.active_patients}
               icon="🏥"
               iconBgColor="#e6f7ef"
             />
-            
             <StatCard
               title="Discharged Patients"
               value={dashboardData.discharged_patients}
               icon="📋"
               iconBgColor="#fff6e0"
             />
-            
-            <StatCard
-              title="Lama Patients"
-              value={dashboardData.inactive_patients}
-              icon="⏸️"
-              iconBgColor="#f0f0f0"
-            />
-            
-            <StatCard
-              title="Deceased Patients"
-              value={dashboardData.orphan_patients}
-              icon="👶"
-              iconBgColor="#ffeaa7"
-            />
-            
             <StatCard
               title="New Admissions"
               value={dashboardData.new_admissions}
               icon="➕"
               iconBgColor="#ffefef"
             />
+
+            <StatCard
+              title="Lama Patients"
+              value={dashboardData.lama_patients}
+              icon="⏸️"
+              iconBgColor="#f0f0f0"
+            />
+            <StatCard
+              title="Step Down Patients"
+              value={dashboardData.step_down_patients}
+              icon="⬇️"
+              iconBgColor="#e8f4fd"
+            />
+            <StatCard
+              title="Referred Patients"
+              value={dashboardData.referred_patients}
+              icon="↗️"
+              iconBgColor="#fff0f5"
+            />
+            <StatCard
+              title="Deceased Patients"
+              value={dashboardData.deceased_patients}
+              icon="👶"
+              iconBgColor="#ffeaa7"
+            />
+
             <StatCard
               title="ICU's Count"
               value={dashboardData.remote_centers_count}
@@ -312,32 +321,25 @@ export default function Dashboard() {
               icon="👨‍⚕️"
               iconBgColor="#f0f8ff"
             />
-          </div>
-
-          <div className={styles.statsCards}>
-            
-            
             <StatCard
               title="Doctors"
               value={dashboardData.total_doctors}
               icon="🩺"
               iconBgColor="#f5f0ff"
             />
-            
             <StatCard
               title="Nurses"
               value={dashboardData.total_nurses}
               icon="💉"
               iconBgColor="#fff0f5"
             />
-            
+
             <StatCard
               title="Occupied Beds"
               value={dashboardData.occupied_beds}
               icon="🛏️"
               iconBgColor="#fff8dc"
             />
-            
             <StatCard
               title="Total Beds"
               value={dashboardData.total_beds}

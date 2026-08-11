@@ -39,7 +39,8 @@ export default function PatientsPage() {
     { value: 'admission', label: 'Admission' },
     { value: 'discharge', label: 'Discharge' },
     { value: 'inactive', label: 'Inactive' },
-    { value: 'orphane', label: 'Orphane' },
+    { value: 'lama', label: 'Lama' },
+    { value: 'deceased', label: 'Deceased' },
     { value: 'referred', label: 'Referred' },
   ];
 

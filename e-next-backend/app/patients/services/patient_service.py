@@ -1,4 +1,5 @@
 import logging
+import random
 from datetime import timedelta, UTC, datetime, timezone
 
 from bson import ObjectId
@@ -559,11 +560,33 @@ class PatientService:
                                 )
                             # Clear bed assignment
                             update_data["organisation_icu_bed_id"] = None
-                        # If status changes to ADMISSION, bed_id must be provided
+                        # If status changes to ADMISSION, bed_id required (or auto-assign from same ICU)
                         elif new_status == PatientStatus.ADMISSION:
                             if "organisation_icu_bed_id" not in update_data or not update_data.get("organisation_icu_bed_id"):
-                                raise NotFoundError("Bed assignment is required when patient status is ADMISSION")
-                            
+                                icu_id = update_data.get("organisation_icu_id") or existing.organisation_icu_id
+                                if not icu_id:
+                                    raise NotFoundError(
+                                        "Organisation ICU is required to activate patient"
+                                    )
+
+                                available_beds = await OrganisationICUBed.find(
+                                    {
+                                        "organisation_icu_id": icu_id,
+                                        "is_available": True,
+                                        "is_active": True,
+                                        "is_deleted": False,
+                                    },
+                                    limit=100,
+                                    sort=[("bed_number", 1)],
+                                )
+                                if not available_beds:
+                                    raise NotFoundError(
+                                        "No available bed in the patient's ICU"
+                                    )
+
+                                selected_bed = random.choice(available_beds)
+                                update_data["organisation_icu_bed_id"] = selected_bed.id
+
                     if "organisation_icu_id" in update_data:
                         # Check organisation icu exists
                         organisation_icu = await OrganisationICU.find_one(
@@ -1498,7 +1521,7 @@ class PatientService:
 
     @staticmethod
     async def is_patient_final_status(patient_id: str) -> bool:
-        """Check if a patient has reached a final status (inactive, discharge, orphan)"""
+        """Check if a patient has reached a final status (discharge, lama, deceased, referred)"""
         try:
             patient = await Patient.find_one(
                 {
@@ -1510,8 +1533,13 @@ class PatientService:
             if not patient:
                 return False
             
-            # Check if patient has reached a final status
-            return patient.status in [PatientStatus.INACTIVE, PatientStatus.DISCHARGE, PatientStatus.ORPHANE]
+            # Final statuses — no Active/reactivate from these
+            return patient.status in [
+                PatientStatus.DISCHARGE,
+                PatientStatus.REFERRED,
+                PatientStatus.LAMA,
+                PatientStatus.DECEASED,
+            ]
         except Exception as e:
             logger.error(f"Error checking if patient has final status: {e}")
             return False

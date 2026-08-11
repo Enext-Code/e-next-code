@@ -2,8 +2,10 @@ export interface DashboardCounts {
   total_patients: number;
   active_patients: number;
   discharged_patients: number;
-  inactive_patients: number;
-  orphan_patients: number;
+  lama_patients: number;
+  step_down_patients: number;
+  referred_patients: number;
+  deceased_patients: number;
   new_admissions: number;
   total_doctors: number;
   total_nurses: number;
