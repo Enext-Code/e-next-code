@@ -76,10 +76,12 @@ const CatheterForm: React.FC<CatheterFormProps> = ({
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
-  const formatDateToUTC = (dateString: string | null): string | null => {
+  const formatDateTimeLocal = (dateString: string | null): string | null => {
     if (!dateString) return null;
     const date = new Date(dateString);
-    return date.toISOString().split('.')[0] + 'Z';
+    if (Number.isNaN(date.getTime())) return null;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
   };
 
   const handleInputChange = (index: number, field: keyof CatheterEntry, value: string) => {
@@ -91,7 +93,7 @@ const CatheterForm: React.FC<CatheterFormProps> = ({
           if (field === 'size') {
             updatedValue = value ? parseInt(value) : null;
           } else if (field === 'date_of_insertion' || field === 'date_of_removal') {
-            updatedValue = value ? formatDateToUTC(value) : null;
+            updatedValue = value ? formatDateTimeLocal(value) : null;
             
             const newEntry = {
               ...entry,
@@ -130,8 +132,8 @@ const CatheterForm: React.FC<CatheterFormProps> = ({
     const formattedValues = {
       entries: formValues.entries.map(entry => ({
         ...entry,
-        date_of_insertion: formatDateToUTC(entry.date_of_insertion),
-        date_of_removal: entry.date_of_removal ? formatDateToUTC(entry.date_of_removal) : null,
+        date_of_insertion: formatDateTimeLocal(entry.date_of_insertion),
+        date_of_removal: entry.date_of_removal ? formatDateTimeLocal(entry.date_of_removal) : null,
         days_in_use: calculateDaysInUse(entry.date_of_insertion, entry.date_of_removal)
       }))
     };
@@ -141,8 +143,9 @@ const CatheterForm: React.FC<CatheterFormProps> = ({
   const formatDateForInput = (dateString: string | null): string => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
-    return localDate.toISOString().slice(0, 16); // Format for datetime-local input (YYYY-MM-DDThh:mm)
+    if (Number.isNaN(date.getTime())) return '';
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   };
 
   const formatDateForDisplay = (dateString: string | null): string => {

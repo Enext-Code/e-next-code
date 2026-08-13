@@ -412,6 +412,11 @@ export default function InvestigationReportPageClient({ params }: { params: Page
     { label: params.date }
   ];
 
+  const formatDateDMY = (isoDate: string) => {
+    const [year, month, day] = isoDate.split('-');
+    return year && month && day ? `${day}-${month}-${year}` : isoDate;
+  };
+
   return (
     <>
     <h2 style={{fontSize: '28px', fontWeight: '600'}}>Investigation Report</h2>
@@ -457,8 +462,10 @@ export default function InvestigationReportPageClient({ params }: { params: Page
            <div className={styles.dateSelector}>
            <h3 style={{fontSize: '18px', fontWeight: '600'}}>Select Date</h3>
 
+             <div className={styles.datePickerWrapper}>
              <input
               type="date"
+              lang="en-GB"
               value={params.date}
               min={patient?.admission_date.split('T')[0]}
               max={new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })}
@@ -485,6 +492,10 @@ export default function InvestigationReportPageClient({ params }: { params: Page
                }}
                className={styles.datePicker}
              />
+             <span className={styles.datePickerValue}>
+               {formatDateDMY(params.date)}
+             </span>
+             </div>
            </div>
            <button 
               className={styles.addButton}

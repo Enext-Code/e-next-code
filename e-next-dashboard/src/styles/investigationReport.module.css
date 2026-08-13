@@ -65,16 +65,45 @@
   padding: 5px;
 }
 
+.datePickerWrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.datePickerValue {
+  position: absolute;
+  left: 12px;
+  top: calc(50% + 6px);
+  transform: translateY(-50%);
+  pointer-events: none;
+  font-size: 14px;
+  color: #333;
+  letter-spacing: 0.2px;
+}
+
 .datePicker {
   padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
-  color: #333;
+  color: transparent;
   background-color: white;
   cursor: pointer;
   transition: border-color 0.2s;
   margin-top: 12px;
+}
+
+.datePicker::-webkit-datetime-edit-fields-wrapper,
+.datePicker::-webkit-datetime-edit-text,
+.datePicker::-webkit-datetime-edit-month-field,
+.datePicker::-webkit-datetime-edit-day-field,
+.datePicker::-webkit-datetime-edit-year-field {
+  color: transparent;
+}
+
+.datePicker::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  z-index: 1;
 }
 
 .datePicker:hover {

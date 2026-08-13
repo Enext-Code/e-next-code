@@ -92,17 +92,20 @@ const CatheterEditModal: React.FC<CatheterEditModalProps> = ({
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
-  const formatDateToUTC = (dateString: string | null): string | null => {
+  const formatDateTimeLocal = (dateString: string | null): string | null => {
     if (!dateString) return null;
     const date = new Date(dateString);
-    return date.toISOString().split('.')[0] + 'Z';
+    if (Number.isNaN(date.getTime())) return null;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
   };
 
   const formatDateForInput = (dateString: string | null): string => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
-    return localDate.toISOString().slice(0, 16);
+    if (Number.isNaN(date.getTime())) return '';
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   };
 
   const handleInputChange = (field: keyof CatheterEntry, value: string) => {
@@ -111,7 +114,7 @@ const CatheterEditModal: React.FC<CatheterEditModalProps> = ({
     if (field === 'size') {
       updatedValue = value ? parseInt(value) : null;
     } else if (field === 'date_of_insertion' || field === 'date_of_removal') {
-      updatedValue = value ? formatDateToUTC(value) : null;
+      updatedValue = value ? formatDateTimeLocal(value) : null;
     } else if (field === 'catheter_type') {
       // When catheter_type changes, reset type to null
       updatedValue = value || null;
@@ -145,8 +148,8 @@ const CatheterEditModal: React.FC<CatheterEditModalProps> = ({
     try {
       const formattedData = {
         ...formData,
-        date_of_insertion: formatDateToUTC(formData.date_of_insertion),
-        date_of_removal: formData.date_of_removal ? formatDateToUTC(formData.date_of_removal) : null,
+        date_of_insertion: formatDateTimeLocal(formData.date_of_insertion),
+        date_of_removal: formData.date_of_removal ? formatDateTimeLocal(formData.date_of_removal) : null,
         days_in_use: calculateDaysInUse(formData.date_of_insertion, formData.date_of_removal)
       };
       await onSave(formattedData);
