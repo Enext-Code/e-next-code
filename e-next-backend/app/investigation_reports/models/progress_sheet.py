@@ -20,6 +20,7 @@ class InfusionEntry(BaseModel):
 
     name: InfusionParameter
     quantity: Optional[float] = None
+    unit: Optional[str] = "ml"
 
     @field_validator("name", mode="before")
     @classmethod
@@ -49,6 +50,7 @@ class OtherInfusionEntry(BaseModel):
 
     name: str
     quantity: Optional[float] = None
+    unit: Optional[str] = "ml"
 
 
 class ColloidEntry(BaseModel):

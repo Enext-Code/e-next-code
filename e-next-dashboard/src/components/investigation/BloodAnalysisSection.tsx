@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BloodAnalysisValues, Parameter } from '@/types/investigation';
+import { bloodParameterOrder, qualitativeBloodParameterSet } from '@/constants/bloodParameters';
 import styles from '@/styles/investigation-report/Blood-analysis-report.module.css';
 import EditButton from '../common/EditButton';
 
@@ -54,7 +55,9 @@ const BloodAnalysisSection: React.FC<BloodAnalysisSectionProps> = ({
       .filter(([_, value]) => value !== '')
       .map(([parameter, value]) => ({
         parameter,
-        value: isNaN(Number(value)) ? value : Number(value)
+        value: qualitativeBloodParameterSet.has(parameter) || isNaN(Number(value))
+          ? value
+          : Number(value)
       }));
     
     setIsLoading(true);
@@ -73,8 +76,28 @@ const BloodAnalysisSection: React.FC<BloodAnalysisSectionProps> = ({
     setEditedValues({});
   };
 
+  const orderedParameters = [...availableParameters].sort((a, b) => {
+    const aIdx = bloodParameterOrder.indexOf(a.value);
+    const bIdx = bloodParameterOrder.indexOf(b.value);
+    const aOrder = aIdx === -1 ? 1000 : aIdx;
+    const bOrder = bIdx === -1 ? 1000 : bIdx;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return a.display_name.localeCompare(b.display_name);
+  });
+
   const checkAbnormalValue = (paramName: string, value: number | string | undefined): { isHigh: boolean; isLow: boolean } => {
-    if (!value || typeof value === 'string') return { isHigh: false, isLow: false };
+    if (value === undefined || value === null || value === '') {
+      return { isHigh: false, isLow: false };
+    }
+
+    if (qualitativeBloodParameterSet.has(paramName)) {
+      return {
+        isHigh: String(value).toLowerCase() === 'reactive',
+        isLow: false
+      };
+    }
+
+    if (typeof value === 'string') return { isHigh: false, isLow: false };
 
     const info = parameterInfo[paramName];
     if (!info) return { isHigh: false, isLow: false };
@@ -125,23 +148,36 @@ const BloodAnalysisSection: React.FC<BloodAnalysisSectionProps> = ({
             <div>Reference Range</div>
             <div>Unit</div>
           </div>
-          {availableParameters.map((parameter, index) => {
+          {orderedParameters.map((parameter, index) => {
             const value = values?.[parameter.value]?.value;
-            const info = parameterInfo[parameter.value];
+            const info = parameterInfo[parameter.value] || parameterInfo[parameter.display_name];
             const { isHigh, isLow } = checkAbnormalValue(parameter.value, value);
+            const isQualitative = qualitativeBloodParameterSet.has(parameter.value);
             
             return (
               <div key={index} className={styles.tableRow}>
                 <div className={styles.parameterName}>{parameter.display_name}</div>
                 {isEditing ? (
-                  <div>
-                    <input
-                      type="text"
-                      value={editedValues[parameter.value] || ''}
-                      onChange={(e) => handleInputChange(parameter.value, e.target.value)}
-                      className={styles.input}
-                      placeholder="Enter value"
-                    />
+                  <div className={styles.resultCell}>
+                    {isQualitative ? (
+                      <select
+                        value={editedValues[parameter.value] || ''}
+                        onChange={(e) => handleInputChange(parameter.value, e.target.value)}
+                        className={styles.input}
+                      >
+                        <option value="">Select</option>
+                        <option value="Non-reactive">Non-reactive</option>
+                        <option value="Reactive">Reactive</option>
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={editedValues[parameter.value] || ''}
+                        onChange={(e) => handleInputChange(parameter.value, e.target.value)}
+                        className={styles.input}
+                        placeholder="Enter value"
+                      />
+                    )}
                   </div>
                 ) : (
                   <div className={`${styles.value} ${isHigh ? styles.abnormalHigh : isLow ? styles.abnormalLow : ''}`}>

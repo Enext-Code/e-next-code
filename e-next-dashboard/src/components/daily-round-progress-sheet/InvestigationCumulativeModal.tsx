@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { InvestigationReportData } from '@/services/investigationReportService';
+import { bloodParameterOrder } from '@/constants/bloodParameters';
 import styles from './InvestigationCumulativeModal.module.css';
 
 interface InvestigationCumulativeModalProps {
@@ -357,49 +358,7 @@ export function buildCumulativeTable(reports: InvestigationReportData[]) {
     'Hematocrit (ABG)',
   ];
 
-  const bloodTestOrder = [
-    'Haemoglobin',
-    'RBC Count',
-    'WBC Count',
-    'PCV/Hematocrit',
-    'MCV',
-    'MCH',
-    'MCHC',
-    'Neutrophils',
-    'Lymphocytes',
-    'Monocytes',
-    'Basophils',
-    'Absolute Neutrophil Count',
-    'Absolute Lymphocyte',
-    'Absolute Monocyte',
-    'PT',
-    'INR',
-    'aPTT',
-    'Total Protein',
-    'Albumin',
-    'Total Bilirubin',
-    'Direct Bilirubin',
-    'SGPT/ALT',
-    'Alkaline Phosphatase',
-    'GGT',
-    'Blood Urea',
-    'Serum Creatinine',
-    'Uric Acid',
-    'Sodium',
-    'Potassium',
-    'Bicarbonate',
-    'Chloride',
-    'Phosphorus',
-    'Calcium Total',
-    'Magnesium',
-    'CPK Total',
-    'CPK-MB',
-    'Troponin I',
-    'T3 Total',
-    'T4 Total',
-    'TSH',
-    'Ammonia',
-  ];
+  const bloodTestOrder = bloodParameterOrder;
 
   const testOrderIndex = (section: string, testName: string) => {
     if (section === 'Arterial Blood Gas Analysis') {

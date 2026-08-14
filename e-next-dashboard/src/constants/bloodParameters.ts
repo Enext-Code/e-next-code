@@ -6,6 +6,68 @@ export interface ParameterInfo {
   max_value: number | null;
 }
 
+/** Matches BloodAnalysisParameter order in e-next-backend/app/investigation_reports/enums.py */
+export const bloodParameterOrder: string[] = [
+  'Haemoglobin',
+  'RBC Count',
+  'WBC Count',
+  'Platelet Count',
+  'Neutrophils',
+  'PCV/Hematocrit',
+  'MCV',
+  'MCH',
+  'MCHC',
+  'MPV',
+  'Lymphocytes',
+  'Monocytes',
+  'Basophils',
+  'Absolute Neutrophil Count',
+  'Absolute Lymphocyte',
+  'Absolute Monocyte',
+  'PT',
+  'INR',
+  'aPTT',
+  'Albumin',
+  'Total Bilirubin',
+  'Direct Bilirubin',
+  'Indirect Bilirubin',
+  'SGPT/ALT',
+  'SGOT/AST',
+  'Alkaline Phosphatase',
+  'GGT',
+  'Total Protein',
+  'Blood Urea',
+  'Serum Creatinine',
+  'Uric Acid',
+  'Sodium',
+  'Potassium',
+  'Bicarbonate',
+  'Chloride',
+  'Phosphorus',
+  'Calcium',
+  'Calcium Total',
+  'Magnesium',
+  'CPK Total',
+  'CPK-MB',
+  'Troponin I',
+  'T3 Total',
+  'T4 Total',
+  'TSH',
+  'Ammonia',
+  'ESR',
+  'CRP',
+  'Amylase',
+  'Lipase',
+  'Procalcitonin',
+  'HIV',
+  'HBsAg',
+  'HCV',
+];
+
+export const qualitativeBloodParameters = ['HIV', 'HBsAg', 'HCV'] as const;
+
+export const qualitativeBloodParameterSet = new Set<string>(qualitativeBloodParameters);
+
 export const bloodParameterInfo: { [key: string]: ParameterInfo } = {
   "Haemoglobin": {
     display_name: "Haemoglobin",
@@ -195,6 +257,13 @@ export const bloodParameterInfo: { [key: string]: ParameterInfo } = {
     units: "mmol/L",
     min_value: 22,
     max_value: 29,
+  },
+  "Calcium": {
+    display_name: "Calcium Total",
+    reference_range: "8.6 - 10.3",
+    units: "mg/dL",
+    min_value: 8.6,
+    max_value: 10.3,
   },
   "Calcium Total": {
     display_name: "Calcium Total",
@@ -574,6 +643,27 @@ export const bloodParameterInfo: { [key: string]: ParameterInfo } = {
     min_value: null,
     max_value: 0.05,
   },
+  "HIV": {
+    display_name: "HIV",
+    reference_range: "Non-reactive",
+    units: null,
+    min_value: null,
+    max_value: null,
+  },
+  "HBsAg": {
+    display_name: "HBsAg",
+    reference_range: "Non-reactive",
+    units: null,
+    min_value: null,
+    max_value: null,
+  },
+  "HCV": {
+    display_name: "HCV",
+    reference_range: "Non-reactive",
+    units: null,
+    min_value: null,
+    max_value: null,
+  },
   "Ferritin": {
     display_name: "Ferritin",
     reference_range: "20 - 300",
@@ -751,10 +841,10 @@ export const bloodParameterInfo: { [key: string]: ParameterInfo } = {
   },
   "Amylase": {
     display_name: "Amylase",
-    reference_range: "23 - 85",
+    reference_range: "30 - 110",
     units: "U/L",
-    min_value: 23,
-    max_value: 85,
+    min_value: 30,
+    max_value: 110,
   },
   "Lipase": {
     display_name: "Lipase",

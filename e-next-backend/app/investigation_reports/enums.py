@@ -20,6 +20,8 @@ class BloodAnalysisParameter(str, Enum):
     HAEMOGLOBIN = "Haemoglobin"
     RBC_COUNT = "RBC Count"
     WBC_COUNT = "WBC Count"
+    PLATELET_COUNT = "Platelet Count"
+    NEUTROPHILS = "Neutrophils"
     PCV_HEMATOCRIT = "PCV/Hematocrit"
     MCV = "MCV"
     MCH = "MCH"
@@ -27,7 +29,6 @@ class BloodAnalysisParameter(str, Enum):
     MPV = "MPV"
 
     # Differential Count
-    NEUTROPHILS = "Neutrophils"
     LYMPHOCYTES = "Lymphocytes"
     MONOCYTES = "Monocytes"
     BASOPHILS = "Basophils"
@@ -41,13 +42,15 @@ class BloodAnalysisParameter(str, Enum):
     APTT = "aPTT"
 
     # Liver Function Tests
-    TOTAL_PROTEIN = "Total Protein"
     ALBUMIN = "Albumin"
     TOTAL_BILIRUBIN = "Total Bilirubin"
     DIRECT_BILIRUBIN = "Direct Bilirubin"
+    INDIRECT_BILIRUBIN = "Indirect Bilirubin"
     SGPT_ALT = "SGPT/ALT"
+    SGOT_AST = "SGOT/AST"
     ALKALINE_PHOSPHATASE = "Alkaline Phosphatase"
     GGT = "GGT"
+    TOTAL_PROTEIN = "Total Protein"
 
     # Renal Function & Electrolytes
     BLOOD_UREA = "Blood Urea"
@@ -73,6 +76,15 @@ class BloodAnalysisParameter(str, Enum):
 
     # Others
     AMMONIA = "Ammonia"
+    ESR = "ESR"
+    CRP = "CRP"
+    AMYLASE = "Amylase"
+    LIPASE = "Lipase"
+    PROCALCITONIN = "Procalcitonin"
+    HIV = "HIV"
+    HBSAG = "HBsAg"
+    HCV = "HCV"
+
 
 # Radiology Types and Subtypes
 class RadiologyType(str, Enum):
@@ -263,13 +275,20 @@ BLOOD_PARAMETER_INFO: Dict[BloodAnalysisParameter, ParameterInfo] = {
         min_value=4.0,
         max_value=11.0,
     ),
-    # BloodAnalysisParameter.PLATELET_COUNT: ParameterInfo(
-    #     display_name="Platelet Count",
-    #     reference_range="150 - 450",
-    #     units="thousand cells/µL",
-    #     min_value=150,
-    #     max_value=450,
-    # ),
+    BloodAnalysisParameter.PLATELET_COUNT: ParameterInfo(
+        display_name="Platelet Count",
+        reference_range="150 - 450",
+        units="thousand cells/µL",
+        min_value=150,
+        max_value=450,
+    ),
+      BloodAnalysisParameter.NEUTROPHILS: ParameterInfo(
+        display_name="Neutrophils",
+        reference_range="40 - 60",
+        units="%",
+        min_value=40,
+        max_value=60,
+    ),
     BloodAnalysisParameter.PCV_HEMATOCRIT: ParameterInfo(
         display_name="PCV/Hematocrit",
         reference_range="38.0 - 50.0",
@@ -312,13 +331,7 @@ BLOOD_PARAMETER_INFO: Dict[BloodAnalysisParameter, ParameterInfo] = {
         min_value=7.5,
         max_value=11.5,
     ),
-    BloodAnalysisParameter.NEUTROPHILS: ParameterInfo(
-        display_name="Neutrophils",
-        reference_range="40 - 60",
-        units="%",
-        min_value=40,
-        max_value=60,
-    ),
+  
     BloodAnalysisParameter.LYMPHOCYTES: ParameterInfo(
         display_name="Lymphocytes",
         reference_range="20 - 40",
@@ -473,20 +486,20 @@ BLOOD_PARAMETER_INFO: Dict[BloodAnalysisParameter, ParameterInfo] = {
         min_value=0.0,
         max_value=0.3,
     ),
-    # BloodAnalysisParameter.INDIRECT_BILIRUBIN: ParameterInfo(
-    #     display_name="Indirect Bilirubin",
-    #     reference_range="0.2 - 0.8",
-    #     units="mg/dL",
-    #     min_value=0.2,
-    #     max_value=0.8,
-    # ),
-    # BloodAnalysisParameter.SGOT_AST: ParameterInfo(
-    #     display_name="SGOT/AST",
-    #     reference_range="10 - 40",
-    #     units="U/L",
-    #     min_value=10,
-    #     max_value=40,
-    # ),
+    BloodAnalysisParameter.INDIRECT_BILIRUBIN: ParameterInfo(
+        display_name="Indirect Bilirubin",
+        reference_range="0.2 - 0.8",
+        units="mg/dL",
+        min_value=0.2,
+        max_value=0.8,
+    ),
+    BloodAnalysisParameter.SGOT_AST: ParameterInfo(
+        display_name="SGOT/AST",
+        reference_range="10 - 40",
+        units="U/L",
+        min_value=10,
+        max_value=40,
+    ),
     BloodAnalysisParameter.SGPT_ALT: ParameterInfo(
         display_name="SGPT/ALT",
         reference_range="7 - 56",
@@ -781,13 +794,13 @@ BLOOD_PARAMETER_INFO: Dict[BloodAnalysisParameter, ParameterInfo] = {
     #     min_value=0.78,
     #     max_value=1.89,
     # ),
-    # BloodAnalysisParameter.CRP: ParameterInfo(
-    #     display_name="CRP",
-    #     reference_range="< 1.0",
-    #     units="mg/dL",
-    #     min_value=None,
-    #     max_value=1.0,
-    # ),
+    BloodAnalysisParameter.CRP: ParameterInfo(
+        display_name="CRP",
+        reference_range="< 1.0",
+        units="mg/dL",
+        min_value=None,
+        max_value=1.0,
+    ),
     # BloodAnalysisParameter.HS_CRP: ParameterInfo(
     #     display_name="hs-CRP",
     #     reference_range="< 3.0",
@@ -795,20 +808,41 @@ BLOOD_PARAMETER_INFO: Dict[BloodAnalysisParameter, ParameterInfo] = {
     #     min_value=None,
     #     max_value=3.0,
     # ),
-    # BloodAnalysisParameter.ESR: ParameterInfo(
-    #     display_name="ESR",
-    #     reference_range="0 - 20",
-    #     units="mm/hr",
-    #     min_value=0,
-    #     max_value=20,
-    # ),
-    # BloodAnalysisParameter.PROCALCITONIN: ParameterInfo(
-    #     display_name="Procalcitonin",
-    #     reference_range="< 0.05",
-    #     units="ng/mL",
-    #     min_value=None,
-    #     max_value=0.05,
-    # ),
+    BloodAnalysisParameter.ESR: ParameterInfo(
+        display_name="ESR",
+        reference_range="0 - 20",
+        units="mm/hr",
+        min_value=0,
+        max_value=20,
+    ),
+    BloodAnalysisParameter.PROCALCITONIN: ParameterInfo(
+        display_name="Procalcitonin",
+        reference_range="< 0.05",
+        units="ng/mL",
+        min_value=None,
+        max_value=0.05,
+    ),
+    BloodAnalysisParameter.HIV: ParameterInfo(
+        display_name="HIV",
+        reference_range="Non-reactive",
+        units=None,
+        min_value=None,
+        max_value=None,
+    ),
+    BloodAnalysisParameter.HBSAG: ParameterInfo(
+        display_name="HBsAg",
+        reference_range="Non-reactive",
+        units=None,
+        min_value=None,
+        max_value=None,
+    ),
+    BloodAnalysisParameter.HCV: ParameterInfo(
+        display_name="HCV",
+        reference_range="Non-reactive",
+        units=None,
+        min_value=None,
+        max_value=None,
+    ),
     # BloodAnalysisParameter.FERRITIN: ParameterInfo(
     #     display_name="Ferritin",
     #     reference_range="20 - 300",
@@ -984,20 +1018,20 @@ BLOOD_PARAMETER_INFO: Dict[BloodAnalysisParameter, ParameterInfo] = {
     #     min_value=0.5,
     #     max_value=2.2,
     # ),
-    # BloodAnalysisParameter.AMYLASE: ParameterInfo(
-    #     display_name="Amylase",
-    #     reference_range="23 - 85",
-    #     units="U/L",
-    #     min_value=23,
-    #     max_value=85,
-    # ),
-    # BloodAnalysisParameter.LIPASE: ParameterInfo(
-    #     display_name="Lipase",
-    #     reference_range="0 - 160",
-    #     units="U/L",
-    #     min_value=0,
-    #     max_value=160,
-    # ),
+    BloodAnalysisParameter.AMYLASE: ParameterInfo(
+        display_name="Amylase",
+        reference_range="30 - 100",
+        units="U/L",
+        min_value=30,
+        max_value=100,
+    ),
+    BloodAnalysisParameter.LIPASE: ParameterInfo(
+        display_name="Lipase",
+        reference_range="0 - 160",
+        units="U/L",
+        min_value=0,
+        max_value=160,
+    ),
     # BloodAnalysisParameter.G6PD: ParameterInfo(
     #     display_name="G6PD",
     #     reference_range="5.5 - 20.5",

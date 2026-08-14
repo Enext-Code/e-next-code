@@ -27,9 +27,15 @@ router = APIRouter()
 
 
 @router.post(
+    "",
+    response_model=BaseResponse[CreateInvestigationReportResponse],
+    description="Create a new investigation report",
+)
+@router.post(
     "/",
     response_model=BaseResponse[CreateInvestigationReportResponse],
     description="Create a new investigation report",
+    include_in_schema=False,
 )
 @format_response(
     response_model=CreateInvestigationReportResponse,

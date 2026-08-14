@@ -1281,7 +1281,7 @@ debugger
       y += 4;
     };
 
-    type FluidItem = { name?: string | null; quantity?: number | null };
+    type FluidItem = { name?: string | null; quantity?: number | null; unit?: string | null };
     const addFluidItemRows = (items: FluidItem[] | undefined | null) => {
       const list = (items || []).filter((item) => item?.name || item?.quantity != null);
       if (list.length === 0) {
@@ -1294,7 +1294,8 @@ debugger
 
       const formatItem = (item: FluidItem) => {
         const name = sanitizePdfText(item.name) || 'Item';
-        const qty = item.quantity != null ? `${item.quantity} ml` : 'NIL';
+        const unit = item.unit || 'ml';
+        const qty = item.quantity != null ? `${item.quantity} ${unit}` : 'NIL';
         return { label: `${name}: `, qty };
       };
 

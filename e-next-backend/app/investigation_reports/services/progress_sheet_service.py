@@ -119,7 +119,9 @@ class ProgressSheetService:
                         infusions=(
                             [
                                 InfusionEntrySchema(
-                                    name=infusion.name, quantity=infusion.quantity
+                                    name=infusion.name,
+                                    quantity=infusion.quantity,
+                                    unit=getattr(infusion, "unit", None) or "ml",
                                 )
                                 for infusion in entry.parameters.fluid.infusions
                             ]
@@ -149,7 +151,9 @@ class ProgressSheetService:
                         other_infusions=(
                             [
                                 OtherInfusionEntrySchema(
-                                    name=infusion.name, quantity=infusion.quantity
+                                    name=infusion.name,
+                                    quantity=infusion.quantity,
+                                    unit=getattr(infusion, "unit", None) or "ml",
                                 )
                                 for infusion in entry.parameters.fluid.other_infusions
                             ]
@@ -568,7 +572,11 @@ class ProgressSheetService:
                 if not final_only:
                     fluid_schema = FluidSectionSchema(
                         infusions=[
-                            InfusionEntrySchema(name=i.name, quantity=i.quantity)
+                            InfusionEntrySchema(
+                                name=i.name,
+                                quantity=i.quantity,
+                                unit=getattr(i, "unit", None) or "ml",
+                            )
                             for i in fluid.infusions
                         ] if fluid.infusions else [],
                         intakes=[
@@ -580,7 +588,11 @@ class ProgressSheetService:
                             for o in fluid.outputs
                         ] if fluid.outputs else [],
                         other_infusions=[
-                            OtherInfusionEntrySchema(name=i.name, quantity=i.quantity)
+                            OtherInfusionEntrySchema(
+                                name=i.name,
+                                quantity=i.quantity,
+                                unit=getattr(i, "unit", None) or "ml",
+                            )
                             for i in fluid.other_infusions
                         ] if fluid.other_infusions else [],
                         colloids=[
@@ -1016,6 +1028,7 @@ class ProgressSheetService:
                             InfusionEntry(
                                 name=infusion.name,
                                 quantity=infusion.quantity,
+                                unit=getattr(infusion, "unit", None) or "ml",
                             )
                             for infusion in fluid_data.infusions
                         ]
@@ -1044,7 +1057,9 @@ class ProgressSheetService:
                     other_infusions = (
                         [
                             OtherInfusionEntry(
-                                name=infusion.name, quantity=infusion.quantity
+                                name=infusion.name,
+                                quantity=infusion.quantity,
+                                unit=getattr(infusion, "unit", None) or "ml",
                             )
                             for infusion in fluid_data.other_infusions
                         ]

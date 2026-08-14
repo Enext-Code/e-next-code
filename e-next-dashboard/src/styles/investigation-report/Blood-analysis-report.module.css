@@ -378,7 +378,6 @@
   
   .table {
     width: 100%;
-    border-collapse: collapse;
   }
   
   .tableHeader {
@@ -387,22 +386,20 @@
     color: #666;
   }
   
-  .tableHeader div {
-    padding: 12px 20px;
-    text-align: left;
-  }
-  
   .tableRow {
     display: grid;
-    grid-template-columns: 2fr 1fr 2fr 1fr;
-    padding: 0.75rem 1rem;
+    grid-template-columns: minmax(180px, 1.5fr) minmax(140px, 1fr) minmax(150px, 1.1fr) minmax(160px, 1.2fr);
+    column-gap: 16px;
+    padding: 0 20px;
     border-bottom: 1px solid #eee;
     align-items: center;
   }
   
-  .tableRow div {
-    padding: 12px 20px;
+  .tableRow > div {
+    padding: 12px 0;
     font-size: 14px;
+    text-align: left;
+    min-width: 0;
   }
   
   .tableRow:nth-child(even) {
@@ -411,9 +408,8 @@
   
   .value {
     color: #333;
-    font-family: monospace;
-    text-align: right;
     font-weight: 500;
+    text-align: left;
   }
   
   .abnormalHigh {
@@ -442,30 +438,34 @@
   
   .unit {
     color: #666;
-    font-size: 12px;
+    font-size: 13px;
     text-align: left;
-    font-style: italic;
   }
   
   .referenceRange {
     color: #666;
     font-size: 13px;
-    text-align: center;
-    font-family: monospace;
+    text-align: left;
   }
   
   .parameterName {
     color: #333;
     font-weight: 500;
   }
+
+  .resultCell {
+    max-width: 180px;
+  }
   
   .input {
     width: 100%;
+    max-width: 160px;
     padding: 8px 12px;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 14px;
     transition: border-color 0.2s;
+    box-sizing: border-box;
   }
   
   .input:focus {
@@ -498,9 +498,14 @@
       gap: 4px;
     }
   
-    .tableRow div {
-      padding: 8px 12px;
+    .tableRow > div {
+      padding: 8px 0;
       text-align: left !important;
+    }
+
+    .resultCell,
+    .input {
+      max-width: 100%;
     }
 
     .unit, .referenceRange {

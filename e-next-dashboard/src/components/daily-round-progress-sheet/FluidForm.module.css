@@ -189,7 +189,7 @@
     align-items: center;
     gap: 8px;
     flex: 1;
-    max-width: 200px;
+    max-width: 280px;
   }
   
   .input {
@@ -204,6 +204,17 @@
     color: #666;
     min-width: 30px;
     font-size: 14px;
+  }
+
+  .unitSelect {
+    min-width: 72px;
+    padding: 8px 6px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
   }
   
   .addButton {

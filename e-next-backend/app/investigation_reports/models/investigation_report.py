@@ -69,7 +69,7 @@ class BloodAnalysisData(BaseModel):
     def add_parameter(
         self,
         parameter: BloodAnalysisParameter,
-        value: float,
+        value: Union[float, str],
         recorded_by: Optional[str] = None,
     ):
         """Add a parameter and value to the blood analysis data"""

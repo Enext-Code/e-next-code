@@ -4,6 +4,7 @@ import styles from '@/styles/fluid.module.css';
 interface FluidItem {
   name: string;
   quantity: number | null;
+  unit?: string | null;
 }
 
 export interface FluidData {
@@ -21,6 +22,15 @@ export interface FluidData {
   total_output: number | null;
   cumulative_balance: number | null;
 }
+
+const INFUSION_UNITS = ['ml', 'mg', 'mcg'] as const;
+
+const getInfusionUnit = (item?: { unit?: string | null }) =>
+  item?.unit && INFUSION_UNITS.includes(item.unit as (typeof INFUSION_UNITS)[number])
+    ? item.unit
+    : 'ml';
+
+const isVolumeUnit = (unit?: string | null) => getInfusionUnit({ unit }) === 'ml';
 
 const INFUSION_OPTIONS = [
   "Fentanyl  - (Sedatives)",
@@ -164,7 +174,7 @@ const FluidForm: React.FC<FluidFormProps> = ({
     if (formValues.infusions.length === 0) {
       setFormValues(prev => ({
         ...prev,
-        infusions: [{ name: "", quantity: null }]
+        infusions: [{ name: "", quantity: null, unit: "ml" }]
       }));
     }
   }, []);
@@ -212,7 +222,15 @@ const FluidForm: React.FC<FluidFormProps> = ({
       
       if (name === "name") {
         // If changing the infusion name, reset its quantity
-        currentInfusions[index] = { name: value, quantity: null };
+        currentInfusions[index] = {
+          name: value,
+          quantity: null,
+          unit: currentInfusions[index]?.unit || "ml"
+        };
+      } else if (name === "unit") {
+        if (currentInfusions[index]) {
+          currentInfusions[index] = { ...currentInfusions[index], unit: value };
+        }
       } else {
         // If changing quantity
         const quantity = value === "" ? null : parseFloat(value);
@@ -243,7 +261,7 @@ const FluidForm: React.FC<FluidFormProps> = ({
   const addInfusion = () => {
     setFormValues(prev => ({
       ...prev,
-      infusions: [...prev.infusions, { name: "", quantity: null }]
+      infusions: [...prev.infusions, { name: "", quantity: null, unit: "ml" }]
     }));
     setAdditionalInfusions(prev => prev + 1);
   };
@@ -491,8 +509,14 @@ const FluidForm: React.FC<FluidFormProps> = ({
   };
 
   const calculateTotalInput = (values: FluidData): number => {
-    const infusionsTotal = values.infusions.reduce((sum, item) => sum + (item.quantity || 0), 0);
-    const otherInfusionsTotal = values.other_infusions.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    const infusionsTotal = values.infusions.reduce((sum, item) => {
+      if (!isVolumeUnit(item.unit)) return sum;
+      return sum + (item.quantity || 0);
+    }, 0);
+    const otherInfusionsTotal = values.other_infusions.reduce((sum, item) => {
+      if (!isVolumeUnit(item.unit)) return sum;
+      return sum + (item.quantity || 0);
+    }, 0);
     const colloidsTotal = values.colloids.reduce((sum, item) => sum + (item.quantity || 0), 0);
     const crystalloidsTotal = values.crystalloids.reduce((sum, item) => sum + (item.quantity || 0), 0);
     const oralIntakesTotal = values.oral_intakes.reduce((sum, item) => sum + (item.quantity || 0), 0);
@@ -634,7 +658,19 @@ const FluidForm: React.FC<FluidFormProps> = ({
                 min="0"
               />
             )}
-            <span className={styles.unit}>ml</span>
+            {isViewMode ? (
+              <span className={styles.unit}>{getInfusionUnit(infusion)}</span>
+            ) : (
+              <select
+                value={getInfusionUnit(infusion)}
+                onChange={(e) => handleInfusionChange(index, "unit", e.target.value)}
+                className={styles.unitSelect}
+              >
+                {INFUSION_UNITS.map((unit) => (
+                  <option key={unit} value={unit}>{unit}</option>
+                ))}
+              </select>
+            )}
           </div>
           {!isViewMode && (
             <button 
@@ -658,7 +694,7 @@ const FluidForm: React.FC<FluidFormProps> = ({
           <button type="button" onClick={() => {
             setFormValues(prev => ({
               ...prev,
-              other_infusions: [...prev.other_infusions, { name: "", quantity: null }]
+              other_infusions: [...prev.other_infusions, { name: "", quantity: null, unit: "ml" }]
             }));
           }} className={styles.addButton}>
             + Add More Infusions
@@ -673,7 +709,7 @@ const FluidForm: React.FC<FluidFormProps> = ({
               {isViewMode ? (
                 <>
                   <span className={styles.textValue}>{infusion.name || "-"}</span>
-                  <span className={styles.quantityValue}>{infusion.quantity ?? "-"} ml</span>
+                  <span className={styles.quantityValue}>{infusion.quantity ?? "-"} {getInfusionUnit(infusion)}</span>
                 </>
               ) : (
                 <>
@@ -726,7 +762,34 @@ const FluidForm: React.FC<FluidFormProps> = ({
                       placeholder="Quantity"
                       className={styles.input}
                     />
-                    <span className={styles.unit}>ml</span>
+                    <select
+                      value={getInfusionUnit(infusion)}
+                      onChange={(e) => {
+                        const unit = e.target.value;
+                        setFormValues(prev => {
+                          const updatedOtherInfusions = prev.other_infusions.map((item, i) =>
+                            i === index ? { ...item, unit } : item
+                          );
+                          const newValues = {
+                            ...prev,
+                            other_infusions: updatedOtherInfusions
+                          };
+                          const totalInput = calculateTotalInput(newValues);
+                          const totalOutput = calculateTotalOutput(newValues);
+                          return {
+                            ...newValues,
+                            total_input: totalInput,
+                            total_output: totalOutput,
+                            cumulative_balance: totalInput - totalOutput
+                          };
+                        });
+                      }}
+                      className={styles.unitSelect}
+                    >
+                      {INFUSION_UNITS.map((unit) => (
+                        <option key={unit} value={unit}>{unit}</option>
+                      ))}
+                    </select>
                   </div>
                   <button 
                     type="button" 
