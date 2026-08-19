@@ -180,7 +180,7 @@ const CatheterForm: React.FC<CatheterFormProps> = ({
   const renderCatheterSection = (entry: CatheterEntry, index: number) => {
     if (isViewMode) {
       return (
-        <div key={index} className={styles.catheterSection}>
+        <div key={index} className={styles.viewSection}>
           <div className={styles.sectionHeader}>
             <h3 className={styles.sectionTitle}>Catheter {index + 1}</h3>
             <div className={styles.actionButtons}>
@@ -205,62 +205,37 @@ const CatheterForm: React.FC<CatheterFormProps> = ({
             </div>
           </div>
           
-          <div className={styles.formGroup}>
-            <div className={styles.parameterLabel}>
-              <label>Catheter Type:</label>
-            </div>
-            <div className={styles.value}>{entry.type ?? "-"}</div>
+          <div className={styles.viewRow}>
+            <label>Catheter Type:</label>
+            <span>{entry.type ?? "-"}</span>
           </div>
-
-          <div className={styles.formGroup}>
-            <div className={styles.parameterLabel}>
-              <label>Type:</label>
-            </div>
-            <div className={styles.value}>{entry.catheter_type ?? "-"}</div>
+          <div className={styles.viewRow}>
+            <label>Type:</label>
+            <span>{entry.catheter_type ?? "-"}</span>
           </div>
-
-          <div className={styles.formGroup}>
-            <div className={styles.parameterLabel}>
-              <label>Size</label>
-            </div>
-            <div className={styles.value}>{entry.size ?? "-"}</div>
+          <div className={styles.viewRow}>
+            <label>Size:</label>
+            <span>{entry.size ?? "-"}</span>
           </div>
-
-          <div className={styles.formGroup}>
-            <div className={styles.parameterLabel}>
-              <label>Site</label>
-            </div>
-            <div className={styles.value}>{entry.site ?? "-"}</div>
+          <div className={styles.viewRow}>
+            <label>Site:</label>
+            <span>{entry.site ?? "-"}</span>
           </div>
-
-          <div className={styles.formGroup}>
-            <div className={styles.parameterLabel}>
-              <label>Date Of Insertion</label>
-            </div>
-            <div className={styles.value}>{formatDateForDisplay(entry.date_of_insertion)}</div>
+          <div className={styles.viewRow}>
+            <label>Date Of Insertion:</label>
+            <span>{formatDateForDisplay(entry.date_of_insertion)}</span>
           </div>
-
-          <div className={styles.formGroup}>
-            <div className={styles.parameterLabel}>
-              <label>Days in use</label>
-            </div>
-            <div className={styles.value}>
-              {calculateDaysInUse(entry.date_of_insertion, entry.date_of_removal) ?? "-"}
-            </div>
+          <div className={styles.viewRow}>
+            <label>Days in use:</label>
+            <span>{calculateDaysInUse(entry.date_of_insertion, entry.date_of_removal) ?? "-"}</span>
           </div>
-
-          <div className={styles.formGroup}>
-            <div className={styles.parameterLabel}>
-              <label>Date Of Removal</label>
-            </div>
-            <div className={styles.value}>{formatDateForDisplay(entry.date_of_removal)}</div>
+          <div className={styles.viewRow}>
+            <label>Date Of Removal:</label>
+            <span>{formatDateForDisplay(entry.date_of_removal)}</span>
           </div>
-
-          <div className={styles.formGroup}>
-            <div className={styles.parameterLabel}>
-              <label>Notes</label>
-            </div>
-            <div className={styles.value}>{entry.notes ?? "-"}</div>
+          <div className={styles.viewRow}>
+            <label>Notes:</label>
+            <span>{entry.notes ?? "-"}</span>
           </div>
         </div>
       );
@@ -403,14 +378,18 @@ const CatheterForm: React.FC<CatheterFormProps> = ({
     const orderedGroups = ['Type1', 'Type2', 'Uncategorized'];
     const sortedGroups = orderedGroups.filter(group => grouped[group]?.length > 0);
 
-    return sortedGroups.map(groupName => (
-      <div key={groupName} className={styles.catheterGroup}>
-        <h3 className={styles.groupTitle}>{groupName} Catheters</h3>
-        {grouped[groupName].map(({ entry, index }) => 
-          renderCatheterSection(entry, index)
-        )}
+    return (
+      <div className={isViewMode ? styles.viewContainer : undefined}>
+        {sortedGroups.map(groupName => (
+          <div key={groupName} className={isViewMode ? styles.viewGroup : styles.catheterGroup}>
+            <h3 className={isViewMode ? styles.viewGroupTitle : styles.groupTitle}>{groupName} Catheters</h3>
+            {grouped[groupName].map(({ entry, index }) =>
+              renderCatheterSection(entry, index)
+            )}
+          </div>
+        ))}
       </div>
-    ));
+    );
   };
 
   return (

@@ -176,6 +176,9 @@ class Radiology(str, Enum):
     X_RAY = "X-Ray"
     ULTRASOUND = "Ultrasound"
     ECG = "ECG"
+    TWO_D_ECHO = "2D Echo"
+    ENDOSCOPY = "Endoscopy"
+    COLONOSCOPY = "Colonoscopy"
 
 
 RADIOLOGY_SUBTYPES = {
@@ -212,6 +215,9 @@ RADIOLOGY_SUBTYPES = {
     Radiology.X_RAY: ["Chest", "C-Spine", "Abdomen", "KUB", "Spine"],
     Radiology.ULTRASOUND: ["Whole Abdomen", "KUB", "Abdomen", "Venous Doppler", "Arterial Doppler"],
     Radiology.ECG: ["ECG"],
+    Radiology.TWO_D_ECHO: [],
+    Radiology.ENDOSCOPY: [],
+    Radiology.COLONOSCOPY: [],
 }
 
 

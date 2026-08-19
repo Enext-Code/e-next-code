@@ -12,6 +12,9 @@ const RadiologyForm = ({ onSave }: RadiologyFormProps) => {
     { id: 'mri', title: 'MRI Scans' },
     { id: 'ultrasound', title: 'Ultrasound' },
     { id: 'ct', title: 'CT Scan' },
+    { id: 'echo', title: '2D Echo' },
+    { id: 'endoscopy', title: 'Endoscopy' },
+    { id: 'colonoscopy', title: 'Colonoscopy' },
   ];
 
   const handleFileUpload = (type: string) => {

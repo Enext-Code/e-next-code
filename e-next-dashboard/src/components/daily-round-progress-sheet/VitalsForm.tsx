@@ -63,60 +63,53 @@ const VitalsForm: React.FC<VitalsFormProps> = ({
   };
 
   if (isViewMode) {
+    const mapScore = calculateMAP();
     return (
       <div className={styles.viewContainer}>
-        <div className={styles.section}>
-          <div className={styles.row}>
-            <label style={{fontWeight: "bold"}}>Cardiac</label>
+        <div className={styles.topGrid}>
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>Cardiac</h3>
+            <div className={styles.row}>
+              <label>Heart Rate:</label>
+              <span>{formValues.values["Heart Rate"] ?? "-"}{formValues.values["Heart Rate"] !== null ? " BPM" : ""}</span>
+            </div>
+            <div className={styles.row}>
+              <label>Rythm:</label>
+              <span>{formValues.values["Rythm"] ?? "-"}</span>
+            </div>
+            <div className={styles.row}>
+              <label>Temp (F) (Oral):</label>
+              <span>{formValues.values["Temp Oral"] ?? "-"}{formValues.values["Temp Oral"] !== null ? " °F" : ""}</span>
+            </div>
+            <div className={styles.row}>
+              <label>RBS:</label>
+              <span>{formValues.values["RBS"] ?? "-"}{formValues.values["RBS"] !== null ? " mmHg" : ""}</span>
+            </div>
+            <div className={styles.row}>
+              <label>SpO2:</label>
+              <span>{formValues.values["SpO2"] ?? "-"}{formValues.values["SpO2"] !== null ? " %" : ""}</span>
+            </div>
           </div>
-          <div className={styles.row}>
-            <label>Heart Rate:</label>
-            <span>{formValues.values["Heart Rate"] ?? "-"} {formValues.values["Heart Rate"] !== null && "BPM"}</span>
-          </div>
-          <div className={styles.row}>
-            <label>Rythm:</label>
-            <span>{formValues.values["Rythm"] ?? "-"}</span>
-          </div>
-          {/* <div className={styles.row}>
-            <label>CVP:</label>
-            <span>{formValues.values["CVP"] ?? "-"} {formValues.values["CVP"] !== null && "mmHg"}</span>
-          </div> */}
-          <div className={styles.row}>
-            <label>Temp (F) (Oral):</label>
-            <span>{formValues.values["Temp Oral"] ?? "-"} {formValues.values["Temp Oral"] !== null && "°F"}</span>
-          </div>
-          <div className={styles.row}>
-            <label>RBS:</label>
-            <span>{formValues.values["RBS"] ?? "-"} {formValues.values["RBS"] !== null && "mmHg"}</span>
-          </div>
-          <div className={styles.row}>
-            <label>SpO2:</label>
-            <span>{formValues.values["SpO2"] ?? "-"} {formValues.values["SpO2"] !== null && "%"}</span>
-          </div>
-        </div>
 
-
-        <div className={styles.section}>
-          <div className={styles.row}>
-            <label style={{fontWeight: "bold"}}>Blood Pressure</label>
-          </div>
-          <div className={styles.row}>
-            <label>Systolic:</label>
-            <span>{formValues.values["Systolic"] ?? "-"} {formValues.values["Systolic"] !== null && "mmHg"}</span>
-          </div>
-          <div className={styles.row}>
-            <label>Diastolic:</label>
-            <span>{formValues.values["Diastolic"] ?? "-"} {formValues.values["Diastolic"] !== null && "mmHg"}</span>
-          </div>
-        </div>
-
-        <div className={styles.section}>
-          <div className={styles.row}>
-            <label style={{fontWeight: "bold"}}>MAP Score</label>
-          </div>
-          <div className={styles.row}>
-            <label>MAP:</label>
-            <span>{calculateMAP() ?? "-"} {calculateMAP() !== null}</span>
+          <div className={styles.rightStack}>
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>Blood Pressure</h3>
+              <div className={styles.row}>
+                <label>Systolic:</label>
+                <span>{formValues.values["Systolic"] ?? "-"}{formValues.values["Systolic"] !== null ? " mmHg" : ""}</span>
+              </div>
+              <div className={styles.row}>
+                <label>Diastolic:</label>
+                <span>{formValues.values["Diastolic"] ?? "-"}{formValues.values["Diastolic"] !== null ? " mmHg" : ""}</span>
+              </div>
+            </div>
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>MAP Score</h3>
+              <div className={styles.row}>
+                <label>MAP:</label>
+                <span>{mapScore ?? "-"}{mapScore !== null ? " mmHg" : ""}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

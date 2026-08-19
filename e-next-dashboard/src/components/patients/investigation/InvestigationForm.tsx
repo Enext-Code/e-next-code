@@ -88,7 +88,10 @@ const radiologyTypes = {
   'Ultrasound': [
     'Whole Abdomen', 'KUB' , 'Venous Doppler' , 'Arterial Doppler'
   ],
-  'ECG': []
+  'ECG': [],
+  '2D Echo': [],
+  'Endoscopy': [],
+  'Colonoscopy': []
 };
 
 const arterialAnalysisTests = [

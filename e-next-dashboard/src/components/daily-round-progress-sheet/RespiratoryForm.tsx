@@ -97,45 +97,67 @@ const RespiratoryForm: React.FC<RespiratoryFormProps> = ({
   if (isViewMode) {
     return (
       <div className={styles.viewContainer}>
-        <div className={styles.section}>
-          <div className={styles.row}>
-            <label>Type:</label>
-            <span>{formValues.values.Type ?? "-"}</span>
-          </div>
-        </div>
-
-        {isOxygen && (
-          <div className={styles.section}>
-            <div className={styles.row}>
-              <label>Oxygen Device:</label>
-              <span>{formValues.values["Oxygen Device"] ?? "-"}</span>
-            </div>
-            <div className={styles.row}>
-              <label>Oxygen Flow:</label>
-              <span>{formValues.values["Oxygen Flow"] ?? "-"}</span>
-            </div>
-          </div>
-        )}
-
-        {isVentilator && (
-          <>
-            {Object.entries(RESPIRATORY_SECTIONS).map(([sectionKey, section]) => (
-              <div key={sectionKey} className={styles.section}>
-                <div className={styles.sectionTitle}>{section.title}</div>
-                {section.parameters.map((param) => (
+        <div className={styles.topGrid}>
+          {isVentilator ? (
+            <>
+              <div className={styles.section}>
+                <h3 className={styles.sectionTitle}>Respiratory</h3>
+                <div className={styles.row}>
+                  <label>Type:</label>
+                  <span>{formValues.values.Type ?? "-"}</span>
+                </div>
+                {RESPIRATORY_SECTIONS.respiratory.parameters.map((param) => (
                   <div key={param.name} className={styles.row}>
                     <label>{param.name}:</label>
                     <span>{formValues.values[param.name as keyof RespiratoryData['values']] ?? "-"}</span>
                   </div>
                 ))}
               </div>
-            ))}
-          </>
-        )}
+              <div className={styles.section}>
+                <h3 className={styles.sectionTitle}>MV</h3>
+                {RESPIRATORY_SECTIONS.mv.parameters.map((param) => (
+                  <div key={param.name} className={styles.row}>
+                    <label>{param.name}:</label>
+                    <span>{formValues.values[param.name as keyof RespiratoryData['values']] ?? "-"}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : isOxygen ? (
+            <>
+              <div className={styles.section}>
+                <h3 className={styles.sectionTitle}>Type</h3>
+                <div className={styles.row}>
+                  <label>Type:</label>
+                  <span>{formValues.values.Type ?? "-"}</span>
+                </div>
+              </div>
+              <div className={styles.section}>
+                <h3 className={styles.sectionTitle}>Oxygen</h3>
+                <div className={styles.row}>
+                  <label>Oxygen Device:</label>
+                  <span>{formValues.values["Oxygen Device"] ?? "-"}</span>
+                </div>
+                <div className={styles.row}>
+                  <label>Oxygen Flow:</label>
+                  <span>{formValues.values["Oxygen Flow"] ?? "-"}</span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>Type</h3>
+              <div className={styles.row}>
+                <label>Type:</label>
+                <span>{formValues.values.Type ?? "-"}</span>
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className={styles.section}>
-          <div className={styles.sectionTitle}>Remarks</div>
-          <div className={styles.row}>
+          <h3 className={styles.sectionTitle}>Remarks</h3>
+          <div className={styles.remarksRow}>
             <span>{formValues.values.Remarks ?? "-"}</span>
           </div>
         </div>

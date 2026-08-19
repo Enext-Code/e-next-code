@@ -1546,7 +1546,7 @@ debugger
       ['Diastolic', diastolic != null ? `${diastolic} mmHg` : 'NIL'],
     ]);
     addSubHeading('MAP Score');
-    addKeyValueRows([['MAP', mapScore]]);
+    addKeyValueRows([['MAP', mapScore !== '—' ? `${mapScore} mmHg` : 'NIL']]);
     drawDivider();
 
     // ——— Respiratory (match RespiratoryForm view mode) ———
@@ -2252,7 +2252,7 @@ debugger
                 value={planFormData.prescription}
                 onChange={(e) => setPlanFormData(prev => ({ ...prev, prescription: e.target.value }))}
                 className={planStyles.planTextarea}
-                rows={6}
+                rows={3}
                 placeholder="Enter plan of the day..."
               />
             </div>
@@ -2265,7 +2265,7 @@ debugger
                 value={planFormData.current_issue}
                 onChange={(e) => setPlanFormData(prev => ({ ...prev, current_issue: e.target.value }))}
                 className={planStyles.planTextarea}
-                rows={4}
+                rows={2}
                 placeholder="Enter current issue..."
               />
             </div>
@@ -2278,7 +2278,7 @@ debugger
                 value={planFormData.current_treatment}
                 onChange={(e) => setPlanFormData(prev => ({ ...prev, current_treatment: e.target.value }))}
                 className={planStyles.planTextarea}
-                rows={4}
+                rows={2}
                 placeholder="Enter current treatment..."
               />
             </div>
@@ -2322,7 +2322,7 @@ debugger
                 value={editFormData.prescription}
                 onChange={(e) => setEditFormData(prev => ({ ...prev, prescription: e.target.value }))}
                 className={planStyles.planTextarea}
-                rows={6}
+                rows={3}
                 placeholder="Enter plan of the day..."
               />
             </div>
@@ -2335,7 +2335,7 @@ debugger
                 value={editFormData.current_issue}
                 onChange={(e) => setEditFormData(prev => ({ ...prev, current_issue: e.target.value }))}
                 className={planStyles.planTextarea}
-                rows={4}
+                rows={2}
                 placeholder="Enter current issue..."
               />
             </div>
@@ -2348,7 +2348,7 @@ debugger
                 value={editFormData.current_treatment}
                 onChange={(e) => setEditFormData(prev => ({ ...prev, current_treatment: e.target.value }))}
                 className={planStyles.planTextarea}
-                rows={4}
+                rows={2}
                 placeholder="Enter current treatment..."
               />
             </div>
@@ -2510,7 +2510,6 @@ debugger
       { key: 'fluid', title: 'Input/Output', content: renderFluidContent },
       { key: 'vitals', title: 'Vitals', content: renderVitalsContent },
       { key: 'respiratory', title: 'Respiratory', content: renderRespiratoryContent },
-      { key: 'catheter', title: 'Catheter', content: renderCatheterContent },
     ];
 
     return (
@@ -2633,6 +2632,15 @@ debugger
 
         {/* Previous Prescriptions Section */}
         {renderPreviousPrescriptions()}
+
+        <div className={styles.sectionsStack}>
+          <div className={styles.sectionBlock}>
+            <div className={styles.sectionTitle}>Catheter</div>
+            <div className={styles.sectionContent}>
+              {renderCatheterContent()}
+            </div>
+          </div>
+        </div>
 
         <div className={styles.pageDownloadBar}>
           <button

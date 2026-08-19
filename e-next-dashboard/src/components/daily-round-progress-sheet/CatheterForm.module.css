@@ -352,4 +352,70 @@
     color: #333;
     border-bottom: 2px solid #544EA8;
     padding-bottom: 0.5rem;
+  }
+
+  .viewContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .viewGroup {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .viewGroupTitle {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .viewSection {
+    background: #fff;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid #E5E7EB;
+  }
+
+  .viewSection .sectionHeader {
+    margin-bottom: 4px;
+  }
+
+  .viewSection .sectionTitle {
+    font-size: 13px;
+  }
+
+  .viewRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 2px 0;
+    border-bottom: 1px solid #E5E7EB;
+  }
+
+  .viewRow:last-child {
+    border-bottom: none;
+  }
+
+  .viewRow label {
+    color: #666;
+    font-size: 13px;
+  }
+
+  .viewRow span {
+    color: #333;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: right;
+  }
+
+  @media (max-width: 768px) {
+    .viewGroup {
+      grid-template-columns: 1fr;
+    }
   } 

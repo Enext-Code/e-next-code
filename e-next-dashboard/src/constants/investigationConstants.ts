@@ -81,7 +81,10 @@ export const radiologyTypes = {
   'Ultrasound': [
     'Whole Abdomen', 'KUB'
   ],
-  'ECG': []
+  'ECG': [],
+  '2D Echo': [],
+  'Endoscopy': [],
+  'Colonoscopy': []
 };
 
 // Arterial Analysis Tests

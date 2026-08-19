@@ -101,6 +101,9 @@ class RadiologyType(str, Enum):
     # ANGIOGRAPHY = "Angiography"
     # NUCLEAR_MEDICINE = "Nuclear Medicine"
     ECG = "ECG"
+    TWO_D_ECHO = "2D Echo"
+    ENDOSCOPY = "Endoscopy"
+    COLONOSCOPY = "Colonoscopy"
 
 
 # Radiology subtypes mapping
@@ -177,6 +180,9 @@ RADIOLOGY_SUBTYPES: Dict[RadiologyType, List[str]] = {
         "Musculoskeletal",
     ],
     RadiologyType.ECG: [],
+    RadiologyType.TWO_D_ECHO: [],
+    RadiologyType.ENDOSCOPY: [],
+    RadiologyType.COLONOSCOPY: [],
 }
 
 

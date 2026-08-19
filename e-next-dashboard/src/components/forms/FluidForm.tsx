@@ -32,6 +32,19 @@ const getInfusionUnit = (item?: { unit?: string | null }) =>
 
 const isVolumeUnit = (unit?: string | null) => getInfusionUnit({ unit }) === 'ml';
 
+const hasFluidValue = (item: FluidItem) =>
+  Boolean(item.name?.trim()) || item.quantity != null;
+
+const itemsForView = (items: FluidItem[]) => {
+  const filled = (items || []).filter(hasFluidValue);
+  return filled.length > 0 ? filled : [{ name: "", quantity: null }];
+};
+
+const formatFluidQty = (item: FluidItem, fallbackUnit = "ml") => {
+  if (item.quantity == null) return "-";
+  return `${item.quantity} ${item.unit ? getInfusionUnit(item) : fallbackUnit}`;
+};
+
 const INFUSION_OPTIONS = [
   "Fentanyl  - (Sedatives)",
   "Midazolam -(Sedatives)",
@@ -1259,6 +1272,116 @@ const FluidForm: React.FC<FluidFormProps> = ({
       }));
     }
   }, []);
+
+  if (isViewMode) {
+    const renderViewItems = (items: FluidItem[], fallbackUnit = "ml") =>
+      itemsForView(items).map((item, index) => (
+        <div key={`${item.name}-${index}`} className={styles.viewRow}>
+          <label>{item.name || "-"}</label>
+          <span>{formatFluidQty(item, fallbackUnit)}</span>
+        </div>
+      ));
+
+    const renderLabeledItems = (items: FluidItem[], labelPrefix: string) => {
+      const list = items.length ? items : [{ name: "", quantity: null }];
+      return list.map((item, index) => (
+        <div key={`${labelPrefix}-${index}`} className={styles.viewLabeledRow}>
+          <label>{`${labelPrefix} ${String(index + 1).padStart(2, "0")}`}</label>
+          <span className={styles.viewName}>{item.name || "-"}</span>
+          <span>{formatFluidQty(item)}</span>
+        </div>
+      ));
+    };
+
+    const formatTotal = (value: number | null) =>
+      value == null ? "-" : `${value} ml`;
+
+    const rylesTubeTotal = formValues.ryles_tubes.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    const urineTotal = formValues.urines.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    const drainageTotal = formValues.drainages.reduce((sum, item) => sum + (item.quantity || 0), 0);
+
+    return (
+      <div className={styles.viewContainer}>
+        <div className={styles.topGrid}>
+          <div className={styles.viewSection}>
+            <h3>Infusions</h3>
+            {renderViewItems(formValues.infusions)}
+          </div>
+          <div className={styles.viewSection}>
+            <h3>Other Infusions</h3>
+            {renderViewItems(formValues.other_infusions)}
+          </div>
+          <div className={styles.viewSection}>
+            <h3>Colloid</h3>
+            {renderViewItems(formValues.colloids)}
+          </div>
+          <div className={styles.viewSection}>
+            <h3>Crystalloid</h3>
+            {renderViewItems(formValues.crystalloids)}
+          </div>
+          <div className={styles.viewSection}>
+            <h3>Oral Intake</h3>
+            {renderLabeledItems(formValues.oral_intakes, "Oral Intake")}
+          </div>
+          <div className={styles.viewSection}>
+            <h3>Ryles Tube</h3>
+            {renderLabeledItems(formValues.ryles_tubes, "Intake")}
+            <div className={styles.viewSectionTotal}>
+              <label>TOTAL RYLES TUBE:</label>
+              <span>{rylesTubeTotal}ML</span>
+            </div>
+          </div>
+          <div className={styles.viewSection}>
+            <h3>Urine Output</h3>
+            <div className={styles.viewLabeledRow}>
+              <label>Urine Quantity</label>
+              <span className={styles.viewName}>{formValues.urines[0]?.name || "-"}</span>
+              <span>{formatFluidQty(formValues.urines[0] || { name: "", quantity: null })}</span>
+            </div>
+            <div className={styles.viewSectionTotal}>
+              <label>TOTAL URINE:</label>
+              <span>{urineTotal}ML</span>
+            </div>
+          </div>
+          <div className={styles.viewSection}>
+            <h3>Drainage</h3>
+            <div className={styles.viewDrainageGrid}>
+              {DRAINAGE_OPTIONS.map((drainageName) => {
+                const drainage = formValues.drainages.find((d) => d.name === drainageName)
+                  || { name: drainageName, quantity: null };
+                return (
+                  <div key={drainageName} className={styles.viewDrainageCard}>
+                    <label>{drainageName}</label>
+                    <span className={styles.viewName}>{drainage.name}</span>
+                    <span>{formatFluidQty(drainage)}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className={styles.viewSectionTotal}>
+              <label>TOTAL DRAINAGE:</label>
+              <span>{drainageTotal}ML</span>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.viewSummaryBar}>
+          <div className={styles.totalItem}>
+            <span>Total Input:</span>
+            <span>{formatTotal(formValues.total_input)}</span>
+          </div>
+          <div className={styles.totalItem}>
+            <span>Total Output:</span>
+            <span>{formatTotal(formValues.total_output)}</span>
+          </div>
+          <div className={styles.totalItem}>
+            <span>Cumulative Balance:</span>
+            <span>{formatTotal(formValues.cumulative_balance)}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className={styles.fluidForm}>

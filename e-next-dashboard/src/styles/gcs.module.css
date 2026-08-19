@@ -7,33 +7,42 @@
 .gcsViewContainer {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 8px;
+}
+
+.gcsTopGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-items: stretch;
 }
 
 .gcsSection {
   background: #fff;
-  padding: 20px;
+  padding: 6px 10px;
   border-radius: 8px;
+  border: 1px solid #E5E7EB;
 }
 
 .gcsSection h3 {
   color: #333;
-  font-size: 14px;
-  margin-bottom: 16px;
-  font-weight: 500;
+  font-size: 13px;
+  margin: 0 0 4px 0;
+  font-weight: 600;
 }
 
 .gcsRow {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 0;
 }
 
 .gcsItem {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
+  gap: 12px;
+  padding: 2px 0;
   border-bottom: 1px solid #E5E7EB;
 }
 
@@ -43,12 +52,31 @@
 
 .gcsItem label {
   color: #666;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .gcsItem span {
   color: #333;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.gcsStatusRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.gcsStatusRow .gcsItem {
+  border-bottom: none;
+  padding: 2px 0;
+}
+
+@media (max-width: 768px) {
+  .gcsTopGrid,
+  .gcsStatusRow {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Edit mode styles */

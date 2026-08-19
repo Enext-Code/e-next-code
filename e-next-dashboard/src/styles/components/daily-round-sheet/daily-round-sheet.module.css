@@ -1,5 +1,5 @@
 .pageContainer {
-    padding: 24px;
+    padding: 12px 16px;
     /* padding-bottom: 200px; Extra padding to prevent content from being hidden behind sticky bottom element */
     background-color: #F8F9FE;
     min-height: 100vh;
@@ -9,7 +9,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
+    margin-bottom: 8px;
   }
   
   .headerLeft {
@@ -28,11 +28,11 @@
   .patientCard {
     display: flex;
     flex-direction: row;
-    gap: 16px;
+    gap: 12px;
     background: white;
     border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 24px;
+    padding: 10px 14px;
+    margin-bottom: 10px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   }
   
@@ -40,8 +40,13 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 16px;
+    margin-bottom: 0;
     color: #666;
+  }
+
+  .patientIcon svg {
+    width: 56px;
+    height: auto;
   }
   
   .bedIcon {
@@ -51,14 +56,14 @@
   .patientInfo {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 4px;
     width: 100%;
     justify-content: space-between;
   }
   
   .infoRow {
     display: flex;
-    gap: 32px;
+    gap: 12px;
     justify-content: space-between;
   }
   
@@ -77,7 +82,7 @@
   .progressContainer {
     background: white;
     border-radius: 8px;
-    padding: 24px;
+    padding: 12px 14px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   }
   
@@ -85,7 +90,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
+    margin-bottom: 8px;
   }
   
   .progressHeader h2 {
@@ -173,41 +178,41 @@
   .sectionsStack {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 8px;
   }
 
   .sectionBlock {
     border: 1px solid #e5e7eb;
-    border-radius: 10px;
+    border-radius: 8px;
     overflow: hidden;
     background: #fff;
   }
 
   .sectionTitle {
-    padding: 14px 20px;
+    padding: 6px 12px;
     background: linear-gradient(135deg, #ffa038 0%, #ff8c17 100%);
     color: #fff;
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 600;
   }
 
   .sectionContent {
-    padding: 20px 24px;
+    padding: 8px 10px;
     border-top: 2px solid #ffa038;
   }
 
   .investigationReportLinkContainer {
     display: flex;
     justify-content: center;
-    margin-top: 24px;
-    padding-top: 24px;
+    margin-top: 10px;
+    padding-top: 10px;
     border-top: 1px solid #eee;
   }
 
   .investigationReportLink {
     display: inline-flex;
     align-items: center;
-    padding: 12px 24px;
+    padding: 8px 16px;
     background-color: #ffa038;
     color: white;
     text-decoration: none;
@@ -601,18 +606,18 @@
   
   /* Previous Prescriptions */
   .previousPrescriptions {
-    margin-top: 24px;
+    margin-top: 8px;
   }
   
   .previousPrescriptions h3 {
     color: #333;
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 600;
-    margin: 0 0 16px 0;
+    margin: 0 0 8px 0;
   }
   
   .prescriptionEntry {
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     border: 1px solid #e0e0e0;
     border-radius: 8px;
     overflow: hidden;
@@ -620,7 +625,7 @@
   
   .prescriptionTitle {
     background: #f8f9fa;
-    padding: 12px 16px;
+    padding: 8px 12px;
     font-weight: 500;
     color: #333;
     border-bottom: 1px solid #e0e0e0;
@@ -679,8 +684,8 @@
     flex-direction: column;
     align-items: center;
     gap: 8px;
-    margin: 24px 0 40px;
-    padding: 20px 16px;
+    margin: 10px 0 16px;
+    padding: 10px 12px;
     border-top: 1px solid #e5e7eb;
   }
 
@@ -714,23 +719,23 @@
   }
   
   .prescriptionContent {
-    padding: 16px;
+    padding: 8px 10px;
     position: relative;
   }
   
   .prescriptionText {
     color: #333;
-    font-size: 14px;
-    line-height: 1.6;
-    margin-bottom: 12px;
+    font-size: 13px;
+    line-height: 1.4;
+    margin-bottom: 8px;
     background: white;
-    padding: 12px;
+    padding: 8px;
     border: 1px solid #e0e0e0;
     border-radius: 6px;
   }
   
   .prescriptionField {
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
   
   .prescriptionFieldLabel {
@@ -743,13 +748,13 @@
   
   .prescriptionFieldText {
     color: #333;
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: 13px;
+    line-height: 1.4;
     background: white;
-    padding: 10px;
+    padding: 6px 8px;
     border: 1px solid #e0e0e0;
     border-radius: 6px;
-    min-height: 40px;
+    min-height: 0;
   }
   
   .prescriptionMeta {
@@ -801,16 +806,16 @@
   .previousPrescriptionsContainer {
     background: white;
     /* border-radius: 12px; */
-    padding: 24px;
-    margin-bottom: 24px;
+    padding: 12px 14px;
+    margin: 10px 0;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
   /* Inline Plan Form */
   .inlinePlanForm {
     border: 2px solid #ffa038;
-    border-radius: 10px;
-    margin-bottom: 24px;
+    border-radius: 8px;
+    margin-bottom: 10px;
     overflow: hidden;
     background: #fff;
   }
@@ -819,19 +824,19 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 14px 20px;
+    padding: 6px 12px;
     background: #ffa038;
     color: #fff;
   }
 
   .inlinePlanFormHeader h3 {
     margin: 0;
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 600;
   }
 
   .inlinePlanFormBody {
-    padding: 20px;
+    padding: 8px 10px;
   }
 
   /* Responsive Design */

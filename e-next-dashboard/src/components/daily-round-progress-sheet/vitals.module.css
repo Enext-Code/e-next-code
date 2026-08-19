@@ -13,14 +13,15 @@
 .section {
   background: white;
   border-radius: 8px;
-  padding: 20px;
+  padding: 6px 10px;
+  border: 1px solid #E5E7EB;
 }
 
 .sectionTitle {
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 600;
   color: #333;
-  margin-bottom: 16px;
+  margin: 0 0 4px 0;
 }
 
 .inputGroup {
@@ -62,14 +63,28 @@
 .viewContainer {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 8px;
+}
+
+.topGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.rightStack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
+  gap: 12px;
+  padding: 2px 0;
   border-bottom: 1px solid #E5E7EB;
 }
 
@@ -79,12 +94,31 @@
 
 .row label {
   color: #666;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .row span {
   color: #333;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.statusRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.statusRow .row {
+  border-bottom: none;
+  padding: 2px 0;
+}
+
+@media (max-width: 768px) {
+  .topGrid,
+  .statusRow {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Temperature slider styles */
