@@ -254,3 +254,10 @@ class ArterialAnalysis(str, Enum):
     BASE_B_C = "Base (B)c"
     ANION_GAPC = "Anion Gapc"
     SO2E = "sO2e"
+
+
+class CatheterSource(str, Enum):
+    """Where the catheter was inserted"""
+
+    INSIDE_ICU = "inside_icu"
+    OUTSIDE = "outside"

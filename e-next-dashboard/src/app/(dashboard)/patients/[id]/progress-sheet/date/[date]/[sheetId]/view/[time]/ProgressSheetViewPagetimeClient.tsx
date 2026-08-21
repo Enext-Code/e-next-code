@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Breadcrumb from '@/components/common/Breadcrumb';
 import { patientService, Patient } from '@/services/patientService';
 import { progressSheetService, ProgressSheet, ProgressSheetEntry } from '@/services/progressSheetService';
-import { catheterService, CatheterEntry } from '@/services/catheterService';
+import { catheterService, CatheterEntry, getCatheterSource } from '@/services/catheterService';
 import FluidForm, { FluidData } from '@/components/forms/FluidForm';
 import VitalsForm, { VitalsData } from '@/components/forms/VitalsForm';
 import RespiratoryForm, { RespiratoryData } from '@/components/forms/RespiratoryForm';
@@ -119,13 +119,14 @@ export default function ProgressSheetViewPageTimeClient() {
         // The API response has nested data structure: response.data.data.items
         const items = catheterResponse.data.items || [];
         // console.log('Found items:', items);
-        const catheterEntries = items.map((item: any) => ({
+        const catheterEntries: CatheterEntry[] = items.map((item: any) => ({
           id: item.id,
           type: item.type,
           catheter_type: item.catheter_type,
           size: item.size,
           site: item.site,
           date_of_insertion: item.date_of_insertion,
+          source: getCatheterSource(item.source),
           date_of_removal: item.date_of_removal,
           days_in_use: null, // Will be calculated dynamically
           notes: item.notes

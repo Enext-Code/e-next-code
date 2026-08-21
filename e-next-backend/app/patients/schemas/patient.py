@@ -27,6 +27,7 @@ class PatientBase(BaseModel):
     mlc_or_non_mlc_number: str = Field(
         ..., description="MLC or non-MLC number of the patient"
     )
+    insurance: Optional[str] = Field(default=None, description="Insurance of the patient")
     organisation_icu_id: str = Field(..., description="ICU ID of the organisation")
     organisation_icu_bed_id: Optional[str] = Field(
         default=None, description="Bed ID of the organisation ICU (required when status is ADMISSION)"
@@ -93,6 +94,7 @@ class PatientUpdate(BaseModel):
     admission_time: Optional[time] = None
     tele_icu_date: Optional[date] = None
     mlc_or_non_mlc_number: Optional[str] = None
+    insurance: Optional[str] = None
     organisation_icu_id: Optional[str] = None
     organisation_icu_bed_id: Optional[str] = None
     doctor_id: Optional[str] = None

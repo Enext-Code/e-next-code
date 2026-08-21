@@ -76,6 +76,10 @@ export default function PatientInfo({ patient }: Props) {
             <label>MLC Number:</label>
             <span>{patient.mlc_or_non_mlc_number}</span>
           </div>
+          <div className={styles.infoItem}>
+            <label>Insurance:</label>
+            <span>{patient.insurance || '-'}</span>
+          </div>
         </div>
       </div>
 

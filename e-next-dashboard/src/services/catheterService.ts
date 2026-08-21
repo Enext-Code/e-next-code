@@ -8,6 +8,7 @@ export interface CatheterEntry {
   size: number | null;
   site: string | null;
   date_of_insertion: string | null;
+  source?: 'inside_icu' | 'outside' | null;
   date_of_removal: string | null;
   days_in_use: number | null;
   notes?: string | null;
@@ -23,6 +24,16 @@ export interface CatheterEntry {
   created_by_profile?: string;
   updated_by_profile?: string;
 }
+
+export type CatheterSource = 'inside_icu' | 'outside';
+
+export const DEFAULT_CATHETER_SOURCE: CatheterSource = 'inside_icu';
+
+export const getCatheterSource = (source?: string | null): CatheterSource =>
+  source === 'outside' ? 'outside' : 'inside_icu';
+
+export const getCatheterSourceLabel = (source?: string | null) =>
+  getCatheterSource(source) === 'outside' ? 'Outside' : 'Inside ICU';
 
 export interface CatheterData {
   entries: CatheterEntry[];

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CatheterEntry } from '@/services/catheterService';
+import { CatheterEntry, DEFAULT_CATHETER_SOURCE, getCatheterSource } from '@/services/catheterService';
 import styles from '@/styles/catheter.module.css';
 
 type CatheterType = 'Central Line' | 'Foley Catheter';
@@ -58,6 +58,7 @@ const CatheterEditModal: React.FC<CatheterEditModalProps> = ({
     size: null,
     site: null,
     date_of_insertion: null,
+    source: DEFAULT_CATHETER_SOURCE,
     date_of_removal: null,
     days_in_use: null,
     notes: null
@@ -67,7 +68,10 @@ const CatheterEditModal: React.FC<CatheterEditModalProps> = ({
   React.useEffect(() => {
     if (isOpen) {
       if (catheter) {
-        setFormData(catheter);
+        setFormData({
+          ...catheter,
+          source: getCatheterSource(catheter.source),
+        });
       } else {
         // Reset to blank values when adding a new catheter
         setFormData({
@@ -76,6 +80,7 @@ const CatheterEditModal: React.FC<CatheterEditModalProps> = ({
           size: null,
           site: null,
           date_of_insertion: null,
+          source: DEFAULT_CATHETER_SOURCE,
           date_of_removal: null,
           days_in_use: null,
           notes: null
@@ -149,6 +154,7 @@ const CatheterEditModal: React.FC<CatheterEditModalProps> = ({
       const formattedData = {
         ...formData,
         date_of_insertion: formatDateTimeLocal(formData.date_of_insertion),
+        source: getCatheterSource(formData.source),
         date_of_removal: formData.date_of_removal ? formatDateTimeLocal(formData.date_of_removal) : null,
         days_in_use: calculateDaysInUse(formData.date_of_insertion, formData.date_of_removal)
       };
@@ -237,6 +243,18 @@ const CatheterEditModal: React.FC<CatheterEditModalProps> = ({
               onChange={(e) => handleInputChange('date_of_insertion', e.target.value)}
               className={styles.dateInput}
             />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>Source</label>
+            <select
+              value={getCatheterSource(formData.source)}
+              onChange={(e) => handleInputChange('source', e.target.value)}
+              className={styles.select}
+            >
+              <option value="inside_icu">Inside ICU</option>
+              <option value="outside">Outside</option>
+            </select>
           </div>
 
           <div className={styles.formGroup}>

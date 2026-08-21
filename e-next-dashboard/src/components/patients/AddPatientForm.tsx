@@ -97,6 +97,7 @@ export default function AddPatientForm() {
     uidNo: '',
     ipidNo: '',
     mlcNo: '',
+    insurance: '',
     address: '',
     consultantId: '',
     dateOfTeleICU: new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }),
@@ -412,6 +413,7 @@ export default function AddPatientForm() {
         admission_time: formattedTime,
         tele_icu_date: formData.dateOfTeleICU,
         mlc_or_non_mlc_number: formData.mlcNo,
+        insurance: formData.insurance || undefined,
         organisation_icu_id: formData.selectedICU,
         organisation_icu_bed_id: formData.selectedBed,
         doctor_id: formData.admittingConsultant,
@@ -874,6 +876,18 @@ export default function AddPatientForm() {
               onChange={handleInputChange}
               className={styles.input}
               placeholder="Please enter patient M.L.C / Non M.L.C No."
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>Insurance</label>
+            <input
+              type="text"
+              name="insurance"
+              value={formData.insurance}
+              onChange={handleInputChange}
+              className={styles.input}
+              placeholder="Please enter insurance"
             />
           </div>
         </div>

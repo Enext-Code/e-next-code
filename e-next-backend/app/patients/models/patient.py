@@ -43,6 +43,9 @@ class Patient(
     mlc_or_non_mlc_number: str = Field(
         ..., description="MLC or non-MLC number of the patient"
     )
+    insurance: Optional[str] = Field(
+        default=None, description="Insurance of the patient"
+    )
     status: Optional[PatientStatus] = Field(
         default=PatientStatus.ADMISSION, description="Status of the patient"
     )

@@ -8,7 +8,7 @@ import jsPDF from "jspdf";
 import Breadcrumb from '@/components/common/Breadcrumb';
 import { patientService, Patient } from '@/services/patientService';
 import { progressSheetService, ProgressSheet, ProgressSheetEntry, ProgressSheetListParams } from '@/services/progressSheetService';
-import { catheterService, CatheterEntry } from '@/services/catheterService';
+import { catheterService, CatheterEntry, getCatheterSource } from '@/services/catheterService';
 import { investigationReportService, InvestigationReportData } from '@/services/investigationReportService';
 import { fetchApi } from '@/utils/api';
 import { API_ENDPOINTS } from '@/constants/api';
@@ -292,13 +292,14 @@ debugger
         // The API response has nested data structure: response.data.data.items
         const items = catheterResponse.data.items || [];
         // // console.log('Found items:', items);
-        const catheterEntries = items.map((item: any) => ({
+        const catheterEntries: CatheterEntry[] = items.map((item: any) => ({
           id: item.id,
           type: item.type,
           catheter_type: item.catheter_type,
           size: item.size,
           site: item.site,
           date_of_insertion: item.date_of_insertion,
+          source: getCatheterSource(item.source),
           date_of_removal: item.date_of_removal,
           days_in_use: null, // Will be calculated dynamically
           notes: item.notes
@@ -1005,7 +1006,7 @@ debugger
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(100);
-    doc.text('Attending Doctor', signBoxX + signBoxW / 2, y, { align: 'center' });
+    doc.text('CRITICAL CARE CONSULTANT', signBoxX + signBoxW / 2, y, { align: 'center' });
     doc.setTextColor(0);
     y += 6;
 
@@ -1238,7 +1239,10 @@ debugger
       y += 6;
     };
 
-    const addKeyValueRows = (rows: Array<[string, string]>, columns = 2) => {
+    const addKeyValueRows = (
+      rows: Array<[string, string] | [string, string, [number, number, number]]>,
+      columns = 2
+    ) => {
       doc.setFontSize(9);
       const colWidth = contentWidth / columns;
       for (let i = 0; i < rows.length; i += columns) {
@@ -1249,13 +1253,19 @@ debugger
           if (!row) continue;
           const x = marginX + c * colWidth;
           const label = `${sanitizePdfText(row[0])}: `;
+          const valueColor = row[2];
+          doc.setTextColor(0);
           doc.setFont('helvetica', 'bold');
           const labelWidth = doc.getTextWidth(label);
           doc.text(label, x, y);
           doc.setFont('helvetica', 'normal');
+          if (valueColor) {
+            doc.setTextColor(valueColor[0], valueColor[1], valueColor[2]);
+          }
           const valueWidth = Math.max(colWidth - labelWidth - 2, 20);
           const valueLines = doc.splitTextToSize(sanitizePdfText(row[1]) || 'NIL', valueWidth);
           doc.text(valueLines, x + labelWidth, y);
+          doc.setTextColor(0);
           maxLines = Math.max(maxLines, valueLines.length);
         }
         y += maxLines * 4.2 + 2;
@@ -1421,6 +1431,7 @@ debugger
       ['Patient ID', patient.unique_id || 'NIL'],
       ['Patient Age', String(patient.age) || 'NIL'],
       ['Patient Gender', capitalizeText(patient.gender)],
+      ['Patient MLC/Non-MLC Number', patient.mlc_or_non_mlc_number || 'NIL', [220, 38, 38]],
       ['Date of Admission', formatPdfDate(patient.admission_date)],
       ['Time of Admission', formatPdfTime(patient.admission_time)],
       ['Organisation', formatValue(organisationName)],
@@ -1428,7 +1439,7 @@ debugger
       ['Day', String(dayNumber)],
       ['Bed No', formatValue(patient.organisation_icu_bed_number)],
       ['Tele ICU Date', formatPdfDate(patient.tele_icu_date)],
-     
+      ['Consultant Name', capitalizeText(patient.doctor_full_name)],
       ['Latest Entry Date', reportDate],
       ['Latest Entry Time', entry.time || 'NIL'],
     ]);
@@ -1621,6 +1632,7 @@ debugger
               'Date Of Insertion',
               c.date_of_insertion ? new Date(c.date_of_insertion).toLocaleString() : 'NIL',
             ],
+            ['Source', c.source === 'outside' ? 'Outside' : 'Inside ICU'],
             ['Days in use', calculateDaysInUse(c.date_of_insertion, c.date_of_removal)],
             [
               'Date Of Removal',
@@ -2102,7 +2114,7 @@ debugger
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(100);
-    doc.text('Attending Doctor', signBoxX + signBoxW / 2, y, { align: 'center' });
+    doc.text('CRITICAL CARE CONSULTANT', signBoxX + signBoxW / 2, y, { align: 'center' });
     doc.setTextColor(0);
 
     // Page footers

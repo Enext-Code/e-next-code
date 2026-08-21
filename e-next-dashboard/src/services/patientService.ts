@@ -34,6 +34,7 @@ export interface Patient {
   admission_time: string;
   tele_icu_date: string;
   mlc_or_non_mlc_number: string;
+  insurance: string;
   organisation_icu_id: string;
   organisation_icu_bed_id: string;
   doctor_id: string;
@@ -80,6 +81,7 @@ export interface PatientCreateResponse {
   admission_time: string;
   tele_icu_date: string;
   mlc_or_non_mlc_number: string;
+  insurance?: string;
   organisation_icu_id: string;
   organisation_icu_bed_id: string;
   doctor_id: string;
@@ -249,6 +251,7 @@ export interface PatientData {
   admission_time: string;
   tele_icu_date: string;
   mlc_or_non_mlc_number: string;
+  insurance?: string;
   organisation_icu_id: string;
   organisation_icu_bed_id: string;
   doctor_id: string;

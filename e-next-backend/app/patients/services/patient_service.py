@@ -296,6 +296,7 @@ class PatientService:
             admission_time=patient.get("admission_time", ""),
             tele_icu_date=tele_icu_date,
             mlc_or_non_mlc_number=patient.get("mlc_or_non_mlc_number", ""),
+            insurance=patient.get("insurance", ""),
             status=patient.get("status", PatientStatus.ADMISSION),
             organisation_icu_id=patient.get("organisation_icu_id", ""),
             organisation_icu_bed_id=patient.get("organisation_icu_bed_id", ""),
@@ -1116,6 +1117,7 @@ class PatientService:
                     admission_time=patient.get("admission_time", ""),
                     tele_icu_date=tele_icu_date,
                     mlc_or_non_mlc_number=patient.get("mlc_or_non_mlc_number", ""),
+                    insurance=patient.get("insurance", ""),
                     status=patient.get("status", PatientStatus.ADMISSION),
                     organisation_icu_id=patient.get("organisation_icu_id", ""),
                     organisation_icu_bed_id=patient.get("organisation_icu_bed_id", ""),
@@ -1462,6 +1464,7 @@ class PatientService:
                 "admission_time": patient_data.get("admission_time", ""),
                 "tele_icu_date": patient_data.get("tele_icu_date", ""),
                 "mlc_or_non_mlc_number": patient_data.get("mlc_or_non_mlc_number", ""),
+                "insurance": patient_data.get("insurance", ""),
                 "status": patient_data.get("status", PatientStatus.ADMISSION),
                 "organisation_icu_id": patient_data.get("organisation_icu_id", ""),
                 "organisation_icu_bed_id": patient_data.get(

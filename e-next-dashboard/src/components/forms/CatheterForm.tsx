@@ -2,7 +2,7 @@
 
 import React from 'react';
 import styles from '@/styles/catheter.module.css';
-import { CatheterEntry } from '@/services/catheterService';
+import { CatheterEntry, DEFAULT_CATHETER_SOURCE, getCatheterSource, getCatheterSourceLabel } from '@/services/catheterService';
 
 type CatheterType = 'Central Line' | 'Foley Catheter';
 
@@ -163,6 +163,7 @@ const CatheterForm: React.FC<CatheterFormProps> = ({
           size: null,
           site: null,
           date_of_insertion: null,
+          source: DEFAULT_CATHETER_SOURCE,
           date_of_removal: null,
           days_in_use: null,
           notes: null
@@ -238,6 +239,13 @@ const CatheterForm: React.FC<CatheterFormProps> = ({
               <label>Date Of Insertion</label>
             </div>
             <div className={styles.value}>{formatDateForDisplay(entry.date_of_insertion)}</div>
+          </div>
+
+          <div className={styles.formGroup}>
+            <div className={styles.parameterLabel}>
+              <label>Source</label>
+            </div>
+            <div className={styles.value}>{getCatheterSourceLabel(entry.source)}</div>
           </div>
 
           <div className={styles.formGroup}>
@@ -350,6 +358,18 @@ const CatheterForm: React.FC<CatheterFormProps> = ({
               onChange={(e) => handleInputChange(index, 'date_of_insertion', e.target.value)}
               className={styles.dateInput}
             />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>Source</label>
+            <select
+              value={getCatheterSource(entry.source)}
+              onChange={(e) => handleInputChange(index, 'source', e.target.value)}
+              className={styles.select}
+            >
+              <option value="inside_icu">Inside ICU</option>
+              <option value="outside">Outside</option>
+            </select>
           </div>
 
           <div className={styles.formGroup}>

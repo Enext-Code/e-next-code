@@ -4,6 +4,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from app.investigation_reports.enums import CatheterCategoryType, CatheterType
+from app.patients.enums import CatheterSource
 
 
 class PatientCatheterBase(BaseModel):
@@ -16,6 +17,10 @@ class PatientCatheterBase(BaseModel):
     site: Optional[str] = Field(default=None, description="Insertion site of the catheter")
     date_of_insertion: Optional[datetime] = Field(
         default=None, description="Date when catheter was inserted"
+    )
+    source: CatheterSource = Field(
+        default=CatheterSource.INSIDE_ICU,
+        description="Whether the catheter was inserted inside ICU or brought from outside",
     )
     date_of_removal: Optional[datetime] = Field(
         default=None, description="Date when catheter was removed"
@@ -47,6 +52,10 @@ class PatientCatheterUpdate(BaseModel):
     site: Optional[str] = Field(default=None, description="Insertion site of the catheter")
     date_of_insertion: Optional[datetime] = Field(
         default=None, description="Date when catheter was inserted"
+    )
+    source: Optional[CatheterSource] = Field(
+        default=None,
+        description="Whether the catheter was inserted inside ICU or brought from outside",
     )
     date_of_removal: Optional[datetime] = Field(
         default=None, description="Date when catheter was removed"

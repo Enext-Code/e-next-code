@@ -69,6 +69,10 @@ const BasicInfoTab = ({ patient, patientId }: Props) => {
             <span>{patient.mlc_or_non_mlc_number}</span>
           </div>
           <div className={styles.infoItem}>
+            <label>Insurance</label>
+            <span>{patient.insurance || '-'}</span>
+          </div>
+          <div className={styles.infoItem}>
             <label>ICU Name</label>
             <span>{patient.organisation_icu_name}</span>
           </div>

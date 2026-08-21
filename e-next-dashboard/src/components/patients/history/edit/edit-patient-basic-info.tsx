@@ -89,6 +89,7 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
     uidNo: '',
     ipidNo: '',
     mlcNo: '',
+    insurance: '',
     address: '',
     consultantId: '',
     dateOfTeleICU: new Date().toISOString().split('T')[0],
@@ -194,6 +195,7 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
           admission_time: patient.admission_time,
           tele_icu_date: patient.tele_icu_date,
           mlc_or_non_mlc_number: patient.mlc_or_non_mlc_number,
+          insurance: patient.insurance || '',
           organisation_icu_id: patient.organisation_icu_id,
           organisation_icu_bed_id: patient.organisation_icu_bed_id,
           doctor_id: patient.doctor_id,
@@ -218,6 +220,7 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
           uidNo: patient.uid_number || '',
           ipidNo: patient.ipid_number || '',
           mlcNo: patient.mlc_or_non_mlc_number || '',
+          insurance: patient.insurance || '',
           address: patient.address || '',
           consultantId: patient.consultant_id || '',
           dateOfTeleICU: patient.tele_icu_date || new Date().toISOString().split('T')[0],
@@ -376,6 +379,7 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
     if (currentData.admission_time !== originalData.admission_time) changes.admission_time = currentData.admission_time;
     if (currentData.tele_icu_date !== originalData.tele_icu_date) changes.tele_icu_date = currentData.tele_icu_date;
     if (currentData.mlc_or_non_mlc_number !== originalData.mlc_or_non_mlc_number) changes.mlc_or_non_mlc_number = currentData.mlc_or_non_mlc_number;
+    if (currentData.insurance !== originalData.insurance) changes.insurance = currentData.insurance;
     if (currentData.organisation_icu_id !== originalData.organisation_icu_id) changes.organisation_icu_id = currentData.organisation_icu_id;
     if (currentData.organisation_icu_bed_id !== originalData.organisation_icu_bed_id) changes.organisation_icu_bed_id = currentData.organisation_icu_bed_id;
     if (currentData.doctor_id !== originalData.doctor_id) changes.doctor_id = currentData.doctor_id;
@@ -418,6 +422,7 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
         admission_time: formattedTime,
         tele_icu_date: formData.dateOfTeleICU,
         mlc_or_non_mlc_number: formData.mlcNo,
+        insurance: formData.insurance || undefined,
         organisation_icu_id: formData.selectedICU,
         organisation_icu_bed_id: formData.selectedBed,
         doctor_id: formData.admittingConsultant,
@@ -776,6 +781,18 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
               onChange={handleInputChange}
               className={styles.input}
               placeholder="77544677258AN8"
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>Insurance</label>
+            <input
+              type="text"
+              name="insurance"
+              value={formData.insurance}
+              onChange={handleInputChange}
+              className={styles.input}
+              placeholder="Please enter insurance"
             />
           </div>
         </div>

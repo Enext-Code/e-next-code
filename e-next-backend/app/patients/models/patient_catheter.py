@@ -6,6 +6,7 @@ from pydantic import Field
 from app.base.models import (AuditMixin, BaseSchema, IDMixin, OrganisationMixin,
                              StatusMixin, TimestampMixin)
 from app.investigation_reports.enums import CatheterCategoryType, CatheterType
+from app.patients.enums import CatheterSource
 
 
 class PatientCatheter(
@@ -20,6 +21,10 @@ class PatientCatheter(
     site: Optional[str] = Field(default=None, description="Insertion site of the catheter")
     date_of_insertion: Optional[datetime] = Field(
         default=None, description="Date when catheter was inserted"
+    )
+    source: Optional[CatheterSource] = Field(
+        default=CatheterSource.INSIDE_ICU,
+        description="Whether the catheter was inserted inside ICU or brought from outside",
     )
     date_of_removal: Optional[datetime] = Field(
         default=None, description="Date when catheter was removed"
