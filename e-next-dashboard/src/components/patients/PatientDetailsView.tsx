@@ -29,6 +29,7 @@ interface PatientData {
   admission_date: string;
   admission_time: string;
   tele_icu_date: string;
+  tele_icu_time?: string;
   mlc_or_non_mlc_number: string;
   insurance: string;
   organisation_icu_id: string;

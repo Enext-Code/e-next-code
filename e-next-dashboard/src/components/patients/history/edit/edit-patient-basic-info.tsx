@@ -9,6 +9,7 @@ import { icuService } from '@/services/icuService';
 import { patientService, Patient } from '@/services/patientService';
 import { userService, User } from '@/services/userService';
 import { useAuth } from '@/contexts/AuthContext';
+import AddIcdCodeModal from '@/components/forms/AddIcdCodeModal';
 import debounce from 'lodash/debounce';
 
 interface RemoteCenter {
@@ -51,6 +52,14 @@ interface ICDCode {
   description: string;
 }
 
+const INSURANCE_OPTIONS = [
+  'TPA',
+  'Ayushman Bharat',
+  'CGSH',
+  'ECSH',
+  'State Government',
+];
+
 interface EditPatientBasicInfoProps {
   patientId?: string;
 }
@@ -70,8 +79,10 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
   const [selectedIcdCodes, setSelectedIcdCodes] = useState<ICDCode[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showIcdDropdown, setShowIcdDropdown] = useState(false);
+  const [showAddIcdModal, setShowAddIcdModal] = useState(false);
   const [originalData, setOriginalData] = useState<any>(null);
   const icdSearchContainerRef = useRef<HTMLDivElement>(null);
+  const isSuperAdmin = user?.type === 'superadmin';
 
   // Form state
   const [formData, setFormData] = useState({
@@ -93,6 +104,7 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
     address: '',
     consultantId: '',
     dateOfTeleICU: new Date().toISOString().split('T')[0],
+    teleIcuTime: '',
     dateOfAdmission: new Date().toISOString().split('T')[0],
     admissionTime: new Date().toLocaleTimeString('en-US', { hour12: false }).slice(0, 5),
     icdCodeIds: [] as string[],
@@ -179,6 +191,18 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
           console.error('Error parsing admission time:', e);
         }
 
+        let formattedTeleIcuTime = '';
+        try {
+          if (patient.tele_icu_time) {
+            const timeMatch = patient.tele_icu_time.match(/^(\d{2}):(\d{2})/);
+            if (timeMatch) {
+              formattedTeleIcuTime = `${timeMatch[1]}:${timeMatch[2]}`;
+            }
+          }
+        } catch (e) {
+          console.error('Error parsing tele ICU time:', e);
+        }
+
         // Store original data for comparison
         setOriginalData({
           first_name: patient.first_name,
@@ -194,6 +218,7 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
           admission_date: patient.admission_date,
           admission_time: patient.admission_time,
           tele_icu_date: patient.tele_icu_date,
+          tele_icu_time: patient.tele_icu_time || '',
           mlc_or_non_mlc_number: patient.mlc_or_non_mlc_number,
           insurance: patient.insurance || '',
           organisation_icu_id: patient.organisation_icu_id,
@@ -224,6 +249,7 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
           address: patient.address || '',
           consultantId: patient.consultant_id || '',
           dateOfTeleICU: patient.tele_icu_date || new Date().toISOString().split('T')[0],
+          teleIcuTime: formattedTeleIcuTime,
           dateOfAdmission: patient.admission_date || new Date().toISOString().split('T')[0],
           admissionTime: formattedTime,
           icdCodeIds: patient.icd_codes?.map(code => code.id) || []
@@ -378,6 +404,7 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
     if (currentData.admission_date !== originalData.admission_date) changes.admission_date = currentData.admission_date;
     if (currentData.admission_time !== originalData.admission_time) changes.admission_time = currentData.admission_time;
     if (currentData.tele_icu_date !== originalData.tele_icu_date) changes.tele_icu_date = currentData.tele_icu_date;
+    if (currentData.tele_icu_time !== originalData.tele_icu_time) changes.tele_icu_time = currentData.tele_icu_time;
     if (currentData.mlc_or_non_mlc_number !== originalData.mlc_or_non_mlc_number) changes.mlc_or_non_mlc_number = currentData.mlc_or_non_mlc_number;
     if (currentData.insurance !== originalData.insurance) changes.insurance = currentData.insurance;
     if (currentData.organisation_icu_id !== originalData.organisation_icu_id) changes.organisation_icu_id = currentData.organisation_icu_id;
@@ -407,6 +434,11 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
       const [hours, minutes] = formData.admissionTime.split(':').map(Number);
       const formattedTime = `${String(hours || 0).padStart(2, '0')}:${String(minutes || 0).padStart(2, '0')}:00.508000Z`;
 
+      const [teleHours, teleMinutes] = formData.teleIcuTime.split(':').map(Number);
+      const formattedTeleIcuTime = formData.teleIcuTime
+        ? `${String(teleHours || 0).padStart(2, '0')}:${String(teleMinutes || 0).padStart(2, '0')}:00.508000Z`
+        : undefined;
+
       const currentData: Partial<Patient> = {
         first_name: firstName,
         last_name: lastName || '',
@@ -421,6 +453,7 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
         admission_date: formData.dateOfAdmission,
         admission_time: formattedTime,
         tele_icu_date: formData.dateOfTeleICU,
+        tele_icu_time: formattedTeleIcuTime,
         mlc_or_non_mlc_number: formData.mlcNo,
         insurance: formData.insurance || undefined,
         organisation_icu_id: formData.selectedICU,
@@ -786,14 +819,20 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
 
           <div className={styles.formGroup}>
             <label>Insurance</label>
-            <input
-              type="text"
+            <select
               name="insurance"
               value={formData.insurance}
               onChange={handleInputChange}
-              className={styles.input}
-              placeholder="Please enter insurance"
-            />
+              className={styles.select}
+            >
+              <option value="">Select Insurance</option>
+              {INSURANCE_OPTIONS.map(option => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+              {formData.insurance && !INSURANCE_OPTIONS.includes(formData.insurance) && (
+                <option value={formData.insurance}>{formData.insurance}</option>
+              )}
+            </select>
           </div>
         </div>
 
@@ -844,11 +883,33 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
               className={styles.input}
             />
           </div>
+
+          <div className={styles.formGroup}>
+            <label>Time of Tele ICU</label>
+            <input
+              type="time"
+              name="teleIcuTime"
+              value={formData.teleIcuTime}
+              onChange={handleInputChange}
+              className={styles.input}
+            />
+          </div>
         </div>
 
         <div className={styles.formRow}>
           <div className={styles.formGroup}>
-            <label>ICD Codes</label>
+            <div className={styles.icdLabelRow}>
+              <label>ICD Codes</label>
+              {isSuperAdmin && (
+                <button
+                  type="button"
+                  className={styles.addIcdButton}
+                  onClick={() => setShowAddIcdModal(true)}
+                >
+                  + Add ICD Code
+                </button>
+              )}
+            </div>
             <div className={styles.icdSearchContainer} ref={icdSearchContainerRef}>
               <input
                 type="text"
@@ -900,6 +961,11 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
           </button>
         </div>
       </form>
+      <AddIcdCodeModal
+        isOpen={showAddIcdModal}
+        onClose={() => setShowAddIcdModal(false)}
+        onCreated={handleIcdCodeSelect}
+      />
     </div>
   );
 } 

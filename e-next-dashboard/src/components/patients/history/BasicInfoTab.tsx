@@ -65,6 +65,10 @@ const BasicInfoTab = ({ patient, patientId }: Props) => {
             <span>{new Date(patient.tele_icu_date).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' })}</span>
           </div>
           <div className={styles.infoItem}>
+            <label>Tele ICU Time</label>
+            <span>{patient.tele_icu_time ? patient.tele_icu_time.split('.')[0].replace('Z', '') : 'N/A'}</span>
+          </div>
+          <div className={styles.infoItem}>
             <label>MLC/Non-MLC Number</label>
             <span>{patient.mlc_or_non_mlc_number}</span>
           </div>

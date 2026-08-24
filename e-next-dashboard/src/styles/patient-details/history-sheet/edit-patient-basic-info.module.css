@@ -251,4 +251,27 @@
   .removeIcdCode:hover {
     background-color: #e5e7eb;
     color: #4b5563;
+  }
+
+  .icdLabelRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .addIcdButton {
+    background: #f97316;
+    color: white;
+    border: none;
+    padding: 0.35rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .addIcdButton:hover {
+    background: #ea580c;
   } 

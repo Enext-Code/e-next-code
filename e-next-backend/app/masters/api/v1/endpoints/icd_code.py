@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from app.accounts.api.v1 import get_current_user
+from app.accounts.api.v1 import get_current_user, require_superadmin
 from app.base.models import BaseResponse, PaginationResponse
 from app.utils import format_response
 
@@ -42,7 +42,7 @@ async def get_icd_code(
     response_model=ICDCodeResponse, message="ICD code created successfully"
 )
 async def create_icd_code(
-    icd_code: ICDCodeCreate, current_user=Depends(get_current_user)
+    icd_code: ICDCodeCreate, current_user=Depends(require_superadmin)
 ) -> ICDCodeResponse:
     """
     Create a new ICD code
@@ -65,7 +65,7 @@ async def create_icd_code(
     response_model=ICDCodeResponse, message="ICD code updated successfully"
 )
 async def update_icd_code(
-    icd_code_id: str, icd_code: ICDCodeUpdate, current_user=Depends(get_current_user)
+    icd_code_id: str, icd_code: ICDCodeUpdate, current_user=Depends(require_superadmin)
 ) -> ICDCodeResponse:
     """
     Update an existing ICD code
@@ -88,7 +88,7 @@ async def update_icd_code(
     response_model=ICDCodeResponse, message="ICD code deleted successfully"
 )
 async def delete_icd_code(
-    icd_code_id: str, current_user=Depends(get_current_user)
+    icd_code_id: str, current_user=Depends(require_superadmin)
 ) -> ICDCodeResponse:
     """
     Delete an existing ICD code
@@ -134,7 +134,7 @@ async def get_icd_codes(
 )
 async def bulk_create_icd_codes(
     request: ICDCodeBulkCreateRequest,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_superadmin),
 ) -> ICDCodeBulkCreateResponse:
     """
     Bulk create ICD codes with validation and error handling

@@ -9,6 +9,7 @@ import { icuService } from '@/services/icuService';
 import { patientService, Patient } from '@/services/patientService';
 import { userService, User } from '@/services/userService';
 import { useAuth } from '@/contexts/AuthContext';
+import AddIcdCodeModal from '@/components/forms/AddIcdCodeModal';
 import debounce from 'lodash/debounce';
 
 interface RemoteCenter {
@@ -51,6 +52,14 @@ interface ICDCode {
   description: string;
 }
 
+const INSURANCE_OPTIONS = [
+  'TPA',
+  'Ayushman Bharat',
+  'CGSH',
+  'ECSH',
+  'State Government',
+];
+
 
 export default function AddPatientForm() {
   const router = useRouter();
@@ -71,7 +80,9 @@ export default function AddPatientForm() {
   const [icdCodes, setIcdCodes] = useState<ICDCode[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showIcdDropdown, setShowIcdDropdown] = useState(false);
+  const [showAddIcdModal, setShowAddIcdModal] = useState(false);
   const icdSearchContainerRef = useRef<HTMLDivElement>(null);
+  const isSuperAdmin = user?.type === 'superadmin';
   
   // Consultant pagination state
   const [showConsultantDropdown, setShowConsultantDropdown] = useState(false);
@@ -101,6 +112,7 @@ export default function AddPatientForm() {
     address: '',
     consultantId: '',
     dateOfTeleICU: new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }),
+    teleIcuTime: new Date().toLocaleTimeString('en-US', { hour12: false, timeZone: 'Asia/Kolkata' }).slice(0, 5),
     dateOfAdmission: new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }),
     admissionTime: new Date().toLocaleTimeString('en-US', { hour12: false, timeZone: 'Asia/Kolkata' }).slice(0, 5), // Default to current IST time in HH:mm format
     icdCodeId: '', // New field
@@ -412,6 +424,7 @@ export default function AddPatientForm() {
         admission_date: formData.dateOfAdmission,
         admission_time: formattedTime,
         tele_icu_date: formData.dateOfTeleICU,
+        tele_icu_time: formData.teleIcuTime ? `${formData.teleIcuTime}:00` : undefined,
         mlc_or_non_mlc_number: formData.mlcNo,
         insurance: formData.insurance || undefined,
         organisation_icu_id: formData.selectedICU,
@@ -593,6 +606,17 @@ export default function AddPatientForm() {
               type="date"
               name="dateOfTeleICU"
               value={formData.dateOfTeleICU}
+              onChange={handleInputChange}
+              className={styles.input}
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>Time of Tele ICU</label>
+            <input
+              type="time"
+              name="teleIcuTime"
+              value={formData.teleIcuTime}
               onChange={handleInputChange}
               className={styles.input}
             />
@@ -881,20 +905,34 @@ export default function AddPatientForm() {
 
           <div className={styles.formGroup}>
             <label>Insurance</label>
-            <input
-              type="text"
+            <select
               name="insurance"
               value={formData.insurance}
               onChange={handleInputChange}
-              className={styles.input}
-              placeholder="Please enter insurance"
-            />
+              className={styles.select}
+            >
+              <option value="">Select Insurance</option>
+              {INSURANCE_OPTIONS.map(option => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
           </div>
         </div>
 
         <div className={styles.formRow}>
           <div className={styles.formGroup}>
-            <label>ICD Codes</label>
+            <div className={styles.icdLabelRow}>
+              <label>ICD Codes</label>
+              {isSuperAdmin && (
+                <button
+                  type="button"
+                  className={styles.addIcdButton}
+                  onClick={() => setShowAddIcdModal(true)}
+                >
+                  + Add ICD Code
+                </button>
+              )}
+            </div>
             <div className={styles.icdSearchContainer} ref={icdSearchContainerRef}>
               <input
                 type="text"
@@ -947,6 +985,11 @@ export default function AddPatientForm() {
           </button>
         </div>
       </form>
+      <AddIcdCodeModal
+        isOpen={showAddIcdModal}
+        onClose={() => setShowAddIcdModal(false)}
+        onCreated={handleIcdCodeSelect}
+      />
     </div>
   );
 } 

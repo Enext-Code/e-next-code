@@ -40,6 +40,9 @@ class Patient(
     admission_date: date = Field(..., description="Admission date of the patient")
     admission_time: time = Field(..., description="Admission time of the patient")
     tele_icu_date: date = Field(..., description="Tele-ICU date of the patient")
+    tele_icu_time: Optional[time] = Field(
+        default=None, description="Tele-ICU time of the patient"
+    )
     mlc_or_non_mlc_number: str = Field(
         ..., description="MLC or non-MLC number of the patient"
     )
@@ -173,4 +176,10 @@ class Patient(
                 current_date, data["admission_time"], tzinfo=UTC
             )
             data["admission_time"] = time_datetime.strftime("%H:%M:%S.%f")[:-3] + "Z"
+        if isinstance(data.get("tele_icu_time"), time):
+            current_date = datetime.now(UTC).date()
+            time_datetime = datetime.combine(
+                current_date, data["tele_icu_time"], tzinfo=UTC
+            )
+            data["tele_icu_time"] = time_datetime.strftime("%H:%M:%S.%f")[:-3] + "Z"
         return data

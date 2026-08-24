@@ -33,6 +33,7 @@ export interface Patient {
   admission_date: string;
   admission_time: string;
   tele_icu_date: string;
+  tele_icu_time?: string;
   mlc_or_non_mlc_number: string;
   insurance: string;
   organisation_icu_id: string;
@@ -80,6 +81,7 @@ export interface PatientCreateResponse {
   admission_date: string;
   admission_time: string;
   tele_icu_date: string;
+  tele_icu_time?: string;
   mlc_or_non_mlc_number: string;
   insurance?: string;
   organisation_icu_id: string;
@@ -250,6 +252,7 @@ export interface PatientData {
   admission_date: string;
   admission_time: string;
   tele_icu_date: string;
+  tele_icu_time?: string;
   mlc_or_non_mlc_number: string;
   insurance?: string;
   organisation_icu_id: string;
@@ -449,6 +452,13 @@ export const patientService = {
     return fetchApi<ICDCodeListResponse>(
       `${API_ENDPOINTS.MASTER.ICD_CODES}?page=1&limit=10&sort_order=desc&${queryParam}=${searchTerm}`
     );
+  },
+
+  createICDCode: async (data: { code: string; description: string }) => {
+    return fetchApi<ICDCode>(API_ENDPOINTS.MASTER.ICD_CODES, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   },
 
   getById: async (id: string) => {

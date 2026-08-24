@@ -24,6 +24,9 @@ class PatientBase(BaseModel):
     admission_date: date = Field(..., description="Admission date of the patient")
     admission_time: time = Field(..., description="Admission time of the patient")
     tele_icu_date: date = Field(..., description="Tele-ICU date of the patient")
+    tele_icu_time: Optional[time] = Field(
+        default=None, description="Tele-ICU time of the patient"
+    )
     mlc_or_non_mlc_number: str = Field(
         ..., description="MLC or non-MLC number of the patient"
     )
@@ -93,6 +96,7 @@ class PatientUpdate(BaseModel):
     admission_date: Optional[date] = None
     admission_time: Optional[time] = None
     tele_icu_date: Optional[date] = None
+    tele_icu_time: Optional[time] = None
     mlc_or_non_mlc_number: Optional[str] = None
     insurance: Optional[str] = None
     organisation_icu_id: Optional[str] = None
@@ -125,6 +129,12 @@ class PatientUpdate(BaseModel):
                 current_date, data["admission_time"], tzinfo=UTC
             )
             data["admission_time"] = time_datetime.strftime("%H:%M:%S.%f")[:-3] + "Z"
+        if data.get("tele_icu_time") and isinstance(data["tele_icu_time"], time):
+            current_date = datetime.now(UTC).date()
+            time_datetime = datetime.combine(
+                current_date, data["tele_icu_time"], tzinfo=UTC
+            )
+            data["tele_icu_time"] = time_datetime.strftime("%H:%M:%S.%f")[:-3] + "Z"
         if data.get("remark_datetime") and isinstance(data["remark_datetime"], datetime):
             data["remark_datetime"] = data["remark_datetime"].isoformat()
         if data.get("status_change_datetime") and isinstance(data["status_change_datetime"], datetime):

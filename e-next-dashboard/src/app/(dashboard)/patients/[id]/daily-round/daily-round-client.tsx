@@ -853,6 +853,7 @@ debugger
       ['Day', String(dayNumber)],
       ['Bed No', formatValue(patient.organisation_icu_bed_number)],
       ['Tele ICU Date', formatPdfDate(patient.tele_icu_date)],
+      ['Tele ICU Time', formatPdfTime(patient.tele_icu_time)],
       ['Latest Entry Date', reportDate],
       ['Latest Entry Time', entry?.time || '—'],
     ];
@@ -1439,6 +1440,7 @@ debugger
       ['Day', String(dayNumber)],
       ['Bed No', formatValue(patient.organisation_icu_bed_number)],
       ['Tele ICU Date', formatPdfDate(patient.tele_icu_date)],
+      ['Tele ICU Time', formatPdfTime(patient.tele_icu_time)],
       ['Consultant Name', capitalizeText(patient.doctor_full_name)],
       ['Latest Entry Date', reportDate],
       ['Latest Entry Time', entry.time || 'NIL'],
