@@ -52,6 +52,49 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+.lineHintWrap {
+  position: relative;
+  width: 100%;
+}
+
+.lineHintDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  margin-top: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+}
+
+.lineHintOption {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: #1f2937;
+  font-size: 13px;
+  line-height: 1.4;
+  cursor: pointer;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.lineHintOption:last-child {
+  border-bottom: none;
+}
+
+.lineHintOption:hover,
+.lineHintOptionActive {
+  background: #f3f4f6;
+}
+
 /* Sticky Plan Button */
 .stickyPlanButton {
   position: fixed;

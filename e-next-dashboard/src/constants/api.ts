@@ -86,6 +86,7 @@ export const API_ENDPOINTS = {
   },
   MASTER: {
     ICD_CODES: `/api/v1/masters/icd-codes`,
+    PLAN_LINE_TEMPLATES: `/api/v1/masters/plan-line-templates`,
   },
   DASHBOARD: {
     COUNTS: `/api/v1/dashboard/counts`,

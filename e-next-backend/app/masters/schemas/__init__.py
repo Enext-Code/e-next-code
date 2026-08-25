@@ -1,5 +1,7 @@
 from .icd_code import (ICDCodeBulkCreateRequest, ICDCodeBulkCreateResponse,
                        ICDCodeCreate, ICDCodeResponse, ICDCodeUpdate)
+from .plan_line_template import (PlanLineTemplateFilterParams,
+                                 PlanLineTemplateResponse)
 
 __all__ = [
     "ICDCodeCreate",
@@ -7,4 +9,6 @@ __all__ = [
     "ICDCodeResponse",
     "ICDCodeBulkCreateRequest",
     "ICDCodeBulkCreateResponse",
+    "PlanLineTemplateResponse",
+    "PlanLineTemplateFilterParams",
 ]

@@ -6,7 +6,7 @@ import jsPDF from "jspdf";
 // import Link from 'next/link';
 
 import Breadcrumb from '@/components/common/Breadcrumb';
-import { patientService, Patient } from '@/services/patientService';
+import { patientService, Patient, PatientInfoResponse } from '@/services/patientService';
 import { progressSheetService, ProgressSheet, ProgressSheetEntry, ProgressSheetListParams } from '@/services/progressSheetService';
 import { catheterService, CatheterEntry, getCatheterSource } from '@/services/catheterService';
 import { investigationReportService, InvestigationReportData } from '@/services/investigationReportService';
@@ -37,6 +37,7 @@ import RespiratoryForm, { RespiratoryData } from '@/components/daily-round-progr
 import CatheterForm, { CatheterData } from '@/components/daily-round-progress-sheet/CatheterForm';
 import CatheterEditModal from '@/components/forms/CatheterEditModal';
 import ConfirmationModal from '@/components/common/ConfirmationModal';
+import LineHintTextarea from '@/components/forms/LineHintTextarea';
 import styles from '@/styles/components/daily-round-sheet/daily-round-sheet.module.css';
 import planStyles from '@/styles/plan-fields.module.css';
 import GCSForm, { GCSData } from '@/components/forms/GCSForm';
@@ -84,6 +85,8 @@ export default function ProgressSheetViewPageTimeClient() {
   const [investigationReports, setInvestigationReports] = useState<InvestigationReportData[]>([]);
   const [isInvestigationModalOpen, setIsInvestigationModalOpen] = useState(false);
   const [apacheScore, setApacheScore] = useState<{ apache_ii_score: number; predicted_mortality_percent: number } | null>(null);
+  const [presentingComplaintsText, setPresentingComplaintsText] = useState('NIL');
+  const [icdCodesText, setIcdCodesText] = useState('NIL');
   const BedIcon = ({ bedNumber }: { bedNumber: number }) => (
     <svg width="95" height="112" viewBox="0 0 95 112" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect x="3.49219" y="0.507812" width="87.1043" height="86.4922" rx="14.1544" fill="#F4F4FF"/>
@@ -183,11 +186,73 @@ debugger
 
       // Load last Apache score
       await loadApacheScore();
+
+      // Load presenting complaints + ICD codes (same source as PDF)
+      await loadHealthHistory(
+        patientResponse.success && patientResponse.data
+          ? (patientResponse.data as unknown as Patient)
+          : null
+      );
     } catch (err) {
       console.error('Error loading data:', err);
       setError('Failed to load data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toTitleCase = (value: string) =>
+    String(value)
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+
+  const formatIcdList = (codes: Array<{ code: string; description: string }>) =>
+    codes
+      .map((icd) => `${icd.code} - ${toTitleCase(icd.description || '')}`)
+      .join(', ');
+
+  const resolveHealthHistory = (
+    info: PatientInfoResponse | null | undefined,
+    fallbackIcd?: Array<{ code: string; description: string }>
+  ) => {
+    let nextIcdCodesText = 'NIL';
+    let nextPresentingComplaintsText = 'NIL';
+
+    const basicIcd = info?.basic_details?.icd_codes;
+    if (Array.isArray(basicIcd) && basicIcd.length > 0) {
+      nextIcdCodesText = formatIcdList(basicIcd);
+    } else if (fallbackIcd?.length) {
+      nextIcdCodesText = formatIcdList(fallbackIcd);
+    }
+
+    const complaints = info?.past_medical_history?.presenting_complaints;
+    if (Array.isArray(complaints) && complaints.length > 0) {
+      const text = complaints
+        .map((c) => toTitleCase(c.complaint || ''))
+        .filter(Boolean)
+        .join(', ');
+      if (text) nextPresentingComplaintsText = text;
+    }
+
+    return { icdCodesText: nextIcdCodesText, presentingComplaintsText: nextPresentingComplaintsText };
+  };
+
+  const loadHealthHistory = async (patientData?: Patient | null) => {
+    const fallbackIcd = patientData?.icd_codes ?? patient?.icd_codes;
+    try {
+      const infoResponse = await patientService.getPatientInfo(params.id);
+      const info = infoResponse.success ? infoResponse.data : null;
+      const resolved = resolveHealthHistory(info, fallbackIcd);
+      setIcdCodesText(resolved.icdCodesText);
+      setPresentingComplaintsText(resolved.presentingComplaintsText);
+    } catch (err) {
+      console.error('Failed to load patient health history:', err);
+      if (fallbackIcd?.length) {
+        setIcdCodesText(formatIcdList(fallbackIcd));
+      }
     }
   };
 
@@ -1060,47 +1125,7 @@ debugger
 
     const doctorName = user?.profile?.full_name?.trim() || '—';
 
-    // Health history: ICD + presenting complaints from patient info API
-    // (same source as Patient History page — not available on daily-round patient alone)
-    const toTitleCase = (value: string) =>
-      String(value)
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean)
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
-
-    const formatIcdList = (codes: Array<{ code: string; description: string }>) =>
-      codes
-        .map((icd) => `${icd.code} - ${toTitleCase(icd.description || '')}`)
-        .join(', ');
-
-    let icdCodesText = 'NIL';
-    let presentingComplaintsText = 'NIL';
-    try {
-      const infoResponse = await patientService.getPatientInfo(patient.id);
-      if (infoResponse.success && infoResponse.data) {
-        const basicIcd = infoResponse.data.basic_details?.icd_codes;
-        if (Array.isArray(basicIcd) && basicIcd.length > 0) {
-          icdCodesText = formatIcdList(basicIcd);
-        } else if (patient.icd_codes?.length) {
-          icdCodesText = formatIcdList(patient.icd_codes);
-        }
-
-        const complaints = infoResponse.data.past_medical_history?.presenting_complaints;
-        if (Array.isArray(complaints) && complaints.length > 0) {
-          presentingComplaintsText = complaints
-            .map((c) => toTitleCase(c.complaint || ''))
-            .filter(Boolean)
-            .join(', ');
-        }
-      }
-    } catch (err) {
-      console.error('Failed to load patient health history for PDF:', err);
-      if (patient.icd_codes?.length) {
-        icdCodesText = formatIcdList(patient.icd_codes);
-      }
-    }
+    // Health history: reuse values already loaded on page (same getPatientInfo call)
 
     // Prefer crisp local SVG (high-DPI raster) — S3 JPEG looks pixelated when scaled in PDF
     const loadLocalSvgLogoAsPng = async (): Promise<{
@@ -2262,9 +2287,10 @@ debugger
           <div className={planStyles.planField}>
             <label className={planStyles.planFieldLabel}>Plan of the Day:</label>
             <div className={planStyles.planFieldContent}>
-              <textarea
+              <LineHintTextarea
                 value={planFormData.prescription}
-                onChange={(e) => setPlanFormData(prev => ({ ...prev, prescription: e.target.value }))}
+                onChange={(nextValue) => setPlanFormData(prev => ({ ...prev, prescription: nextValue }))}
+                fieldType="prescription"
                 className={planStyles.planTextarea}
                 rows={3}
                 placeholder="Enter plan of the day..."
@@ -2275,9 +2301,10 @@ debugger
           <div className={planStyles.planField}>
             <div className={planStyles.planFieldContent}>
               <label className={planStyles.planFieldLabel}>Current Issue:</label>
-              <textarea
+              <LineHintTextarea
                 value={planFormData.current_issue}
-                onChange={(e) => setPlanFormData(prev => ({ ...prev, current_issue: e.target.value }))}
+                onChange={(nextValue) => setPlanFormData(prev => ({ ...prev, current_issue: nextValue }))}
+                fieldType="current_issue"
                 className={planStyles.planTextarea}
                 rows={2}
                 placeholder="Enter current issue..."
@@ -2288,11 +2315,12 @@ debugger
           <div className={planStyles.planField}>
             <div className={planStyles.planFieldContent}>
               <label className={planStyles.planFieldLabel}>Current Treatment:</label>
-              <textarea
+              <LineHintTextarea
                 value={planFormData.current_treatment}
-                onChange={(e) => setPlanFormData(prev => ({ ...prev, current_treatment: e.target.value }))}
+                onChange={(nextValue) => setPlanFormData(prev => ({ ...prev, current_treatment: nextValue }))}
+                fieldType="current_treatment"
                 className={planStyles.planTextarea}
-                rows={2}
+                rows={4}
                 placeholder="Enter current treatment..."
               />
             </div>
@@ -2332,9 +2360,10 @@ debugger
           <div className={planStyles.planField}>
             <label className={planStyles.planFieldLabel}>Plan of the Day:</label>
             <div className={planStyles.planFieldContent}>
-              <textarea
+              <LineHintTextarea
                 value={editFormData.prescription}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, prescription: e.target.value }))}
+                onChange={(nextValue) => setEditFormData(prev => ({ ...prev, prescription: nextValue }))}
+                fieldType="prescription"
                 className={planStyles.planTextarea}
                 rows={3}
                 placeholder="Enter plan of the day..."
@@ -2345,9 +2374,10 @@ debugger
           <div className={planStyles.planField}>
             <div className={planStyles.planFieldContent}>
               <label className={planStyles.planFieldLabel}>Current Issue:</label>
-              <textarea
+              <LineHintTextarea
                 value={editFormData.current_issue}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, current_issue: e.target.value }))}
+                onChange={(nextValue) => setEditFormData(prev => ({ ...prev, current_issue: nextValue }))}
+                fieldType="current_issue"
                 className={planStyles.planTextarea}
                 rows={2}
                 placeholder="Enter current issue..."
@@ -2358,11 +2388,12 @@ debugger
           <div className={planStyles.planField}>
             <div className={planStyles.planFieldContent}>
               <label className={planStyles.planFieldLabel}>Current Treatment:</label>
-              <textarea
+              <LineHintTextarea
                 value={editFormData.current_treatment}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, current_treatment: e.target.value }))}
+                onChange={(nextValue) => setEditFormData(prev => ({ ...prev, current_treatment: nextValue }))}
+                fieldType="current_treatment"
                 className={planStyles.planTextarea}
-                rows={2}
+                rows={4}
                 placeholder="Enter current treatment..."
               />
             </div>
@@ -2518,8 +2549,22 @@ debugger
     );
   };
 
+  const renderHealthHistoryContent = () => (
+    <div className={styles.healthHistoryGrid}>
+      <div className={styles.healthHistoryBox}>
+        <h3>Presenting Complaints</h3>
+        <p className={styles.healthHistoryValue}>{presentingComplaintsText}</p>
+      </div>
+      <div className={styles.healthHistoryBox}>
+        <h3>ICD Code</h3>
+        <p className={styles.healthHistoryValue}>{icdCodesText}</p>
+      </div>
+    </div>
+  );
+
   const renderAllSections = () => {
     const sections = [
+      { key: 'health-history', title: 'Patient Health History', content: renderHealthHistoryContent },
       { key: 'gcs', title: 'GCS & Power', content: renderGCSContent },
       { key: 'fluid', title: 'Input/Output', content: renderFluidContent },
       { key: 'vitals', title: 'Vitals', content: renderVitalsContent },
@@ -2665,7 +2710,7 @@ debugger
             Download Daily Round Sheet (PDF)
           </button>
           <p className={styles.pageDownloadHint}>
-            Downloads the same fields shown on this page: patient details, GCS, input/output, vitals, respiratory, catheters, and all plans of day.
+            Downloads the same fields shown on this page: patient details, health history, GCS, input/output, vitals, respiratory, catheters, and all plans of day.
           </p>
         </div>
 

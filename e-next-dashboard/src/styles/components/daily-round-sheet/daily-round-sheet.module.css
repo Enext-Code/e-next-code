@@ -201,6 +201,44 @@
     border-top: 2px solid #ffa038;
   }
 
+  .healthHistoryGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .healthHistoryBox {
+    background: #fff;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid #E5E7EB;
+    min-width: 0;
+  }
+
+  .healthHistoryBox h3 {
+    color: #333;
+    font-size: 13px;
+    margin: 0 0 4px 0;
+    font-weight: 600;
+  }
+
+  .healthHistoryValue {
+    margin: 0;
+    font-weight: 400;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #333;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  @media (max-width: 768px) {
+    .healthHistoryGrid {
+      grid-template-columns: 1fr;
+    }
+  }
+
   .investigationReportLinkContainer {
     display: flex;
     justify-content: center;
@@ -816,7 +854,7 @@
     border: 2px solid #ffa038;
     border-radius: 8px;
     margin-bottom: 10px;
-    overflow: hidden;
+    overflow: visible;
     background: #fff;
   }
 

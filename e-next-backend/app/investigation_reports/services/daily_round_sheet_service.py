@@ -1,15 +1,19 @@
 from datetime import timedelta
+import logging
 
 from dateutil.parser import isoparse
 
 from app.accounts.enums import UserType
 from app.base.models import DuplicateError, NotFoundError
 from app.core import cache
+from app.masters.services import plan_line_template_service
 from app.utils import decrypt_user_type
 
 from ..filters import DailyRoundSheetFilterParams
 from ..models import DailyRoundSheet
 from ..schemas import DailyRoundSheetResponseSchema
+
+logger = logging.getLogger(__name__)
 
 
 class DailyRoundSheetService:
@@ -27,6 +31,20 @@ class DailyRoundSheetService:
                 f"{DailyRoundSheetService.LIST_CACHE_KEY_PREFIX}:{patient_id}:*"
             )
         await cache.delete_pattern(f"{DailyRoundSheetService.LIST_CACHE_KEY_PREFIX}:*")
+
+    @staticmethod
+    async def _save_plan_line_templates(sheet_data: dict, current_user: dict) -> None:
+        """Persist Plan of the Day, Current Issue and Current Treatment lines into the shared hint bank."""
+        for field_type in ("prescription", "current_issue", "current_treatment"):
+            field_value = sheet_data.get(field_type)
+            if not field_value:
+                continue
+            try:
+                await plan_line_template_service.upsert_lines(
+                    field_type, field_value, current_user
+                )
+            except Exception as exc:
+                logger.error("Failed to save %s templates: %s", field_type, exc)
 
     @staticmethod
     async def get_daily_round_sheet(sheet_id: str) -> DailyRoundSheet:
@@ -106,6 +124,10 @@ class DailyRoundSheetService:
                     await DailyRoundSheetService._invalidate_cache(
                         daily_round_sheet_data["patient_id"]
                     )
+                    await DailyRoundSheetService._save_plan_line_templates(
+                        daily_round_sheet_data,
+                        current_user,
+                    )
                     return daily_round_sheet
                 except Exception as e:
                     await session.abort_transaction()
@@ -147,6 +169,10 @@ class DailyRoundSheetService:
                     # Commit transaction
                     await session.commit_transaction()
                     await DailyRoundSheetService._invalidate_cache(existing.patient_id)
+                    await DailyRoundSheetService._save_plan_line_templates(
+                        update_data,
+                        current_user,
+                    )
                     return existing
                 except Exception as e:
                     await session.abort_transaction()
