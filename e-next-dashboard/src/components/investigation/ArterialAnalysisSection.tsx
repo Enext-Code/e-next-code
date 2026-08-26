@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ArterialAnalysisValues, Parameter } from '@/types/investigation';
 import styles from '@/styles/investigationReport.module.css';
 import EditButton from '../common/EditButton';
-import { arterialBloodGasParameterInfo } from '@/constants/arterialBloodGasParameters';
+import { arterialBloodGasParameterInfo, arterialParameterOrder } from '@/constants/arterialBloodGasParameters';
 
 interface ArterialAnalysisSectionProps {
   values: ArterialAnalysisValues | undefined;
@@ -124,7 +124,14 @@ const ArterialAnalysisSection: React.FC<ArterialAnalysisSectionProps> = ({
             <div>Reference Range</div>
             <div>Unit</div>
           </div>
-          {availableParameters.map((parameter, index) => {
+          {[...availableParameters].sort((a, b) => {
+            const aIdx = arterialParameterOrder.indexOf(a.value);
+            const bIdx = arterialParameterOrder.indexOf(b.value);
+            const aOrder = aIdx === -1 ? 1000 : aIdx;
+            const bOrder = bIdx === -1 ? 1000 : bIdx;
+            if (aOrder !== bOrder) return aOrder - bOrder;
+            return a.display_name.localeCompare(b.display_name);
+          }).map((parameter, index) => {
             const value = values?.[parameter.value];
             const { isHigh, isLow } = checkAbnormalValue(value?.value, parameter.value);
             const parameterInfo = arterialBloodGasParameterInfo[parameter.value];

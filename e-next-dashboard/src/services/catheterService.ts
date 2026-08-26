@@ -33,7 +33,7 @@ export const getCatheterSource = (source?: string | null): CatheterSource =>
   source === 'outside' ? 'outside' : 'inside_icu';
 
 export const getCatheterSourceLabel = (source?: string | null) =>
-  getCatheterSource(source) === 'outside' ? 'Outside' : 'Inside ICU';
+  getCatheterSource(source) === 'outside' ? 'Outside' : 'Inside Hospital';
 
 export interface CatheterData {
   entries: CatheterEntry[];

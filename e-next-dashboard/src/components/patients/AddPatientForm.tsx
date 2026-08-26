@@ -55,8 +55,8 @@ interface ICDCode {
 const INSURANCE_OPTIONS = [
   'TPA',
   'Ayushman Bharat',
-  'CGSH',
-  'ECSH',
+  'CGHS',
+  'ECHS',
   'State Government',
 ];
 

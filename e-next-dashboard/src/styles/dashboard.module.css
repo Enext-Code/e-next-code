@@ -110,6 +110,23 @@
   gap: 0.75rem;
 }
 
+.headerLogoutButton {
+  display: flex;
+  align-items: center;
+  margin-right: 1rem;
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+
+.headerLogoutButton:hover {
+  color: #f7941d;
+}
+
 .avatar {
   width: 40px;
   height: 40px;

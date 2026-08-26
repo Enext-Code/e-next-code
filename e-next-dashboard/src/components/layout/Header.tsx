@@ -7,7 +7,15 @@ import UserProfile from './UserProfile';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Header = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   return (
     <header className={styles.header}>
@@ -36,6 +44,15 @@ const Header = () => {
           <Image src="https://enext-assets.s3.ap-south-1.amazonaws.com/assets/Notification.svg" alt="Notification" width={24} height={24} />
           <span className={styles.notificationBadge}>1</span>
         </div> */}
+
+        <button
+          type="button"
+          className={styles.headerLogoutButton}
+          onClick={handleLogout}
+        >
+          <span className={styles.logoutIcon}>⏻</span>
+          <span>Logout</span>
+        </button>
         
         <UserProfile user={user} />
       </div>

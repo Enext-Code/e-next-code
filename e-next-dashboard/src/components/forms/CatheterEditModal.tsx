@@ -252,7 +252,7 @@ const CatheterEditModal: React.FC<CatheterEditModalProps> = ({
               onChange={(e) => handleInputChange('source', e.target.value)}
               className={styles.select}
             >
-              <option value="inside_icu">Inside ICU</option>
+              <option value="inside_icu">Inside Hospital</option>
               <option value="outside">Outside</option>
             </select>
           </div>

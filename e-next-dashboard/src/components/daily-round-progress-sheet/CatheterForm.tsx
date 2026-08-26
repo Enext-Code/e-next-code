@@ -339,7 +339,7 @@ const CatheterForm: React.FC<CatheterFormProps> = ({
               onChange={(e) => handleInputChange(index, 'source', e.target.value)}
               className={styles.select}
             >
-              <option value="inside_icu">Inside ICU</option>
+              <option value="inside_icu">Inside Hospital</option>
               <option value="outside">Outside</option>
             </select>
           </div>

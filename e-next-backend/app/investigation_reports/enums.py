@@ -190,35 +190,21 @@ RADIOLOGY_SUBTYPES: Dict[RadiologyType, List[str]] = {
 class ArterialAnalysisParameter(str, Enum):
     """Arterial blood gas analysis parameters"""
 
-    # Primary Parameters
     PH = "pH"
     PCO2 = "pCO2"
     PO2 = "pO2"
     HCO3_ACTUAL = "HCO3"
-    # HCO3_STANDARD = "HCO3 Standard"
-
-    # Oxygenation
-    SO2 = "sO2"
-    # FIO2 = "FiO2"
-    # PAO2_FIO2_RATIO = "PaO2/FiO2 Ratio"
-    # AA_GRADIENT = "A-a Gradient"
-
-    # Electrolytes in ABG
+    BASE_EXCESS = "Base Excess"
+    LACTATE_ABG = "Lactate (ABG)"
     SODIUM_ABG = "Sodium (ABG)"
     POTASSIUM_ABG = "Potassium (ABG)"
     CHLORIDE_ABG = "Chloride (ABG)"
     CALCIUM_IONIZED_ABG = "Calcium Ionized (ABG)"
-
-    # Additional Parameters
-    BASE_EXCESS = "Base Excess"
-    # BASE_DEFICIT = "Base Deficit"
     ANION_GAP = "Anion Gap"
-    LACTATE_ABG = "Lactate (ABG)"
     GLUCOSE_ABG = "Glucose (ABG)"
-
-    # Hemoglobin & Related
     HEMOGLOBIN_ABG = "Hemoglobin (ABG)"
     HEMATOCRIT_ABG = "Hematocrit (ABG)"
+    SO2 = "sO2"
 
     # CO-Oximetry
     # COHB = "COHb"

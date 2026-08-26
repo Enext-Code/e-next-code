@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { InvestigationReportData } from '@/services/investigationReportService';
 import { bloodParameterOrder } from '@/constants/bloodParameters';
+import { arterialParameterOrder } from '@/constants/arterialBloodGasParameters';
 import styles from './InvestigationCumulativeModal.module.css';
 
 interface InvestigationCumulativeModalProps {
@@ -340,22 +341,8 @@ export function buildCumulativeTable(reports: InvestigationReportData[]) {
 
   // Fixed display order (only sequence; data unchanged)
   const arterialTestOrder = [
-    'pH',
-    'pCO2',
-    'pO2',
-    'HCO3',
+    ...arterialParameterOrder,
     'HCO3 Actual',
-    'sO2',
-    'Sodium (ABG)',
-    'Potassium (ABG)',
-    'Chloride (ABG)',
-    'Calcium Ionized (ABG)',
-    'Base Excess',
-    'Anion Gap',
-    'Lactate (ABG)',
-    'Glucose (ABG)',
-    'Hemoglobin (ABG)',
-    'Hematocrit (ABG)',
   ];
 
   const bloodTestOrder = bloodParameterOrder;

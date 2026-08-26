@@ -8,7 +8,7 @@ import jsPDF from "jspdf";
 import Breadcrumb from '@/components/common/Breadcrumb';
 import { patientService, Patient, PatientInfoResponse } from '@/services/patientService';
 import { progressSheetService, ProgressSheet, ProgressSheetEntry, ProgressSheetListParams } from '@/services/progressSheetService';
-import { catheterService, CatheterEntry, getCatheterSource } from '@/services/catheterService';
+import { catheterService, CatheterEntry, getCatheterSource, getCatheterSourceLabel } from '@/services/catheterService';
 import { investigationReportService, InvestigationReportData } from '@/services/investigationReportService';
 import { fetchApi } from '@/utils/api';
 import { API_ENDPOINTS } from '@/constants/api';
@@ -1284,14 +1284,17 @@ debugger
           doc.setFont('helvetica', 'bold');
           const labelWidth = doc.getTextWidth(label);
           doc.text(label, x, y);
-          doc.setFont('helvetica', 'normal');
           if (valueColor) {
+            doc.setFont('helvetica', 'bold');
             doc.setTextColor(valueColor[0], valueColor[1], valueColor[2]);
+          } else {
+            doc.setFont('helvetica', 'normal');
           }
           const valueWidth = Math.max(colWidth - labelWidth - 2, 20);
           const valueLines = doc.splitTextToSize(sanitizePdfText(row[1]) || 'NIL', valueWidth);
           doc.text(valueLines, x + labelWidth, y);
           doc.setTextColor(0);
+          doc.setFont('helvetica', 'normal');
           maxLines = Math.max(maxLines, valueLines.length);
         }
         y += maxLines * 4.2 + 2;
@@ -1659,7 +1662,7 @@ debugger
               'Date Of Insertion',
               c.date_of_insertion ? new Date(c.date_of_insertion).toLocaleString() : 'NIL',
             ],
-            ['Source', c.source === 'outside' ? 'Outside' : 'Inside ICU'],
+            ['Source', getCatheterSourceLabel(c.source)],
             ['Days in use', calculateDaysInUse(c.date_of_insertion, c.date_of_removal)],
             [
               'Date Of Removal',

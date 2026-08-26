@@ -6,6 +6,25 @@ export interface ParameterInfo {
   max_value: number | null;
 }
 
+/** Matches ArterialAnalysisParameter order in e-next-backend/app/investigation_reports/enums.py */
+export const arterialParameterOrder: string[] = [
+  'pH',
+  'pCO2',
+  'pO2',
+  'HCO3',
+  'Base Excess',
+  'Lactate (ABG)',
+  'Sodium (ABG)',
+  'Potassium (ABG)',
+  'Chloride (ABG)',
+  'Calcium Ionized (ABG)',
+  'Anion Gap',
+  'Glucose (ABG)',
+  'Hemoglobin (ABG)',
+  'Hematocrit (ABG)',
+  'sO2',
+];
+
 export const arterialBloodGasParameterInfo: { [key: string]: ParameterInfo } = {
   "pH": {
     display_name: "pH",
@@ -27,6 +46,13 @@ export const arterialBloodGasParameterInfo: { [key: string]: ParameterInfo } = {
     units: "mmHg",
     min_value: 80,
     max_value: 100,
+  },
+  "HCO3": {
+    display_name: "HCO3",
+    reference_range: "22 – 26",
+    units: "mmol/L",
+    min_value: 22,
+    max_value: 26,
   },
   "HCO3 Actual": {
     display_name: "HCO3 Actual",
