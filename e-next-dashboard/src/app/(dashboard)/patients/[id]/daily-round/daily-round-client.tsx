@@ -2192,19 +2192,20 @@ debugger
 
     try {
       setSavingPlan(true);
-      
-      const sheetResponse = await progressSheetService.list({
-        patient_id: params.id,
-        page: 1,
-        limit: 1,
-        sort_order: 'desc'
-      });
 
-      const investigationResponse = await investigationReportService.listInvestigationReports(params.id, {
-        page: 1,
-        limit: 1,
-        sort_order: 'desc'
-      });
+      const [sheetResponse, investigationResponse] = await Promise.all([
+        progressSheetService.list({
+          patient_id: params.id,
+          page: 1,
+          limit: 1,
+          sort_order: 'desc'
+        }),
+        investigationReportService.listInvestigationReports(params.id, {
+          page: 1,
+          limit: 1,
+          sort_order: 'desc'
+        })
+      ]);
 
       const latestSheet = sheetResponse.success && sheetResponse.data?.items?.[0] ? sheetResponse.data.items[0] : null;
       const latestReport = investigationResponse.success && investigationResponse.data?.items?.[0] ? investigationResponse.data.items[0] : null;
