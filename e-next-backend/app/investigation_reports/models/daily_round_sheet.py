@@ -51,30 +51,14 @@ class DailyRoundSheet(
     @classmethod
     async def generate_sheet_id(cls) -> str:
         """Generate a unique ID for the daily round sheet"""
-
         max_attempts = 5
         attempt = 0
 
         while attempt < max_attempts:
-            try:
-                cursor = (
-                    cls.get_collection().find({}, {"sheet_id": 1, "_id": 0}).limit(1000)
-                )
-
-                existing_sheet_ids = set()
-                async for doc in cursor:
-                    existing_sheet_ids.add(doc["sheet_id"])
-
-                # Generate new sheet ID
-                sheet_id = generate_random_string("DRS", 10)
-
-                # Verify sheet ID uniqueness with index
-                existing = await cls.find_one({"sheet_id": sheet_id}, {"_id": 1})
-                if not existing:
-                    return sheet_id
-            except Exception as e:
-                logger.error(f"Error generating sheet ID: {e}")
-
+            sheet_id = generate_random_string("DRS", 10)
+            existing = await cls.find_one({"sheet_id": sheet_id}, {"_id": 1})
+            if not existing:
+                return sheet_id
             attempt += 1
 
         raise DuplicateError(

@@ -1,4 +1,5 @@
 from datetime import timedelta
+import asyncio
 import logging
 
 from dateutil.parser import isoparse
@@ -14,6 +15,7 @@ from ..models import DailyRoundSheet
 from ..schemas import DailyRoundSheetResponseSchema
 
 logger = logging.getLogger(__name__)
+_template_save_tasks = set()
 
 
 class DailyRoundSheetService:
@@ -33,8 +35,19 @@ class DailyRoundSheetService:
         await cache.delete_pattern(f"{DailyRoundSheetService.LIST_CACHE_KEY_PREFIX}:*")
 
     @staticmethod
-    async def _save_plan_line_templates(sheet_data: dict, current_user: dict) -> None:
-        """Persist Plan of the Day, Current Issue and Current Treatment lines into the shared hint bank."""
+    def _save_plan_line_templates(sheet_data: dict, current_user: dict) -> None:
+        """Save hint lines in the background so daily-round save is not blocked."""
+        task = asyncio.create_task(
+            DailyRoundSheetService._save_plan_line_templates_async(
+                dict(sheet_data or {}), current_user
+            )
+        )
+        _template_save_tasks.add(task)
+        task.add_done_callback(_template_save_tasks.discard)
+
+    @staticmethod
+    async def _save_plan_line_templates_async(sheet_data: dict, current_user: dict) -> None:
+        """Persist Plan of the Day, Current Issue and Current Treatment lines."""
         for field_type in ("prescription", "current_issue", "current_treatment"):
             field_value = sheet_data.get(field_type)
             if not field_value:
@@ -124,7 +137,7 @@ class DailyRoundSheetService:
                     await DailyRoundSheetService._invalidate_cache(
                         daily_round_sheet_data["patient_id"]
                     )
-                    await DailyRoundSheetService._save_plan_line_templates(
+                    DailyRoundSheetService._save_plan_line_templates(
                         daily_round_sheet_data,
                         current_user,
                     )
@@ -169,7 +182,7 @@ class DailyRoundSheetService:
                     # Commit transaction
                     await session.commit_transaction()
                     await DailyRoundSheetService._invalidate_cache(existing.patient_id)
-                    await DailyRoundSheetService._save_plan_line_templates(
+                    DailyRoundSheetService._save_plan_line_templates(
                         update_data,
                         current_user,
                     )

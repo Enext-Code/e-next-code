@@ -19,7 +19,7 @@ export interface PlanLineTemplateListResponse {
 }
 
 export const planLineTemplateService = {
-  search: async (fieldType: string, search: string, limit = 8) => {
+  search: async (fieldType: string, search: string, limit = 8, signal?: AbortSignal) => {
     const query = new URLSearchParams({
       field_type: fieldType,
       search,
@@ -27,7 +27,18 @@ export const planLineTemplateService = {
     });
 
     return fetchApi<PlanLineTemplateListResponse>(
-      `${API_ENDPOINTS.MASTER.PLAN_LINE_TEMPLATES}?${query.toString()}`
+      `${API_ENDPOINTS.MASTER.PLAN_LINE_TEMPLATES}?${query.toString()}`,
+      { signal }
     );
+  },
+
+  saveLines: async (fieldType: string, text: string) => {
+    return fetchApi<{ saved: boolean }>(API_ENDPOINTS.MASTER.PLAN_LINE_TEMPLATES, {
+      method: 'POST',
+      body: JSON.stringify({
+        field_type: fieldType,
+        text,
+      }),
+    });
   },
 };

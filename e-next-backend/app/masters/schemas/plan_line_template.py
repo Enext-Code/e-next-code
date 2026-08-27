@@ -23,3 +23,10 @@ class PlanLineTemplateFilterParams(PaginationParams):
     field_type: str = Field(..., description="Field to search, e.g. current_treatment")
     search: Optional[str] = Field(default=None, description="Current line text")
     limit: int = Field(default=8, ge=1, le=50)
+
+
+class PlanLineTemplateUpsertRequest(BaseModel):
+    """Schema for saving lines from a daily-round field"""
+
+    field_type: str = Field(..., description="Field this text belongs to")
+    text: str = Field(..., description="Full field text to split into lines")

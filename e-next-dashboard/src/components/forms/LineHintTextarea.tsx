@@ -13,11 +13,9 @@ interface LineHintTextareaProps {
   placeholder?: string;
 }
 
-function getCurrentLine(value: string, cursor: number) {
+function getLinePrefix(value: string, cursor: number) {
   const start = value.lastIndexOf('\n', Math.max(cursor - 1, 0)) + 1;
-  const nextBreak = value.indexOf('\n', cursor);
-  const end = nextBreak === -1 ? value.length : nextBreak;
-  return { start, end, text: value.slice(start, end) };
+  return value.slice(start, cursor).trim();
 }
 
 export default function LineHintTextarea({
@@ -31,6 +29,8 @@ export default function LineHintTextarea({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchAbortRef = useRef<AbortController | null>(null);
+  const lastSavedTextRef = useRef(value);
   const [suggestions, setSuggestions] = useState<PlanLineTemplate[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(0);
@@ -41,20 +41,24 @@ export default function LineHintTextarea({
     setHighlightIndex(0);
   };
 
-  const searchCurrentLine = (line: { start: number; end: number; text: string }) => {
+  const searchCurrentLine = (prefix: string) => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
+    searchAbortRef.current?.abort();
 
-    const query = line.text.trim();
-    if (query.length < 2) {
+    const query = prefix.trim();
+    if (query.length < 2 || query.length > 24) {
       closeDropdown();
       return;
     }
 
     searchTimeoutRef.current = setTimeout(async () => {
+      const controller = new AbortController();
+      searchAbortRef.current = controller;
       try {
-        const response = await planLineTemplateService.search(fieldType, query);
+        const response = await planLineTemplateService.search(fieldType, query, 8, controller.signal);
+        if (controller.signal.aborted) return;
         if (response.success && response.data?.items) {
           const matches = response.data.items.filter(
             item => item.text.trim().toLowerCase() !== query.toLowerCase()
@@ -66,23 +70,26 @@ export default function LineHintTextarea({
           closeDropdown();
         }
       } catch (error) {
+        if (controller.signal.aborted) return;
         console.error('Error searching treatment line hints:', error);
         closeDropdown();
       }
-    }, 250);
+    }, 400);
   };
 
   const applySuggestion = (suggestion: PlanLineTemplate) => {
     const textarea = textareaRef.current;
     const cursor = textarea?.selectionStart ?? value.length;
-    const line = getCurrentLine(value, cursor);
-    const nextValue = `${value.slice(0, line.start)}${suggestion.text}${value.slice(line.end)}`;
+    const lineStart = value.lastIndexOf('\n', Math.max(cursor - 1, 0)) + 1;
+    const nextBreak = value.indexOf('\n', cursor);
+    const lineEnd = nextBreak === -1 ? value.length : nextBreak;
+    const nextValue = `${value.slice(0, lineStart)}${suggestion.text}${value.slice(lineEnd)}`;
     onChange(nextValue);
     closeDropdown();
 
     requestAnimationFrame(() => {
       if (!textarea) return;
-      const nextCursor = line.start + suggestion.text.length;
+      const nextCursor = lineStart + suggestion.text.length;
       textarea.focus();
       textarea.setSelectionRange(nextCursor, nextCursor);
     });
@@ -92,7 +99,29 @@ export default function LineHintTextarea({
     const nextValue = event.target.value;
     const cursor = event.target.selectionStart ?? nextValue.length;
     onChange(nextValue);
-    searchCurrentLine(getCurrentLine(nextValue, cursor));
+    searchCurrentLine(getLinePrefix(nextValue, cursor));
+  };
+
+  const handleBlur = (event: React.FocusEvent<HTMLTextAreaElement>) => {
+    closeDropdown();
+    const nextTarget = event.relatedTarget as HTMLElement | null;
+    if (nextTarget?.closest('button')) {
+      return;
+    }
+
+    const nextText = textareaRef.current?.value ?? value;
+    if (!nextText.trim() || nextText.trim() === lastSavedTextRef.current.trim()) {
+      return;
+    }
+
+    void planLineTemplateService
+      .saveLines(fieldType, nextText)
+      .then(() => {
+        lastSavedTextRef.current = nextText;
+      })
+      .catch(error => {
+        console.error('Error saving line hints:', error);
+      });
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -135,6 +164,7 @@ export default function LineHintTextarea({
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
+      searchAbortRef.current?.abort();
     };
   }, []);
 
@@ -144,6 +174,7 @@ export default function LineHintTextarea({
         ref={textareaRef}
         value={value}
         onChange={handleChange}
+        onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         className={className}
         rows={rows}
