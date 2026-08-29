@@ -110,6 +110,26 @@ class PlanLineTemplateService:
         await cache.delete(PlanLineTemplateService._cache_key(field_type))
 
     @staticmethod
+    def _filter_matching_lines(
+        lines: List[dict], normalized_query: str, limit: int
+    ) -> List[dict]:
+        """Prefer lines that start with the query, then lines that contain it as a word."""
+        prefix_matches: List[dict] = []
+        word_matches: List[dict] = []
+        word_needle = f" {normalized_query}"
+
+        for line in lines:
+            text = line.get("text_normalized") or ""
+            if text.startswith(normalized_query):
+                prefix_matches.append(line)
+                if len(prefix_matches) >= limit:
+                    return prefix_matches[:limit]
+            elif word_needle in text:
+                word_matches.append(line)
+
+        return (prefix_matches + word_matches)[:limit]
+
+    @staticmethod
     async def search_templates(params: PlanLineTemplateFilterParams) -> dict:
         """Search shared templates from Redis, with Mongo fallback."""
         field_type = (params.field_type or "").strip()
@@ -120,11 +140,9 @@ class PlanLineTemplateService:
 
         normalized_query = _normalize_line(query)
         lines = await PlanLineTemplateService._load_field_lines(field_type)
-        matches = [
-            line
-            for line in lines
-            if (line.get("text_normalized") or "").startswith(normalized_query)
-        ][: params.limit]
+        matches = PlanLineTemplateService._filter_matching_lines(
+            lines, normalized_query, params.limit
+        )
 
         now = get_current_datetime()
         items = [
