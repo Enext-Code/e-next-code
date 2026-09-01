@@ -506,7 +506,12 @@
     color: #333;
     border-bottom: 1px solid #e0e0e0;
   }
-  
+
+  .prescriptionTitleText {
+    font-weight: 700;
+    color: #1f2937;
+  }
+
   .prescriptionContent {
     padding: 16px;
     position: relative;

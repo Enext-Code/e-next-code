@@ -87,6 +87,8 @@ export default function ProgressSheetViewPageTimeClient() {
   const [apacheScore, setApacheScore] = useState<{ apache_ii_score: number; predicted_mortality_percent: number } | null>(null);
   const [presentingComplaintsText, setPresentingComplaintsText] = useState('NIL');
   const [icdCodesText, setIcdCodesText] = useState('NIL');
+  const [medicalHistoryText, setMedicalHistoryText] = useState('NIL');
+  const [otherMedicalFindingsText, setOtherMedicalFindingsText] = useState('NIL');
   const BedIcon = ({ bedNumber }: { bedNumber: number }) => (
     <svg width="95" height="112" viewBox="0 0 95 112" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect x="3.49219" y="0.507812" width="87.1043" height="86.4922" rx="14.1544" fill="#F4F4FF"/>
@@ -206,13 +208,37 @@ debugger
       .trim()
       .split(/\s+/)
       .filter(Boolean)
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      // .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ');
 
   const formatIcdList = (codes: Array<{ code: string; description: string }>) =>
     codes
       .map((icd) => `${icd.code} - ${toTitleCase(icd.description || '')}`)
       .join(', ');
+
+  // Past medical history is stored as short codes; show the same labels as the history tab.
+  const medicalHistoryLabels: Record<string, string> = {
+    dm: 'DM',
+    htn: 'HTN',
+    cad: 'CAD',
+    copd: 'COPD',
+    ba: 'BA',
+    ckd: 'CKD',
+    cva: 'CVA',
+    smoking: 'Smoking',
+    alchohol: 'Alcohol',
+  };
+
+  const formatMedicalHistory = (items?: string[] | null, others?: string | null) => {
+    const labels = (items ?? [])
+      .filter((item) => item && item !== 'others')
+      .map((item) => medicalHistoryLabels[item] ?? toTitleCase(item));
+
+    const othersText = (others ?? '').trim();
+    if (othersText) labels.push(othersText);
+
+    return labels.length > 0 ? labels.join(', ') : 'NIL';
+  };
 
   const resolveHealthHistory = (
     info: PatientInfoResponse | null | undefined,
@@ -237,7 +263,20 @@ debugger
       if (text) nextPresentingComplaintsText = text;
     }
 
-    return { icdCodesText: nextIcdCodesText, presentingComplaintsText: nextPresentingComplaintsText };
+    const nextMedicalHistoryText = formatMedicalHistory(
+      info?.past_medical_history?.medical_history,
+      info?.past_medical_history?.medical_history_others
+    );
+
+    const nextOtherMedicalFindingsText =
+      (info?.heent?.other_medical_findings ?? '').trim() || 'NIL';
+
+    return {
+      icdCodesText: nextIcdCodesText,
+      presentingComplaintsText: nextPresentingComplaintsText,
+      medicalHistoryText: nextMedicalHistoryText,
+      otherMedicalFindingsText: nextOtherMedicalFindingsText,
+    };
   };
 
   const loadHealthHistory = async (patientData?: Patient | null) => {
@@ -248,6 +287,8 @@ debugger
       const resolved = resolveHealthHistory(info, fallbackIcd);
       setIcdCodesText(resolved.icdCodesText);
       setPresentingComplaintsText(resolved.presentingComplaintsText);
+      setMedicalHistoryText(resolved.medicalHistoryText);
+      setOtherMedicalFindingsText(resolved.otherMedicalFindingsText);
     } catch (err) {
       console.error('Failed to load patient health history:', err);
       if (fallbackIcd?.length) {
@@ -643,9 +684,6 @@ debugger
     return text;
   };
 
-  // List is newest-first (desc); plan number stays chronological (oldest = 1)
-  const getPlanDayNumber = (index: number) => planData.length - index;
-
   // Plan `date` from API/Mongo is UTC; naive ISO (no Z) must not be treated as local IST.
   const parsePlanUtcDate = (value: string) => {
     if (!value) return new Date(NaN);
@@ -658,6 +696,50 @@ debugger
     }
     return new Date(trimmed);
   };
+
+  // Plan numbers restart at 1 on every calendar date (IST) so they can't be mistaken
+  // for the hospital day; within a date they follow the time the plan was written.
+  const planDayNumbers = (() => {
+    const numbers = new Array<number>(planData.length).fill(1);
+    const indexesByDate = new Map<string, number[]>();
+
+    planData.forEach((plan, index) => {
+      const planAt = parsePlanUtcDate(plan.date);
+      const dateKey = Number.isNaN(planAt.getTime())
+        ? `unknown-${index}`
+        : planAt.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+      const bucket = indexesByDate.get(dateKey);
+      if (bucket) bucket.push(index);
+      else indexesByDate.set(dateKey, [index]);
+    });
+
+    const timeOf = (index: number) => {
+      const time = parsePlanUtcDate(planData[index].date).getTime();
+      return Number.isNaN(time) ? 0 : time;
+    };
+
+    indexesByDate.forEach((indexes) => {
+      [...indexes]
+        .sort((a, b) => timeOf(a) - timeOf(b))
+        .forEach((planIndex, position) => {
+          numbers[planIndex] = position + 1;
+        });
+    });
+
+    return numbers;
+  })();
+
+  const getPlanDayNumber = (index: number) => planDayNumbers[index] ?? index + 1;
+
+  const formatPlanDate = (value: string) => {
+    const planAt = parsePlanUtcDate(value);
+    return Number.isNaN(planAt.getTime())
+      ? '—'
+      : planAt.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' });
+  };
+
+  const getPlanHeading = (plan: DailyRoundSheetData, index: number) =>
+    `Plan of day ${getPlanDayNumber(index)} — ${formatPlanDate(plan.date)}`;
 
   const getLoggedInUserId = (): string | null => {
     if (user?.id) return user.id;
@@ -877,6 +959,7 @@ debugger
     );
     const reportDate = new Date().toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' });
     const planDayNo = getPlanDayNumber(index);
+    const planHeading = getPlanHeading(plan, index);
 
     // Meta strip
     doc.setFillColor(220, 220, 224);
@@ -884,7 +967,7 @@ debugger
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
     doc.setTextColor(55);
-    doc.text(`Plan of Day ${planDayNo}`, marginX + 3, y + 2.5);
+    doc.text(planHeading, marginX + 3, y + 2.5);
     doc.setFont('helvetica', 'normal');
     doc.text(
       `Report Date: ${reportDate}  |  Hospital Day: ${dayNumber}`,
@@ -1011,7 +1094,7 @@ debugger
 
     addClinicalSection('Current Issue', plan.current_issue, false);
     addClinicalSection('Current Treatment', plan.current_treatment, true);
-    addClinicalSection(`Plan of Day ${planDayNo}`, plan.prescription, false);
+    addClinicalSection(planHeading, plan.prescription, false);
 
     // ——— Doctor signature block (bottom) ———
     ensureSpace(42);
@@ -1102,7 +1185,11 @@ debugger
       doc.setTextColor(0);
     }
 
-    doc.save(`Emergency-Plan-${planDayNo}-${patient.unique_id || 'patient'}.pdf`);
+    doc.save(
+      `Emergency-Plan-${formatPlanDate(plan.date).replace(/\//g, '-')}-${planDayNo}-${
+        patient.unique_id || 'patient'
+      }.pdf`
+    );
   };
 
   const downloadFullDailyRoundPDF = async () => {
@@ -1487,7 +1574,9 @@ debugger
     addKeyValueRows(
       [
         ['Presenting Complaints', presentingComplaintsText],
+        ['Medical History', medicalHistoryText],
         ['ICD Code', icdCodesText],
+        ['Other Medical Findings', otherMedicalFindingsText],
 
       ],
       1
@@ -2053,7 +2142,7 @@ debugger
         ensureSpace(36);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
-        doc.text(`Plan of day ${getPlanDayNumber(index)}`, marginX, y);
+        doc.text(getPlanHeading(plan, index), marginX, y);
         y += 6;
         addWrappedBlock('Current Issue', plan.current_issue || 'No current issue described');
         addWrappedBlock('Current Treatment', plan.current_treatment || 'No current treatment described');
@@ -2289,20 +2378,6 @@ debugger
         
         <div className={styles.inlinePlanFormBody}>
           <div className={planStyles.planField}>
-            <label className={planStyles.planFieldLabel}>Plan of the Day:</label>
-            <div className={planStyles.planFieldContent}>
-              <LineHintTextarea
-                value={planFormData.prescription}
-                onChange={(nextValue) => setPlanFormData(prev => ({ ...prev, prescription: nextValue }))}
-                fieldType="prescription"
-                className={planStyles.planTextarea}
-                rows={3}
-                placeholder="Enter plan of the day..."
-              />
-            </div>
-          </div>
-          
-          <div className={planStyles.planField}>
             <div className={planStyles.planFieldContent}>
               <label className={planStyles.planFieldLabel}>Current Issue:</label>
               <LineHintTextarea
@@ -2326,6 +2401,20 @@ debugger
                 className={planStyles.planTextarea}
                 rows={4}
                 placeholder="Enter current treatment..."
+              />
+            </div>
+          </div>
+
+          <div className={planStyles.planField}>
+            <label className={planStyles.planFieldLabel}>Plan of the Day:</label>
+            <div className={planStyles.planFieldContent}>
+              <LineHintTextarea
+                value={planFormData.prescription}
+                onChange={(nextValue) => setPlanFormData(prev => ({ ...prev, prescription: nextValue }))}
+                fieldType="prescription"
+                className={planStyles.planTextarea}
+                rows={3}
+                placeholder="Enter plan of the day..."
               />
             </div>
           </div>
@@ -2362,20 +2451,6 @@ debugger
         
         <div className={styles.inlinePlanFormBody}>
           <div className={planStyles.planField}>
-            <label className={planStyles.planFieldLabel}>Plan of the Day:</label>
-            <div className={planStyles.planFieldContent}>
-              <LineHintTextarea
-                value={editFormData.prescription}
-                onChange={(nextValue) => setEditFormData(prev => ({ ...prev, prescription: nextValue }))}
-                fieldType="prescription"
-                className={planStyles.planTextarea}
-                rows={3}
-                placeholder="Enter plan of the day..."
-              />
-            </div>
-          </div>
-          
-          <div className={planStyles.planField}>
             <div className={planStyles.planFieldContent}>
               <label className={planStyles.planFieldLabel}>Current Issue:</label>
               <LineHintTextarea
@@ -2399,6 +2474,20 @@ debugger
                 className={planStyles.planTextarea}
                 rows={4}
                 placeholder="Enter current treatment..."
+              />
+            </div>
+          </div>
+
+          <div className={planStyles.planField}>
+            <label className={planStyles.planFieldLabel}>Plan of the Day:</label>
+            <div className={planStyles.planFieldContent}>
+              <LineHintTextarea
+                value={editFormData.prescription}
+                onChange={(nextValue) => setEditFormData(prev => ({ ...prev, prescription: nextValue }))}
+                fieldType="prescription"
+                className={planStyles.planTextarea}
+                rows={3}
+                placeholder="Enter plan of the day..."
               />
             </div>
           </div>
@@ -2459,7 +2548,7 @@ debugger
                 </div> */}
 
                   <div className={styles.prescriptionTitle}>
-                       <span>Plan of day {getPlanDayNumber(index)}</span>
+                       <span className={styles.prescriptionTitleText}>{getPlanHeading(plan, index)}</span>
 
                       <div className={styles.actionButtons}>
                         <button
@@ -2485,10 +2574,6 @@ debugger
                 {editingSheetId === plan.sheet_id && renderEditPlanForm()}
 
                 <div className={styles.prescriptionContent}>
-                  <div className={styles.prescriptionText} style={{ whiteSpace: 'pre-line' }}>
-                    {plan.prescription || 'No prescription available'}
-                  </div>
-                  
                   {/* Current Issue */}
                   <div className={styles.prescriptionField}>
                     <label className={styles.prescriptionFieldLabel}>Current Issue:</label>
@@ -2502,6 +2587,14 @@ debugger
                     <label className={styles.prescriptionFieldLabel}>Current Treatment:</label>
                     <div className={styles.prescriptionFieldText} style={{ whiteSpace: 'pre-line' }}>
                       {plan.current_treatment || 'No current treatment described'}
+                    </div>
+                  </div>
+
+                  {/* Plan of the Day */}
+                  <div className={styles.prescriptionField}>
+                    <label className={styles.prescriptionFieldLabel}>Plan of the Day:</label>
+                    <div className={styles.prescriptionText} style={{ whiteSpace: 'pre-line' }}>
+                      {plan.prescription || 'No prescription available'}
                     </div>
                   </div>
                   
@@ -2562,6 +2655,16 @@ debugger
       <div className={styles.healthHistoryBox}>
         <h3>ICD Code</h3>
         <p className={styles.healthHistoryValue}>{icdCodesText}</p>
+      </div>
+      <div className={styles.healthHistoryBox}>
+        <h3>Medical History</h3>
+        <p className={styles.healthHistoryValue}>{medicalHistoryText}</p>
+      </div>
+      <div className={styles.healthHistoryBox}>
+        <h3>Other Medical Findings</h3>
+        <p className={styles.healthHistoryValue} style={{ whiteSpace: 'pre-line' }}>
+          {otherMedicalFindingsText}
+        </p>
       </div>
     </div>
   );
