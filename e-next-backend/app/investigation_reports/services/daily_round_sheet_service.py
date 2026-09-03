@@ -1,10 +1,13 @@
 from datetime import timedelta
 import asyncio
 import logging
+from typing import Optional
 
+from bson import ObjectId
 from dateutil.parser import isoparse
 
 from app.accounts.enums import UserType
+from app.accounts.models import UserProfile
 from app.base.models import DuplicateError, NotFoundError
 from app.core import cache
 from app.masters.services import plan_line_template_service
@@ -22,8 +25,90 @@ class DailyRoundSheetService:
     """Daily Round Sheet Service"""
 
     CACHE_KEY_PREFIX = "daily_round_sheet"
-    LIST_CACHE_KEY_PREFIX = "daily_round_sheet_list"
+    LIST_CACHE_KEY_PREFIX = "daily_round_sheet_list_v2"
     CACHE_TIMEOUT = timedelta(minutes=30)
+
+    @staticmethod
+    def _full_name(first_name: Optional[str], last_name: Optional[str]) -> Optional[str]:
+        name = " ".join(part for part in [first_name, last_name] if part).strip()
+        return name or None
+
+    @staticmethod
+    async def _profile_name(profile_id: Optional[str]) -> Optional[str]:
+        """Resolve a user profile ID to a display name."""
+        if not profile_id:
+            return None
+        try:
+            profile = await UserProfile.find_one({"_id": ObjectId(str(profile_id))})
+        except Exception:
+            return None
+        if not profile:
+            return None
+        return DailyRoundSheetService._full_name(profile.first_name, profile.last_name)
+
+    @staticmethod
+    def _profile_lookup_stages(source_field: str, as_field: str) -> list[dict]:
+        """Lookup user_profiles by a string profile id field."""
+        return [
+            {
+                "$lookup": {
+                    "from": "user_profiles",
+                    "let": {"profile_id_str": f"${source_field}"},
+                    "pipeline": [
+                        {
+                            "$match": {
+                                "$expr": {
+                                    "$eq": [
+                                        "$_id",
+                                        {
+                                            "$convert": {
+                                                "input": "$$profile_id_str",
+                                                "to": "objectId",
+                                                "onError": None,
+                                                "onNull": None,
+                                            }
+                                        },
+                                    ]
+                                }
+                            }
+                        },
+                        {"$project": {"first_name": 1, "last_name": 1}},
+                    ],
+                    "as": as_field,
+                }
+            },
+            {
+                "$unwind": {
+                    "path": f"${as_field}",
+                    "preserveNullAndEmptyArrays": True,
+                }
+            },
+        ]
+
+    @staticmethod
+    async def _to_response(sheet: DailyRoundSheet) -> DailyRoundSheetResponseSchema:
+        created_by_name = await DailyRoundSheetService._profile_name(
+            getattr(sheet, "created_by_profile", None)
+        )
+        updated_by_name = await DailyRoundSheetService._profile_name(
+            getattr(sheet, "updated_by_profile", None)
+        )
+        return DailyRoundSheetResponseSchema(
+            id=str(sheet.id),
+            sheet_id=sheet.sheet_id,
+            patient_id=sheet.patient_id,
+            date=sheet.date,
+            prescription=sheet.prescription,
+            progress_sheet_id=sheet.progress_sheet_id,
+            progress_sheet_datetime=sheet.progress_sheet_datetime,
+            investigation_report_id=sheet.investigation_report_id,
+            current_issue=sheet.current_issue,
+            current_treatment=sheet.current_treatment,
+            created_at=sheet.created_at,
+            updated_at=sheet.updated_at,
+            created_by_name=created_by_name,
+            updated_by_name=updated_by_name,
+        )
 
     @staticmethod
     async def _invalidate_cache(patient_id: str = None) -> None:
@@ -60,12 +145,13 @@ class DailyRoundSheetService:
                 logger.error("Failed to save %s templates: %s", field_type, exc)
 
     @staticmethod
-    async def get_daily_round_sheet(sheet_id: str) -> DailyRoundSheet:
+    async def get_daily_round_sheet(sheet_id: str) -> DailyRoundSheetResponseSchema:
         """Get daily round sheet by ID"""
         cache_key = f"{DailyRoundSheetService.CACHE_KEY_PREFIX}:{sheet_id}"
         cached_daily_round_sheet = await cache.get(cache_key)
         if cached_daily_round_sheet:
-            return DailyRoundSheet.model_validate(cached_daily_round_sheet)
+            daily_round_sheet = DailyRoundSheet.model_validate(cached_daily_round_sheet)
+            return await DailyRoundSheetService._to_response(daily_round_sheet)
 
         daily_round_sheet = await DailyRoundSheet.find_one(
             {
@@ -84,12 +170,12 @@ class DailyRoundSheetService:
             DailyRoundSheetService.CACHE_TIMEOUT,
         )
 
-        return daily_round_sheet
+        return await DailyRoundSheetService._to_response(daily_round_sheet)
 
     @staticmethod
     async def create_daily_round_sheet(
         daily_round_sheet_data: dict, current_user: dict
-    ) -> DailyRoundSheet:
+    ) -> DailyRoundSheetResponseSchema:
         """Create daily round sheet"""
         if "date" in daily_round_sheet_data and daily_round_sheet_data["date"]:
             date = daily_round_sheet_data["date"]
@@ -141,7 +227,7 @@ class DailyRoundSheetService:
                         daily_round_sheet_data,
                         current_user,
                     )
-                    return daily_round_sheet
+                    return await DailyRoundSheetService._to_response(daily_round_sheet)
                 except Exception as e:
                     await session.abort_transaction()
                     raise e
@@ -149,7 +235,7 @@ class DailyRoundSheetService:
     @staticmethod
     async def update_daily_round_sheet(
         sheet_id: str, daily_round_sheet_data: dict, current_user: dict
-    ) -> DailyRoundSheet:
+    ) -> DailyRoundSheetResponseSchema:
         """Update daily round sheet"""
         async with await DailyRoundSheet.get_collection().database.client.start_session() as session:
             async with session.start_transaction():
@@ -186,7 +272,7 @@ class DailyRoundSheetService:
                         update_data,
                         current_user,
                     )
-                    return existing
+                    return await DailyRoundSheetService._to_response(existing)
                 except Exception as e:
                     await session.abort_transaction()
                     raise e
@@ -274,6 +360,58 @@ class DailyRoundSheetService:
                     "data": [
                         {"$skip": skip},
                         {"$limit": filter_params.limit},
+                        *DailyRoundSheetService._profile_lookup_stages(
+                            "updated_by_profile", "_updated_by_profile"
+                        ),
+                        *DailyRoundSheetService._profile_lookup_stages(
+                            "created_by_profile", "_created_by_profile"
+                        ),
+                        {
+                            "$addFields": {
+                                "updated_by_name": {
+                                    "$trim": {
+                                        "input": {
+                                            "$concat": [
+                                                {
+                                                    "$ifNull": [
+                                                        "$_updated_by_profile.first_name",
+                                                        "",
+                                                    ]
+                                                },
+                                                " ",
+                                                {
+                                                    "$ifNull": [
+                                                        "$_updated_by_profile.last_name",
+                                                        "",
+                                                    ]
+                                                },
+                                            ]
+                                        }
+                                    }
+                                },
+                                "created_by_name": {
+                                    "$trim": {
+                                        "input": {
+                                            "$concat": [
+                                                {
+                                                    "$ifNull": [
+                                                        "$_created_by_profile.first_name",
+                                                        "",
+                                                    ]
+                                                },
+                                                " ",
+                                                {
+                                                    "$ifNull": [
+                                                        "$_created_by_profile.last_name",
+                                                        "",
+                                                    ]
+                                                },
+                                            ]
+                                        }
+                                    }
+                                },
+                            }
+                        },
                     ],
                 }
             },
@@ -299,6 +437,8 @@ class DailyRoundSheetService:
                 current_treatment=daily_round_sheet["current_treatment"],
                 created_at=daily_round_sheet["created_at"],
                 updated_at=daily_round_sheet["updated_at"],
+                created_by_name=daily_round_sheet.get("created_by_name") or None,
+                updated_by_name=daily_round_sheet.get("updated_by_name") or None,
             ).model_dump(mode="json")
             for daily_round_sheet in result["data"]
         ]

@@ -17,17 +17,27 @@ ALLOWED_FIELD_TYPES = {"current_treatment", "current_issue", "prescription"}
 MIN_LINE_LENGTH = 4
 MAX_SEARCH_LENGTH = 24
 MAX_CACHED_LINES = 10000
-CACHE_KEY_PREFIX = "plan_line_templates"
+CACHE_KEY_PREFIX = "plan_line_templates:v2"
 CACHE_TIMEOUT = timedelta(minutes=1440)
 DATE_OR_ROUND_HEADER = re.compile(
     r"^\d{1,2}[./-]\d{1,2}[./-]\d{2,4}"
     r"(?:\s+(?:night|morning|evening|day)?\s*(?:medical\s+)?round\s+sheet)?\s*$",
     re.IGNORECASE,
 )
+EDGE_PUNCTUATION = ".,;:!?\"'`“”‘’"
+
+
+def _strip_edge_punctuation(token: str) -> str:
+    return token.strip(EDGE_PUNCTUATION)
+
+
+def _clean_line(text: str) -> str:
+    tokens = [_strip_edge_punctuation(token) for token in (text or "").strip().split()]
+    return " ".join(token for token in tokens if token)
 
 
 def _normalize_line(text: str) -> str:
-    return " ".join(text.strip().split()).lower()
+    return _clean_line(text).lower()
 
 
 def extract_template_lines(text: str) -> List[str]:
@@ -35,13 +45,13 @@ def extract_template_lines(text: str) -> List[str]:
     seen = set()
     lines = []
     for raw_line in (text or "").splitlines():
-        line = " ".join(raw_line.strip().split())
+        line = _clean_line(raw_line)
         if len(line) < MIN_LINE_LENGTH:
             continue
         if DATE_OR_ROUND_HEADER.match(line):
             continue
         normalized = _normalize_line(line)
-        if normalized in seen:
+        if not normalized or normalized in seen:
             continue
         seen.add(normalized)
         lines.append(line)
@@ -89,19 +99,27 @@ class PlanLineTemplateService:
             .to_list(length=MAX_CACHED_LINES)
         )
 
-        lines = [
-            {
+        deduped: dict[str, dict] = {}
+        for doc in docs:
+            text = _clean_line(doc.get("text", ""))
+            if not text:
+                continue
+            normalized = _normalize_line(text)
+            usage_count = doc.get("usage_count", 1)
+            existing = deduped.get(normalized)
+            if existing and existing.get("usage_count", 1) >= usage_count:
+                continue
+            deduped[normalized] = {
                 "id": str(doc["_id"]),
                 "field_type": doc.get("field_type", field_type),
-                "text": doc.get("text", ""),
-                "text_normalized": doc.get("text_normalized")
-                or _normalize_line(doc.get("text", "")),
-                "usage_count": doc.get("usage_count", 1),
+                "text": text,
+                "text_normalized": normalized,
+                "usage_count": usage_count,
                 "created_at": doc.get("created_at"),
                 "updated_at": doc.get("updated_at"),
             }
-            for doc in docs
-        ]
+
+        lines = list(deduped.values())
         await cache.set(cache_key, lines, CACHE_TIMEOUT)
         return lines
 
@@ -198,12 +216,12 @@ class PlanLineTemplateService:
                     {
                         "$inc": {"usage_count": 1},
                         "$set": {
+                            "text": line,
                             "updated_at": now,
                             "updated_by": created_by,
                             "updated_by_profile": created_by_profile,
                         },
                         "$setOnInsert": {
-                            "text": line,
                             "field_type": field_type,
                             "text_normalized": normalized,
                             "is_active": True,

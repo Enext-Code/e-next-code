@@ -33,12 +33,12 @@ export default function LineHintTextarea({
   const lastSavedTextRef = useRef(value);
   const [suggestions, setSuggestions] = useState<PlanLineTemplate[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [highlightIndex, setHighlightIndex] = useState(0);
+  const [highlightIndex, setHighlightIndex] = useState(-1);
 
   const closeDropdown = () => {
     setShowDropdown(false);
     setSuggestions([]);
-    setHighlightIndex(0);
+    setHighlightIndex(-1);
   };
 
   const searchCurrentLine = (prefix: string) => {
@@ -65,7 +65,7 @@ export default function LineHintTextarea({
           );
           setSuggestions(matches);
           setShowDropdown(matches.length > 0);
-          setHighlightIndex(0);
+          setHighlightIndex(-1);
         } else {
           closeDropdown();
         }
@@ -140,8 +140,12 @@ export default function LineHintTextarea({
     }
 
     if (event.key === 'Enter' || event.key === 'Tab') {
-      event.preventDefault();
-      applySuggestion(suggestions[highlightIndex]);
+      if (highlightIndex >= 0 && suggestions[highlightIndex]) {
+        event.preventDefault();
+        applySuggestion(suggestions[highlightIndex]);
+      } else {
+        closeDropdown();
+      }
       return;
     }
 
@@ -187,6 +191,7 @@ export default function LineHintTextarea({
               key={item.id}
               type="button"
               className={`${styles.lineHintOption} ${index === highlightIndex ? styles.lineHintOptionActive : ''}`}
+              onMouseEnter={() => setHighlightIndex(index)}
               onMouseDown={event => {
                 event.preventDefault();
                 applySuggestion(item);

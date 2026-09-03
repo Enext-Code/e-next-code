@@ -531,9 +531,16 @@
   .prescriptionMeta {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     flex-wrap: wrap;
     gap: 8px;
+  }
+
+  .prescriptionMetaRight {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
   }
   
   .prescriptionDate {
@@ -546,6 +553,14 @@
     color: #666;
     font-size: 12px;
     font-weight: 500;
+  }
+
+  .prescriptionEnteredBy {
+    color: #666;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+    margin-left: 12px;
   }
   
   /* Additional Info */
@@ -591,10 +606,19 @@
       flex-direction: column;
       align-items: flex-start;
     }
+
+    .prescriptionMetaRight {
+      align-items: flex-start;
+    }
     
     .prescriptionDate,
-    .prescriptionTime {
+    .prescriptionTime,
+    .prescriptionEnteredBy {
       font-size: 11px;
+    }
+
+    .idRow {
+      flex-wrap: wrap;
     }
 
     .previousPrescriptionsContainer {
@@ -803,9 +827,16 @@
   .prescriptionMeta {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     flex-wrap: wrap;
     gap: 8px;
+  }
+
+  .prescriptionMetaRight {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
   }
   
   .prescriptionDate {
@@ -819,12 +850,28 @@
     font-size: 12px;
     font-weight: 500;
   }
+
+  .prescriptionEnteredBy {
+    color: #666;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+    margin-left: 12px;
+  }
   
   /* Prescription IDs */
   .prescriptionIds {
     margin-top: 8px;
     padding-top: 8px;
     border-top: 1px solid #f0f0f0;
+  }
+
+  .idRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 4px;
   }
   
   .idItem {
@@ -901,10 +948,19 @@
       flex-direction: column;
       align-items: flex-start;
     }
+
+    .prescriptionMetaRight {
+      align-items: flex-start;
+    }
     
     .prescriptionDate,
-    .prescriptionTime {
+    .prescriptionTime,
+    .prescriptionEnteredBy {
       font-size: 11px;
+    }
+
+    .idRow {
+      flex-wrap: wrap;
     }
 
     .previousPrescriptionsContainer {

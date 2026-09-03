@@ -312,6 +312,8 @@ export const investigationReportService = {
           current_treatment: string;
           created_at: string;
           updated_at: string;
+          created_by_name?: string | null;
+          updated_by_name?: string | null;
         }[];
         total: number;
         page: number;
@@ -351,6 +353,8 @@ export const investigationReportService = {
       current_treatment: string;
       created_at: string;
       updated_at: string;
+      created_by_name?: string | null;
+      updated_by_name?: string | null;
     }>>(
       `/api/v1/investigation-reports/daily-round-sheets?organisation_id=${orgIdParam}`,
       {
@@ -379,6 +383,8 @@ export const investigationReportService = {
       current_treatment: string;
       created_at: string;
       updated_at: string;
+      created_by_name?: string | null;
+      updated_by_name?: string | null;
     }>>(
       `/api/v1/investigation-reports/daily-round-sheets?sheet_id=${encodeURIComponent(sheetId)}`
     );
@@ -403,6 +409,8 @@ export const investigationReportService = {
       current_treatment: string;
       created_at: string;
       updated_at: string;
+      created_by_name?: string | null;
+      updated_by_name?: string | null;
     }>>(
       `/api/v1/investigation-reports/daily-round-sheets?sheet_id=${encodeURIComponent(sheetId)}`,
       {

@@ -30,6 +30,8 @@ interface DailyRoundSheetData {
   current_treatment: string;
   created_at: string;
   updated_at: string;
+  created_by_name?: string | null;
+  updated_by_name?: string | null;
 }
 import FluidForm, { FluidData } from '@/components/forms/FluidForm';
 import VitalsForm, { VitalsData } from '@/components/daily-round-progress-sheet/VitalsForm';
@@ -1095,6 +1097,68 @@ debugger
     addClinicalSection('Current Issue', plan.current_issue, false);
     addClinicalSection('Current Treatment', plan.current_treatment, true);
     addClinicalSection(planHeading, plan.prescription, false);
+
+    const planAt = parsePlanUtcDate(plan.date);
+    const planDay = patient.admission_date
+      ? Math.ceil(
+          (planAt.getTime() - new Date(patient.admission_date).getTime()) /
+            (1000 * 60 * 60 * 24)
+        )
+      : '—';
+    const planDate = planAt.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' });
+    const planTime = planAt.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'Asia/Kolkata',
+    });
+    const enteredBy = plan.updated_by_name || plan.created_by_name;
+
+    ensureSpace(16);
+    doc.setFontSize(9);
+    doc.setTextColor(50);
+    doc.setFont('helvetica', 'bold');
+    const dateLabel = 'Date: ';
+    doc.text(dateLabel, marginX, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${planDate} | DAY: ${planDay}`, marginX + doc.getTextWidth(dateLabel), y);
+
+    const timeLabel = 'Time: ';
+    doc.setFont('helvetica', 'bold');
+    const timeLabelW = doc.getTextWidth(timeLabel);
+    doc.setFont('helvetica', 'normal');
+    const timeValueW = doc.getTextWidth(planTime);
+    doc.setFont('helvetica', 'bold');
+    doc.text(timeLabel, pageWidth - marginX - timeLabelW - timeValueW, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(planTime, pageWidth - marginX - timeValueW, y);
+    y += 5.5;
+
+    doc.setFont('helvetica', 'bold');
+    const progressLabel = 'Progress Sheet ID: ';
+    doc.text(progressLabel, marginX, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(formatValue(plan.progress_sheet_id), marginX + doc.getTextWidth(progressLabel), y);
+    if (enteredBy) {
+      const enteredLabel = 'Entered by: ';
+      doc.setFont('helvetica', 'bold');
+      const enteredLabelW = doc.getTextWidth(enteredLabel);
+      doc.setFont('helvetica', 'normal');
+      const enteredValueW = doc.getTextWidth(enteredBy);
+      doc.setFont('helvetica', 'bold');
+      doc.text(enteredLabel, pageWidth - marginX - enteredLabelW - enteredValueW, y);
+      doc.setFont('helvetica', 'normal');
+      doc.text(enteredBy, pageWidth - marginX - enteredValueW, y);
+    }
+    y += 5.5;
+
+    doc.setFont('helvetica', 'bold');
+    const investigationLabel = 'Investigation ID: ';
+    doc.text(investigationLabel, marginX, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(formatValue(plan.investigation_report_id), marginX + doc.getTextWidth(investigationLabel), y);
+    y += 5.5;
+    doc.setTextColor(0);
 
     // ——— Doctor signature block (bottom) ———
     ensureSpace(42);
@@ -2164,15 +2228,52 @@ debugger
           timeZone: 'Asia/Kolkata',
         });
 
-        addKeyValueRows(
-          [
-            ['Date', `${planDate} | DAY: ${planDay}`],
-            ['Time', planTime],
-            ['Progress Sheet ID', formatValue(plan.progress_sheet_id)],
-            ['Investigation ID', formatValue(plan.investigation_report_id)],
-          ],
-          2
-        );
+        ensureSpace(16);
+        doc.setFontSize(9);
+        doc.setTextColor(50);
+        doc.setFont('helvetica', 'bold');
+        const dateLabel = 'Date: ';
+        doc.text(dateLabel, marginX, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`${planDate} | DAY: ${planDay}`, marginX + doc.getTextWidth(dateLabel), y);
+
+        const timeLabel = 'Time: ';
+        doc.setFont('helvetica', 'bold');
+        const timeLabelW = doc.getTextWidth(timeLabel);
+        doc.setFont('helvetica', 'normal');
+        const timeValueW = doc.getTextWidth(planTime);
+        doc.setFont('helvetica', 'bold');
+        doc.text(timeLabel, pageWidth - marginX - timeLabelW - timeValueW, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(planTime, pageWidth - marginX - timeValueW, y);
+        y += 5.5;
+
+        const enteredBy = plan.updated_by_name || plan.created_by_name;
+        doc.setFont('helvetica', 'bold');
+        const progressLabel = 'Progress Sheet ID: ';
+        doc.text(progressLabel, marginX, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(formatValue(plan.progress_sheet_id), marginX + doc.getTextWidth(progressLabel), y);
+        if (enteredBy) {
+          const enteredLabel = 'Entered by: ';
+          doc.setFont('helvetica', 'bold');
+          const enteredLabelW = doc.getTextWidth(enteredLabel);
+          doc.setFont('helvetica', 'normal');
+          const enteredValueW = doc.getTextWidth(enteredBy);
+          doc.setFont('helvetica', 'bold');
+          doc.text(enteredLabel, pageWidth - marginX - enteredLabelW - enteredValueW, y);
+          doc.setFont('helvetica', 'normal');
+          doc.text(enteredBy, pageWidth - marginX - enteredValueW, y);
+        }
+        y += 5.5;
+
+        doc.setFont('helvetica', 'bold');
+        const investigationLabel = 'Investigation ID: ';
+        doc.text(investigationLabel, marginX, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(formatValue(plan.investigation_report_id), marginX + doc.getTextWidth(investigationLabel), y);
+        y += 5.5;
+        doc.setTextColor(0);
 
         if (index < planData.length - 1) drawDivider();
       });
@@ -2619,8 +2720,15 @@ debugger
                     })()}
                   </div>
                   <div className={styles.prescriptionIds}>
-                    <div className={styles.idItem}>
-                      <span className={styles.bullet}>•</span> Progress Sheet ID: {plan.progress_sheet_id}
+                    <div className={styles.idRow}>
+                      <div className={styles.idItem}>
+                        <span className={styles.bullet}>•</span> Progress Sheet ID: {plan.progress_sheet_id}
+                      </div>
+                      {(plan.updated_by_name || plan.created_by_name) && (
+                        <div className={styles.prescriptionEnteredBy}>
+                          Entered by: {plan.updated_by_name || plan.created_by_name}
+                        </div>
+                      )}
                     </div>
                     <div className={styles.idItem}>
                       <span className={styles.bullet}>•</span> Investigation ID: {plan.investigation_report_id}

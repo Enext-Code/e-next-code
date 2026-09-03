@@ -46,6 +46,12 @@ class DailyRoundSheetResponseSchema(DailyRoundSheetBaseSchema):
     updated_at: datetime = Field(
         ..., description="The date and time the daily round sheet was last updated"
     )
+    created_by_name: Optional[str] = Field(
+        default=None, description="Full name of the user who created the sheet"
+    )
+    updated_by_name: Optional[str] = Field(
+        default=None, description="Full name of the user who last updated the sheet"
+    )
 
 
 class DailyRoundSheetUpdateSchema(BaseModel):
