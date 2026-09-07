@@ -2725,8 +2725,8 @@ debugger
                         <span className={styles.bullet}>•</span> Progress Sheet ID: {plan.progress_sheet_id}
                       </div>
                       {(plan.updated_by_name || plan.created_by_name) && (
-                        <div className={styles.prescriptionEnteredBy}>
-                          Entered by: {plan.updated_by_name || plan.created_by_name}
+                        <div className={`${styles.idItem} ${styles.prescriptionEnteredBy}`}>
+                          <span className={styles.bullet}>•</span> Entered by: {plan.updated_by_name || plan.created_by_name}
                         </div>
                       )}
                     </div>
