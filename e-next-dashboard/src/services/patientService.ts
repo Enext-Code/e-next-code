@@ -170,6 +170,7 @@ export interface PatientListParams {
   limit?: number;
   sort_order?: 'asc' | 'desc';
   organisation_id?: string;
+  organisation_icu_id?: string;
   search?: string;
   statuses?: PatientStatus[];
 }
@@ -402,6 +403,7 @@ export const patientService = {
       limit: (params.limit || 10).toString(),
       sort_order: params.sort_order || 'desc',
       organisation_id: params.organisation_id,
+      ...(params.organisation_icu_id ? { organisation_icu_id: params.organisation_icu_id } : {}),
       ...(params.search ? { search: params.search } : {})
     });
 

@@ -37,6 +37,7 @@ build/
 coverage/
 .cache/
 .turbo/
+*.tsbuildinfo
 
 # Nested repos / extras (keep out of this monorepo push)
 e-next-code/

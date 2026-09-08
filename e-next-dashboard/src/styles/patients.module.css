@@ -109,6 +109,80 @@
   color: #374151;
 }
 
+.icuFilterHeader {
+  position: relative;
+}
+
+.icuFilter {
+  position: relative;
+  display: inline-block;
+}
+
+.icuFilterTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.icuFilterTrigger:hover,
+.icuFilterActive {
+  color: #f7941d;
+}
+
+.icuFilterTrigger:focus-visible {
+  outline: none;
+  border-radius: 3px;
+  box-shadow: 0 0 0 2px rgba(247, 148, 29, 0.25);
+}
+
+.icuFilterMenu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  min-width: 130px;
+  padding: 0.35rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.icuFilterMenu button {
+  display: block;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #374151;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.icuFilterMenu button:hover {
+  background: #fff7ed;
+  color: #f7941d;
+}
+
+.icuFilterMenu .icuFilterOptionActive {
+  background: #f7941d;
+  color: #fff;
+}
+
+.icuFilterMenu .icuFilterOptionActive:hover {
+  background: #e88a1a;
+  color: #fff;
+}
+
 .actionCell {
   text-align: center;
   width: 100px;

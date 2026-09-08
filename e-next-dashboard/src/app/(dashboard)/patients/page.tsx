@@ -5,6 +5,7 @@ import Link from 'next/link';
 import styles from '@/styles/patients.module.css';
 import { remoteCenterService, RemoteCenter } from '@/services/remoteCenterService';
 import { patientService, Patient, PatientStatus } from '@/services/patientService';
+import { icuService, ICU } from '@/services/icuService';
 import { useRouter } from 'next/navigation';
 import Breadcrumb from '@/components/common/Breadcrumb';
 export default function PatientsPage() {
@@ -20,6 +21,7 @@ export default function PatientsPage() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const icuFilterRef = useRef<HTMLDivElement>(null);
 
   // Pagination states
   const [centerPage, setCenterPage] = useState(1);
@@ -33,6 +35,9 @@ export default function PatientsPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [patientSearchTerm, setPatientSearchTerm] = useState('');
   const [selectedStatuses, setSelectedStatuses] = useState<PatientStatus[]>([]);
+  const [icus, setIcus] = useState<ICU[]>([]);
+  const [selectedIcuId, setSelectedIcuId] = useState('');
+  const [isIcuFilterOpen, setIsIcuFilterOpen] = useState(false);
   const itemsPerPage = 10;
 
   const AVAILABLE_STATUSES: { value: PatientStatus; label: string }[] = [
@@ -94,7 +99,14 @@ export default function PatientsPage() {
   };
 
   // Load patients for selected center with pagination
-  const loadPatients = async (centerId: string, page: number, append: boolean = false, search?: string, statuses?: PatientStatus[]) => {
+  const loadPatients = async (
+    centerId: string,
+    page: number,
+    append: boolean = false,
+    search?: string,
+    statuses?: PatientStatus[],
+    icuId?: string
+  ) => {
     try {
       setLoadingMorePatients(true);
       
@@ -104,7 +116,8 @@ export default function PatientsPage() {
         limit: itemsPerPage,
         sort_order: 'desc',
         ...(search && search.trim() ? { search: search.trim() } : {}),
-        ...(statuses && statuses.length > 0 ? { statuses } : {})
+        ...(statuses && statuses.length > 0 ? { statuses } : {}),
+        ...(icuId ? { organisation_icu_id: icuId } : {})
       });
 
       // // console.log('Patient API response:', response);
@@ -126,6 +139,20 @@ export default function PatientsPage() {
       setError(err instanceof Error ? err.message : 'Failed to load patients');
     } finally {
       setLoadingMorePatients(false);
+    }
+  };
+
+  const loadIcus = async (centerId: string) => {
+    try {
+      const response = await icuService.list({
+        organisation_id: centerId,
+        limit: 100,
+        sort_order: 'asc'
+      });
+      setIcus(response.success && response.data ? response.data.items : []);
+    } catch (err) {
+      console.error('Error loading ICUs:', err);
+      setIcus([]);
     }
   };
 
@@ -159,6 +186,9 @@ export default function PatientsPage() {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
       }
+      if (icuFilterRef.current && !icuFilterRef.current.contains(event.target as Node)) {
+        setIsIcuFilterOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -170,6 +200,9 @@ export default function PatientsPage() {
       setPatientPage(1);
       setPatients([]); // Clear existing patients
       setPatientSearchTerm(''); // Clear search when center changes
+      setSelectedIcuId('');
+      setIsIcuFilterOpen(false);
+      loadIcus(selectedCenter);
       // Read statuses from sessionStorage to avoid stale state on initial load
       let statuses = selectedStatuses;
       const savedStatuses = sessionStorage.getItem('selectedPatientStatuses');
@@ -180,7 +213,7 @@ export default function PatientsPage() {
           // ignore
         }
       }
-      loadPatients(selectedCenter, 1, false, '', statuses);
+      loadPatients(selectedCenter, 1, false, '', statuses, '');
     }
   }, [selectedCenter]);
 
@@ -223,13 +256,13 @@ export default function PatientsPage() {
 
   const loadMorePatients = () => {
     if (!loadingMorePatients && hasMorePatients && selectedCenter) {
-      loadPatients(selectedCenter, patientPage + 1, true, patientSearchTerm, selectedStatuses);
+      loadPatients(selectedCenter, patientPage + 1, true, patientSearchTerm, selectedStatuses, selectedIcuId);
     }
   };
 
   const handlePageChange = (newPage: number) => {
     if (selectedCenter && newPage >= 1 && newPage <= totalPages) {
-      loadPatients(selectedCenter, newPage, false, patientSearchTerm, selectedStatuses);
+      loadPatients(selectedCenter, newPage, false, patientSearchTerm, selectedStatuses, selectedIcuId);
     }
   };
 
@@ -238,7 +271,7 @@ export default function PatientsPage() {
     if (selectedCenter) {
       setPatientPage(1);
       setPatients([]);
-      loadPatients(selectedCenter, 1, false, patientSearchTerm, selectedStatuses);
+      loadPatients(selectedCenter, 1, false, patientSearchTerm, selectedStatuses, selectedIcuId);
     }
   };
 
@@ -251,7 +284,7 @@ export default function PatientsPage() {
     if (selectedCenter) {
       setPatientPage(1);
       setPatients([]);
-      loadPatients(selectedCenter, 1, false, '', selectedStatuses);
+      loadPatients(selectedCenter, 1, false, '', selectedStatuses, selectedIcuId);
     }
   };
 
@@ -265,7 +298,7 @@ export default function PatientsPage() {
     if (selectedCenter) {
       setPatientPage(1);
       setPatients([]);
-      loadPatients(selectedCenter, 1, false, patientSearchTerm, newStatuses);
+      loadPatients(selectedCenter, 1, false, patientSearchTerm, newStatuses, selectedIcuId);
     }
   };
 
@@ -275,7 +308,17 @@ export default function PatientsPage() {
     if (selectedCenter) {
       setPatientPage(1);
       setPatients([]);
-      loadPatients(selectedCenter, 1, false, patientSearchTerm, []);
+      loadPatients(selectedCenter, 1, false, patientSearchTerm, [], selectedIcuId);
+    }
+  };
+
+  const handleIcuChange = (icuId: string) => {
+    setSelectedIcuId(icuId);
+    setIsIcuFilterOpen(false);
+    if (selectedCenter) {
+      setPatientPage(1);
+      setPatients([]);
+      loadPatients(selectedCenter, 1, false, patientSearchTerm, selectedStatuses, icuId);
     }
   };
 
@@ -458,7 +501,42 @@ export default function PatientsPage() {
                         <th>Patient Name</th>
                         <th>Age</th>
                         <th>Gender</th>
-                        <th>ICU</th>
+                        <th className={styles.icuFilterHeader}>
+                          <div className={styles.icuFilter} ref={icuFilterRef}>
+                            <button
+                              type="button"
+                              className={`${styles.icuFilterTrigger} ${selectedIcuId ? styles.icuFilterActive : ''}`}
+                              onClick={() => setIsIcuFilterOpen(open => !open)}
+                              aria-haspopup="menu"
+                              aria-expanded={isIcuFilterOpen}
+                            >
+                              ICU <span aria-hidden="true">▾</span>
+                            </button>
+                            {isIcuFilterOpen && (
+                              <div className={styles.icuFilterMenu} role="menu">
+                                <button
+                                  type="button"
+                                  className={!selectedIcuId ? styles.icuFilterOptionActive : ''}
+                                  onClick={() => handleIcuChange('')}
+                                  role="menuitem"
+                                >
+                                  All ICU
+                                </button>
+                                {icus.map(icu => (
+                                  <button
+                                    type="button"
+                                    key={icu.id}
+                                    className={selectedIcuId === icu.id ? styles.icuFilterOptionActive : ''}
+                                    onClick={() => handleIcuChange(icu.id)}
+                                    role="menuitem"
+                                  >
+                                    {icu.name}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </th>
                         <th>Bed No.</th>
                         <th>Doctor</th>
                         <th>Criticality</th>
