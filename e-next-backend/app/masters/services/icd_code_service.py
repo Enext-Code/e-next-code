@@ -1,3 +1,4 @@
+import re
 import time
 from datetime import timedelta
 from typing import Any, Dict, List
@@ -166,6 +167,14 @@ class ICDCodeService:
             return cached_result
 
         filter_query = {"is_active": True, "is_deleted": False}
+        # Normal search across code + description (typeahead / phrase, e.g. "Infectious gas")
+        if params.search and params.search.strip():
+            search_term = re.escape(params.search.strip())
+            filter_query["$or"] = [
+                {"code": {"$regex": search_term, "$options": "i"}},
+                {"description": {"$regex": search_term, "$options": "i"}},
+            ]
+        # Existing field-specific filters (kept)
         if params.code:
             filter_query["code"] = {"$regex": params.code, "$options": "i"}
         if params.description:

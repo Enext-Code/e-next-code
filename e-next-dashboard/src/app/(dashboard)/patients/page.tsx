@@ -8,6 +8,10 @@ import { patientService, Patient, PatientStatus } from '@/services/patientServic
 import { icuService, ICU } from '@/services/icuService';
 import { useRouter } from 'next/navigation';
 import Breadcrumb from '@/components/common/Breadcrumb';
+
+const ICU_STORAGE_KEY = 'selectedPatientIcu';
+const ICU_CENTER_STORAGE_KEY = 'selectedPatientIcuCenter';
+
 export default function PatientsPage() {
   const breadcrumbItems = [
     { label: 'Patients', href: '/patients' },
@@ -175,6 +179,11 @@ export default function PatientsPage() {
 
       const savedCenterId = sessionStorage.getItem('selectedPatientCenter');
       if (savedCenterId) {
+        const savedIcuId = sessionStorage.getItem(ICU_STORAGE_KEY);
+        const savedIcuCenter = sessionStorage.getItem(ICU_CENTER_STORAGE_KEY);
+        if (savedIcuId && savedIcuCenter === savedCenterId) {
+          setSelectedIcuId(savedIcuId);
+        }
         setSelectedCenter(savedCenterId);
       }
     };
@@ -200,8 +209,19 @@ export default function PatientsPage() {
       setPatientPage(1);
       setPatients([]); // Clear existing patients
       setPatientSearchTerm(''); // Clear search when center changes
-      setSelectedIcuId('');
       setIsIcuFilterOpen(false);
+
+      let icuId = '';
+      const savedIcuId = sessionStorage.getItem(ICU_STORAGE_KEY);
+      const savedIcuCenter = sessionStorage.getItem(ICU_CENTER_STORAGE_KEY);
+      if (savedIcuId && savedIcuCenter === selectedCenter) {
+        icuId = savedIcuId;
+      } else {
+        sessionStorage.removeItem(ICU_STORAGE_KEY);
+        sessionStorage.removeItem(ICU_CENTER_STORAGE_KEY);
+      }
+      setSelectedIcuId(icuId);
+
       loadIcus(selectedCenter);
       // Read statuses from sessionStorage to avoid stale state on initial load
       let statuses = selectedStatuses;
@@ -213,7 +233,7 @@ export default function PatientsPage() {
           // ignore
         }
       }
-      loadPatients(selectedCenter, 1, false, '', statuses, '');
+      loadPatients(selectedCenter, 1, false, '', statuses, icuId);
     }
   }, [selectedCenter]);
 
@@ -315,6 +335,13 @@ export default function PatientsPage() {
   const handleIcuChange = (icuId: string) => {
     setSelectedIcuId(icuId);
     setIsIcuFilterOpen(false);
+    if (icuId && selectedCenter) {
+      sessionStorage.setItem(ICU_STORAGE_KEY, icuId);
+      sessionStorage.setItem(ICU_CENTER_STORAGE_KEY, selectedCenter);
+    } else {
+      sessionStorage.removeItem(ICU_STORAGE_KEY);
+      sessionStorage.removeItem(ICU_CENTER_STORAGE_KEY);
+    }
     if (selectedCenter) {
       setPatientPage(1);
       setPatients([]);
@@ -348,6 +375,7 @@ export default function PatientsPage() {
   };
 
   const selectedCenterName = allCenters.find(c => c.id === selectedCenter)?.name || '';
+  const selectedIcuName = icus.find(icu => icu.id === selectedIcuId)?.name || '';
 
   const handleAddNewPatient = () => {
     // // console.log('Adding new patient');
@@ -510,7 +538,7 @@ export default function PatientsPage() {
                               aria-haspopup="menu"
                               aria-expanded={isIcuFilterOpen}
                             >
-                              ICU <span aria-hidden="true">▾</span>
+                              ICU{selectedIcuName ? `: ${selectedIcuName}` : ''} <span aria-hidden="true">▾</span>
                             </button>
                             {isIcuFilterOpen && (
                               <div className={styles.icuFilterMenu} role="menu">

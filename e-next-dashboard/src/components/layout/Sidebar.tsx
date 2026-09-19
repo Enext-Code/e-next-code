@@ -101,6 +101,26 @@ const Sidebar = () => {
               <span className={styles.navLabel}>Dashboard</span>
             </Link>
           </li>
+          {/* <li>
+            <Link
+              href="/integrations/hl7-ingest"
+              className={`${styles.navItem} ${isActive('/integrations/hl7-ingest') ? styles.active : ''}`}
+            >
+              <Image src="https://enext-assets.s3.ap-south-1.amazonaws.com/assets/SquaresFour.svg" alt="Monitor HL7" width={24} height={24} />
+              <span className={styles.navLabel}>Monitor HL7</span>
+            </Link>
+          </li> */}
+          {/* First decoder sidebar link — kept commented, do not delete.
+          <li>
+            <Link
+              href="/integrations/hl7-decode"
+              className={`${styles.navItem} ${isActive('/integrations/hl7-decode') ? styles.active : ''}`}
+            >
+              <Image src="https://enext-assets.s3.ap-south-1.amazonaws.com/assets/SquaresFour.svg" alt="HL7 Decode" width={24} height={24} />
+              <span className={styles.navLabel}>HL7 Decode</span>
+            </Link>
+          </li>
+          */}
 
           {/* Remote Center with submenu */}
           <li className={styles.menuItemWithSubmenu}>

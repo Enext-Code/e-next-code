@@ -1,0 +1,163 @@
+.page {
+  max-width: 1100px;
+}
+
+.lead {
+  color: #6b7280;
+  margin: 0 0 1.25rem;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 960px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem 1.15rem 1.25rem;
+}
+
+.panelTitle {
+  margin: 0 0 0.75rem;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 300px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.75rem;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.primaryButton,
+.secondaryButton {
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.primaryButton {
+  background-color: #f39b3a;
+  color: #fff;
+}
+
+.primaryButton:hover:not(:disabled) {
+  background-color: #e88716;
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.secondaryButton {
+  background: #fff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.error {
+  margin-top: 0.75rem;
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+.ok {
+  margin-top: 0.75rem;
+  color: #047857;
+  font-size: 13px;
+}
+
+.vitals {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.vitals th,
+.vitals td {
+  text-align: left;
+  padding: 0.55rem 0.4rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.vitals th {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.meta {
+  font-size: 13px;
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+}
+
+.empty {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.sheetBox {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.75rem 0.85rem;
+  margin-bottom: 0.9rem;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #374151;
+}
+
+.sheetTitle {
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  color: #111827;
+}
+
+.sheetLink {
+  display: inline-block;
+  margin-top: 0.55rem;
+  color: #544ea8;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.sheetLink:hover {
+  text-decoration: underline;
+}
+
+.sheetNote {
+  margin: 0.55rem 0 0;
+  color: #92400e;
+  font-size: 12px;
+  line-height: 1.5;
+}

@@ -448,11 +448,15 @@ export const patientService = {
   },
 
   searchICDCodes: async (searchTerm: string) => {
-    const isCodeSearch = /^[A-Z0-9]+$/i.test(searchTerm);
-    const queryParam = isCodeSearch ?  'description' : 'code' ;
-    
+    // Old field-guess search (code vs description). Kept for reference.
+    // const isCodeSearch = /^[A-Z0-9]+$/i.test(searchTerm);
+    // const queryParam = isCodeSearch ?  'description' : 'code' ;
+    // return fetchApi<ICDCodeListResponse>(
+    //   `${API_ENDPOINTS.MASTER.ICD_CODES}?page=1&limit=10&sort_order=desc&${queryParam}=${searchTerm}`
+    // );
+
     return fetchApi<ICDCodeListResponse>(
-      `${API_ENDPOINTS.MASTER.ICD_CODES}?page=1&limit=10&sort_order=desc&${queryParam}=${searchTerm}`
+      `${API_ENDPOINTS.MASTER.ICD_CODES}?page=1&limit=10&sort_order=desc&search=${encodeURIComponent(searchTerm)}`
     );
   },
 

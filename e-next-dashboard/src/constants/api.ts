@@ -91,6 +91,14 @@ export const API_ENDPOINTS = {
   DASHBOARD: {
     COUNTS: `/api/v1/dashboard/counts`,
   },
+  INTEGRATIONS: {
+    HL7_INGEST: `/api/v1/integrations/hl7/ingest`,
+    HL7_SAMPLE: `/api/v1/integrations/hl7/sample`,
+    HL7_LATEST: (patientId: string) =>
+      `/api/v1/integrations/hl7/latest?patient_id=${patientId}`,
+    // First decoder route — kept commented, do not delete.
+    // HL7_DECODE: `/api/v1/integrations/hl7/decode`,
+  },
   OPD_PATIENT: {
     CREATE: `/api/v1/patients/opd-patients?organisation_id=null`,
     LIST: `/api/v1/patients/opd-patients`,

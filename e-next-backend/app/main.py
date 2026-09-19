@@ -15,6 +15,7 @@ from app.middlewares import (AppException, RequestLogger,
                              app_exception_handler, base_error_handler,
                              general_exception_handler,
                              validation_exception_handler)
+from app.integrations import integrations_router
 from app.organisations.api.v1 import organisations_router
 from app.patients.api.v1 import patient_router
 
@@ -100,6 +101,14 @@ def create_application() -> FastAPI:
 
     # Include dashboard router
     app.include_router(dashboard_router, prefix=f"{settings.API_V1_STR}")
+
+    app.include_router(
+        integrations_router,
+        prefix=f"{settings.API_V1_STR}/integrations/hl7",
+        tags=["HL7 Integrations"],
+    )
+    # First decoder comment — kept, do not delete.
+    # HL7 device feed decode (Mindray eGateway / Philips IHE PCD)
 
     return app
 
