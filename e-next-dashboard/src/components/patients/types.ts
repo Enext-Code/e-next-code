@@ -18,6 +18,8 @@ export interface PatientData {
   doctor_id: string;
   icd_code_id: string;
   status: string;
+  remark?: string | null;
+  remark_datetime?: string | null;
   id: string;
   unique_id: string;
   organisation_id: string;

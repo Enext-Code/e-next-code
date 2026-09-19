@@ -6,10 +6,53 @@ interface Props {
   patient: PatientData;
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  admission: 'Admission',
+  discharge: 'Discharge',
+  lama: 'Lama',
+  deceased: 'Deceased',
+  referred: 'Referred',
+  inactive: 'Inactive',
+};
+
+function getStatusDisplayName(status?: string) {
+  if (!status) return '';
+  const key = status.toLowerCase();
+  if (STATUS_LABELS[key]) return STATUS_LABELS[key];
+  return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+}
+
+function formatRemark(value?: string | null) {
+  if (!value?.trim()) return '-';
+  return value
+    .trim()
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+function formatRemarkDateTime(value?: string | null) {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
 export default function PatientInfo({ patient }: Props) {
   const status = patient.status ?? '';
   // console.log(patient);
   const statusClass = status ? (styles as Record<string, string>)[status] ?? '' : '';
+  const statusLabel = getStatusDisplayName(status);
+  const remarkLabel = statusLabel ? `${statusLabel} Remark` : 'Remark';
+  const remarkDateLabel = statusLabel ? `${statusLabel} Date and Time` : 'Remark Date and Time';
 
   return (
     <div className={styles.patientInfo}>
@@ -45,6 +88,14 @@ export default function PatientInfo({ patient }: Props) {
           <div className={styles.infoItem}>
             <label>Bed Number:</label>
             <span>{patient.organisation_icu_bed_number}</span>
+          </div>
+          <div className={styles.infoItem}>
+            <label>{remarkLabel}:</label>
+            <span>{formatRemark(patient.remark)}</span>
+          </div>
+          <div className={styles.infoItem}>
+            <label>{remarkDateLabel}:</label>
+            <span>{formatRemarkDateTime(patient.remark_datetime)}</span>
           </div>
         </div>
 
