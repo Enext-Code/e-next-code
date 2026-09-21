@@ -5,8 +5,10 @@ from typing import List
 
 from pymongo import UpdateOne
 
+from app.accounts.enums import UserType
 from app.base.models import get_current_datetime
 from app.core import cache
+from app.utils import decrypt_user_type
 
 from ..models import PlanLineTemplate
 from ..schemas import PlanLineTemplateFilterParams, PlanLineTemplateResponse
@@ -187,10 +189,23 @@ class PlanLineTemplateService:
         }
 
     @staticmethod
+    def can_save_templates(current_user: dict) -> bool:
+        """Only SuperAdmin can add lines to the shared hint bank."""
+        try:
+            encrypted_user_type = (current_user or {}).get("ut")
+            if not encrypted_user_type:
+                return False
+            return UserType(decrypt_user_type(encrypted_user_type)) == UserType.SUPERADMIN
+        except Exception:
+            return False
+
+    @staticmethod
     async def upsert_lines(
         field_type: str, text: str, current_user: dict
     ) -> None:
         """Save unique lines from a field into the shared template bank."""
+        if not PlanLineTemplateService.can_save_templates(current_user):
+            return
         if field_type not in ALLOWED_FIELD_TYPES:
             return
 

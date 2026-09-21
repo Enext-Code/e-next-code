@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { planLineTemplateService, PlanLineTemplate } from '@/services/planLineTemplateService';
+import { useAuth } from '@/contexts/AuthContext';
 import styles from '@/styles/plan-fields.module.css';
 
 interface LineHintTextareaProps {
@@ -26,6 +27,9 @@ export default function LineHintTextarea({
   rows = 2,
   placeholder,
 }: LineHintTextareaProps) {
+  const { user } = useAuth();
+  const canSaveTemplates =
+    user?.type === 'superadmin' || user?.profile?.user_type === 'superadmin';
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -110,7 +114,11 @@ export default function LineHintTextarea({
     }
 
     const nextText = textareaRef.current?.value ?? value;
-    if (!nextText.trim() || nextText.trim() === lastSavedTextRef.current.trim()) {
+    if (
+      !canSaveTemplates ||
+      !nextText.trim() ||
+      nextText.trim() === lastSavedTextRef.current.trim()
+    ) {
       return;
     }
 

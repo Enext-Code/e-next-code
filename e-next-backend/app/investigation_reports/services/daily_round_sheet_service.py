@@ -111,6 +111,14 @@ class DailyRoundSheetService:
         )
 
     @staticmethod
+    def _uppercase_plan_fields(sheet_data: dict) -> None:
+        """Uppercase Current Issue, Current Treatment and Plan of the Day before save."""
+        for field_name in ("current_issue", "current_treatment", "prescription"):
+            field_value = sheet_data.get(field_name)
+            if isinstance(field_value, str):
+                sheet_data[field_name] = field_value.upper()
+
+    @staticmethod
     async def _invalidate_cache(patient_id: str = None) -> None:
         """Invalidate cache"""
         if patient_id:
@@ -122,6 +130,8 @@ class DailyRoundSheetService:
     @staticmethod
     def _save_plan_line_templates(sheet_data: dict, current_user: dict) -> None:
         """Save hint lines in the background so daily-round save is not blocked."""
+        if not plan_line_template_service.can_save_templates(current_user):
+            return
         task = asyncio.create_task(
             DailyRoundSheetService._save_plan_line_templates_async(
                 dict(sheet_data or {}), current_user
@@ -177,6 +187,7 @@ class DailyRoundSheetService:
         daily_round_sheet_data: dict, current_user: dict
     ) -> DailyRoundSheetResponseSchema:
         """Create daily round sheet"""
+        DailyRoundSheetService._uppercase_plan_fields(daily_round_sheet_data)
         if "date" in daily_round_sheet_data and daily_round_sheet_data["date"]:
             date = daily_round_sheet_data["date"]
             if isinstance(date, str):
@@ -237,6 +248,7 @@ class DailyRoundSheetService:
         sheet_id: str, daily_round_sheet_data: dict, current_user: dict
     ) -> DailyRoundSheetResponseSchema:
         """Update daily round sheet"""
+        DailyRoundSheetService._uppercase_plan_fields(daily_round_sheet_data)
         async with await DailyRoundSheet.get_collection().database.client.start_session() as session:
             async with session.start_transaction():
                 try:

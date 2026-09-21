@@ -699,6 +699,10 @@ debugger
     return new Date(trimmed);
   };
 
+  // Footer Date/Time should show last save. `date` is only set on create; `updated_at` refreshes on edit.
+  const getPlanSavedAt = (plan: DailyRoundSheetData) =>
+    parsePlanUtcDate(plan.updated_at || plan.date);
+
   // Plan numbers restart at 1 on every calendar date (IST) so they can't be mistaken
   // for the hospital day; within a date they follow the time the plan was written.
   const planDayNumbers = (() => {
@@ -1098,7 +1102,7 @@ debugger
     addClinicalSection('Current Treatment', plan.current_treatment, true);
     addClinicalSection(planHeading, plan.prescription, false);
 
-    const planAt = parsePlanUtcDate(plan.date);
+    const planAt = getPlanSavedAt(plan);
     const planDay = patient.admission_date
       ? Math.ceil(
           (planAt.getTime() - new Date(patient.admission_date).getTime()) /
@@ -2213,7 +2217,7 @@ debugger
         addWrappedBlock('Plan of the Day', plan.prescription || 'No prescription available');
 
 
-        const planAt = parsePlanUtcDate(plan.date);
+        const planAt = getPlanSavedAt(plan);
         const planDay = patient.admission_date
           ? Math.ceil(
               (planAt.getTime() - new Date(patient.admission_date).getTime()) /
@@ -2701,7 +2705,7 @@ debugger
                   
                   <div className={styles.prescriptionMeta}>
                     {(() => {
-                      const planAt = parsePlanUtcDate(plan.date);
+                      const planAt = getPlanSavedAt(plan);
                       return (
                         <>
                           <div className={styles.prescriptionDate}>

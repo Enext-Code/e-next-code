@@ -58,6 +58,7 @@ const INSURANCE_OPTIONS = [
   'CGHS',
   'ECHS',
   'State Government',
+  'Cash',
 ];
 
 
@@ -904,7 +905,7 @@ export default function AddPatientForm() {
           </div>
 
           <div className={styles.formGroup}>
-            <label>Insurance</label>
+            <label>Insurance/ non-Insurance</label>
             <select
               name="insurance"
               value={formData.insurance}

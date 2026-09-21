@@ -58,6 +58,7 @@ const INSURANCE_OPTIONS = [
   'CGHS',
   'ECHS',
   'State Government',
+  'Cash',
 ];
 
 interface EditPatientBasicInfoProps {
@@ -818,7 +819,7 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
           </div>
 
           <div className={styles.formGroup}>
-            <label>Insurance</label>
+            <label>Insurance/ non-Insurance</label>
             <select
               name="insurance"
               value={formData.insurance}
