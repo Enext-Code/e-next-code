@@ -53,6 +53,44 @@ type PageParams = {
     sheetId: string;
     time: string;
   };
+
+// SPEED (2026-09-21): in-flight GET cache.
+// Dev React Strict Mode useEffect ko 2 baar chalaata tha, isliye same APIs 2–4 baar hit ho rahi thi.
+// Same key ki request already chal rahi ho to naya fetch nahi — wahi Promise reuse.
+// `fresh = true` save/delete ke baad: cache skip, naya data lao.
+const dailyRoundGetCache = new Map<string, Promise<unknown>>();
+
+function dedupeRequest<T>(key: string, fn: () => Promise<T>, fresh = false): Promise<T> {
+  if (!fresh) {
+    const existing = dailyRoundGetCache.get(key);
+    if (existing) return existing as Promise<T>;
+  }
+  const promise = fn().finally(() => {
+    dailyRoundGetCache.delete(key);
+  });
+  dailyRoundGetCache.set(key, promise);
+  return promise;
+}
+
+// SPEED: pehle empty entry object loadData() mein 2 jagah copy-paste tha.
+function createEmptyProgressEntry(): ProgressSheetEntry {
+  return {
+    time: new Date().toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: 'Asia/Kolkata'
+    }),
+    recorded_by: null,
+    recorded_at: null,
+    gcs: null,
+    fluid: null,
+    vitals: null,
+    blood_gas: null,
+    respiratory: null,
+    catheter: null
+  };
+}
   
 export default function ProgressSheetViewPageTimeClient() {
   const params = useParams<PageParams>();
@@ -109,6 +147,8 @@ export default function ProgressSheetViewPageTimeClient() {
       </defs>
     </svg>
   );
+  /*
+  ========== PURANA CODE (hataya 2026-09-21) — sequential load, slow ==========
   useEffect(() => {
     loadData();
   }, [params.id]);
@@ -116,13 +156,11 @@ export default function ProgressSheetViewPageTimeClient() {
   const loadData = async () => {
     try {
       setLoading(true);
-      // Load patient details
       const patientResponse = await patientService.getById(params.id);
       if (patientResponse.success && patientResponse.data) {
         setPatient(patientResponse.data as unknown as Patient);
       }
-debugger
-      // Load latest progress sheet for the patient
+      debugger
       const sheetResponse = await progressSheetService.list({
         patient_id: params.id,
         page: 1,
@@ -133,16 +171,14 @@ debugger
       if (sheetResponse.success && sheetResponse.data && sheetResponse.data.items.length > 0) {
         const latestSheet = sheetResponse.data.items[0];
         console.log('latestSheet', latestSheet);
-        // Get the latest entry from the sheet
         if (latestSheet.entries && latestSheet.entries.length > 0) {
           const latestEntry = latestSheet.entries[latestSheet.entries.length - 1];
           console.log('latestEntry', latestEntry);
           setEntry(latestEntry);
         } else {
-          // Initialize with empty entry if no entries exist (IST time)
           const emptyEntry: ProgressSheetEntry = {
-            time: new Date().toLocaleTimeString('en-US', { 
-              hour: '2-digit', 
+            time: new Date().toLocaleTimeString('en-US', {
+              hour: '2-digit',
               minute: '2-digit',
               hour12: false,
               timeZone: 'Asia/Kolkata'
@@ -159,10 +195,9 @@ debugger
           setEntry(emptyEntry);
         }
       } else {
-        // Initialize with empty entry if no sheet exists (IST time)
         const emptyEntry: ProgressSheetEntry = {
-          time: new Date().toLocaleTimeString('en-US', { 
-            hour: '2-digit', 
+          time: new Date().toLocaleTimeString('en-US', {
+            hour: '2-digit',
             minute: '2-digit',
             hour12: false,
             timeZone: 'Asia/Kolkata'
@@ -179,19 +214,10 @@ debugger
         setEntry(emptyEntry);
       }
 
-      // Load catheter data separately
       await reloadCatheterData();
-
-      // Load plan data (investigation report)
       await loadPlanData();
-
-      // Load all investigation reports (all dates) with full detail
       await loadInvestigationReports();
-
-      // Load last Apache score
       await loadApacheScore();
-
-      // Load presenting complaints + ICD codes (same source as PDF)
       await loadHealthHistory(
         patientResponse.success && patientResponse.data
           ? (patientResponse.data as unknown as Patient)
@@ -203,6 +229,82 @@ debugger
     } finally {
       setLoading(false);
     }
+  };
+  ========== PURANA CODE END ==========
+  */
+
+  // NAYA: parallel fetch + Strict Mode cancel. Data same hai, wait kam.
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      setLoading(true);
+      try {
+        await loadData(() => cancelled);
+      } catch (err) {
+        if (cancelled) return;
+        console.error('Error loading data:', err);
+        setError('Failed to load data');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [params.id]);
+
+  const loadData = async (isCancelled: () => boolean = () => false) => {
+    const patientId = params.id;
+    const patientPromise = dedupeRequest(`patient:${patientId}`, () =>
+      patientService.getById(patientId)
+    );
+
+    await Promise.all([
+      (async () => {
+        const patientResponse = await patientPromise;
+        if (isCancelled()) return;
+        if (patientResponse.success && patientResponse.data) {
+          setPatient(patientResponse.data as unknown as Patient);
+        }
+      })(),
+      (async () => {
+        const sheetResponse = await dedupeRequest(`progress-sheets:${patientId}`, () =>
+          progressSheetService.list({
+            patient_id: patientId,
+            page: 1,
+            limit: 1,
+            sort_order: 'desc'
+          })
+        );
+        if (isCancelled()) return;
+        if (sheetResponse.success && sheetResponse.data && sheetResponse.data.items.length > 0) {
+          const latestSheet = sheetResponse.data.items[0];
+          if (latestSheet.entries && latestSheet.entries.length > 0) {
+            setEntry(latestSheet.entries[latestSheet.entries.length - 1]);
+          } else {
+            setEntry(createEmptyProgressEntry());
+          }
+        } else {
+          setEntry(createEmptyProgressEntry());
+        }
+      })(),
+      reloadCatheterData(),
+      loadPlanData(),
+      loadInvestigationReports(),
+      loadApacheScore(),
+      (async () => {
+        const patientResponse = await patientPromise;
+        if (isCancelled()) return;
+        await loadHealthHistory(
+          patientResponse.success && patientResponse.data
+            ? (patientResponse.data as unknown as Patient)
+            : null
+        );
+      })(),
+    ]);
   };
 
   const toTitleCase = (value: string) =>
@@ -284,7 +386,10 @@ debugger
   const loadHealthHistory = async (patientData?: Patient | null) => {
     const fallbackIcd = patientData?.icd_codes ?? patient?.icd_codes;
     try {
-      const infoResponse = await patientService.getPatientInfo(params.id);
+      // OLD: const infoResponse = await patientService.getPatientInfo(params.id);
+      const infoResponse = await dedupeRequest(`patient-info:${params.id}`, () =>
+        patientService.getPatientInfo(params.id)
+      );
       const info = infoResponse.success ? infoResponse.data : null;
       const resolved = resolveHealthHistory(info, fallbackIcd);
       setIcdCodesText(resolved.icdCodesText);
@@ -301,9 +406,14 @@ debugger
 
   const loadApacheScore = async () => {
     try {
-      const response = await fetchApi<{ apache_ii_score: number; predicted_mortality_percent: number }>(
-        API_ENDPOINTS.PATIENT.APACHE_II.LAST(params.id),
-        { method: 'GET' }
+      // OLD: seedha fetchApi(APACHE_II.LAST) — Strict Mode mein 404 `last` 2 baar jaata tha.
+      const response = await dedupeRequest(
+        `apache-last:${params.id}`,
+        () =>
+          fetchApi<{ apache_ii_score: number; predicted_mortality_percent: number }>(
+            API_ENDPOINTS.PATIENT.APACHE_II.LAST(params.id),
+            { method: 'GET' }
+          )
       );
       if (response.success && response.data) {
         setApacheScore(response.data as unknown as { apache_ii_score: number; predicted_mortality_percent: number });
@@ -313,13 +423,20 @@ debugger
     }
   };
 
-  const loadPlanData = async () => {
+  // `fresh = true` plan create/update ke baad — cache mat use karo.
+  const loadPlanData = async (fresh = false) => {
     try {
-      const planResponse = await investigationReportService.getDailyRoundSheetsList(params.id, {
-        page: 1,
-        limit: 100,
-        sort_order: 'desc'
-      });
+      // OLD: await investigationReportService.getDailyRoundSheetsList(...)  (bina dedupe)
+      const planResponse = await dedupeRequest(
+        `plan-list:${params.id}`,
+        () =>
+          investigationReportService.getDailyRoundSheetsList(params.id, {
+            page: 1,
+            limit: 100,
+            sort_order: 'desc'
+          }),
+        fresh
+      );
       
       if (planResponse.success && planResponse.data) {
         const responseData = planResponse.data as any;
@@ -337,11 +454,16 @@ debugger
   const loadInvestigationReports = async () => {
     try {
       // 1) All reports for this patient (newest first)
-      const listResponse = await investigationReportService.listInvestigationReports(params.id, {
-        page: 1,
-        limit: 100,
-        sort_order: 'desc'
-      });
+      // OLD: await investigationReportService.listInvestigationReports(...)  (bina dedupe)
+      const listResponse = await dedupeRequest(
+        `ir-list:${params.id}`,
+        () =>
+          investigationReportService.listInvestigationReports(params.id, {
+            page: 1,
+            limit: 100,
+            sort_order: 'desc'
+          })
+      );
 
       const summaries = listResponse.success ? listResponse.data?.items ?? [] : [];
       if (summaries.length === 0) {
@@ -368,7 +490,11 @@ debugger
         summaries.map(async (summary) => {
           const reportKey = summary.report_id || summary.id;
           try {
-            const detailResponse = await investigationReportService.getInvestigationReport(reportKey);
+            // OLD: await investigationReportService.getInvestigationReport(reportKey)
+            // Detail calls skip nahi — modal + PDF ko full data chahiye. Sirf duplicate GET band.
+            const detailResponse = await dedupeRequest(`ir-detail:${reportKey}`, () =>
+              investigationReportService.getInvestigationReport(reportKey)
+            );
             const reportData =
               (detailResponse as any)?.data?.data ??
               (detailResponse as any)?.data ??
@@ -392,9 +518,15 @@ debugger
     }
   };
 
-  const reloadCatheterData = async () => {
+  // `fresh = true` catheter save/delete ke baad.
+  const reloadCatheterData = async (fresh = false) => {
     try {
-      const catheterResponse = await catheterService.getByPatientId(params.id);
+      // OLD: const catheterResponse = await catheterService.getByPatientId(params.id);
+      const catheterResponse = await dedupeRequest(
+        `catheters:${params.id}`,
+        () => catheterService.getByPatientId(params.id),
+        fresh
+      );
       // // console.log('Reloading catheter data:', catheterResponse);
       if (catheterResponse.success && catheterResponse.data) {
         // The API response has nested data structure: response.data.data.items
@@ -444,7 +576,7 @@ debugger
       // // console.log('Deleting catheter:', catheterToDelete);
       await catheterService.delete(catheterToDelete);
       // // console.log('Catheter deleted successfully, reloading data...');
-      await reloadCatheterData();
+      await reloadCatheterData(true); // fresh after delete — pehle reloadCatheterData()
     } catch (error) {
       console.error('Failed to delete catheter:', error);
     } finally {
@@ -479,7 +611,7 @@ debugger
       }
       
       // // console.log('Catheter saved successfully, reloading data...');
-      await reloadCatheterData();
+      await reloadCatheterData(true); // fresh after save — pehle reloadCatheterData()
       
       setIsModalOpen(false);
       setEditingCatheter(null);
@@ -2424,7 +2556,7 @@ debugger
           current_issue: '',
           current_treatment: ''
         });
-        await loadPlanData();
+        await loadPlanData(true); // fresh after create — pehle loadPlanData()
       } else {
         alert('Failed to create plan data');
       }
@@ -2462,7 +2594,7 @@ debugger
           current_treatment: ''
         });
         setEditingSheetId(null);
-        await loadPlanData();
+        await loadPlanData(true); // fresh after update — pehle loadPlanData()
       } else {
         alert('Failed to update plan data: ' + (updateResponse.error || 'Unknown error'));
       }
