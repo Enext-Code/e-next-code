@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { InvestigationReportData } from '@/services/investigationReportService';
 import { bloodParameterOrder } from '@/constants/bloodParameters';
 import { arterialParameterOrder } from '@/constants/arterialBloodGasParameters';
@@ -23,6 +23,23 @@ export type CumulativeRow = {
   testName: string;
   section: string;
   cells: Record<string, ParamCell>;
+};
+
+/** Cells with more words than this show a short preview; click opens full text. */
+const PREVIEW_WORD_LIMIT = 1;
+
+/** Returns "first three words…" if text is longer than the limit, else null. */
+function getShortPreview(text: string): string | null {
+  const words = text.trim().split(/\s+/);
+  if (words.length <= PREVIEW_WORD_LIMIT) return null;
+  return `${words.slice(0, PREVIEW_WORD_LIMIT).join(' ')}…`;
+}
+
+type TextPreviewState = {
+  testName: string;
+  dateLabel: string;
+  timeLabel: string;
+  text: string;
 };
 
 export function toDateKey(analysisDate: string): string {
@@ -381,6 +398,20 @@ export default function InvestigationCumulativeModal({
 }: InvestigationCumulativeModalProps) {
   const { columns, dateGroups, rows } = buildCumulativeTable(reports);
   const [preview, setPreview] = useState<{ urls: string[]; index: number } | null>(null);
+  const [textPreview, setTextPreview] = useState<TextPreviewState | null>(null);
+
+  // Esc closes the full-text popup first (before the main modal)
+  useEffect(() => {
+    if (!textPreview) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setTextPreview(null);
+      }
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [textPreview]);
 
   if (!isOpen) return null;
 
@@ -389,6 +420,8 @@ export default function InvestigationCumulativeModal({
   };
 
   const closePreview = () => setPreview(null);
+
+  const closeTextPreview = () => setTextPreview(null);
 
   const showPrev = () => {
     if (!preview) return;
@@ -492,11 +525,17 @@ export default function InvestigationCumulativeModal({
                           const hasImages = !!(cell?.imageUrls && cell.imageUrls.length > 0);
                           const hasValue = !!(cell?.value && String(cell.value).trim());
 
-                          return (
-                            <td key={col.key}>
-                              {!cell || (!hasImages && !hasValue) ? (
+                          if (!cell || (!hasImages && !hasValue)) {
+                            return (
+                              <td key={col.key}>
                                 <span className={styles.nil}>Nil</span>
-                              ) : hasImages ? (
+                              </td>
+                            );
+                          }
+
+                          if (hasImages) {
+                            return (
+                              <td key={col.key}>
                                 <div className={styles.thumbRow}>
                                   {cell.imageUrls!.map((url, idx) => (
                                     <button
@@ -514,37 +553,69 @@ export default function InvestigationCumulativeModal({
                                     </button>
                                   ))}
                                 </div>
-                              ) : (
-                                <span
-                                  className={
-                                    cell.flag === 'H'
-                                      ? styles.high
-                                      : cell.flag === 'L'
-                                        ? styles.low
-                                        : undefined
-                                  }
-                                >
-                                  {String(cell.value)
-                                    .split(',')
-                                    .map((part, idx, arr) => (
-                                      <span key={`${col.key}-${idx}`}>
-                                        {part.trim()}
-                                        {idx < arr.length - 1 ? (
-                                          <span className={styles.comma}>, </span>
-                                        ) : null}
-                                      </span>
-                                    ))}
-                                  {cell.flag === 'H' ? (
-                                    <span className={styles.flagArrow} title="High" aria-label="High">
-                                      {' '}↑
-                                    </span>
-                                  ) : cell.flag === 'L' ? (
-                                    <span className={styles.flagArrow} title="Low" aria-label="Low">
-                                      {' '}↓
-                                    </span>
-                                  ) : null}
+                              </td>
+                            );
+                          }
+
+                          const fullText = String(cell.value).trim();
+                          const shortText = getShortPreview(fullText);
+                          const valueClass =
+                            cell.flag === 'H'
+                              ? styles.high
+                              : cell.flag === 'L'
+                                ? styles.low
+                                : undefined;
+                          const flagArrow =
+                            cell.flag === 'H' ? (
+                              <span className={styles.flagArrow} title="High" aria-label="High">
+                                {' '}↑
+                              </span>
+                            ) : cell.flag === 'L' ? (
+                              <span className={styles.flagArrow} title="Low" aria-label="Low">
+                                {' '}↓
+                              </span>
+                            ) : null;
+
+                          // Long text: show first 3 words, click to see everything
+                          if (shortText) {
+                            return (
+                              <td key={col.key}>
+                                <span className={valueClass}>
+                                  <button
+                                    type="button"
+                                    className={styles.longTextButton}
+                                    title="Click to view full result"
+                                    onClick={() =>
+                                      setTextPreview({
+                                        testName: row.testName,
+                                        dateLabel: col.dateLabel,
+                                        timeLabel: col.timeLabel,
+                                        text: fullText,
+                                      })
+                                    }
+                                  >
+                                    {shortText}
+                                  </button>
+                                  {flagArrow}
                                 </span>
-                              )}
+                              </td>
+                            );
+                          }
+
+                          // Short text / numeric value: same as before
+                          return (
+                            <td key={col.key}>
+                              <span className={valueClass}>
+                                {fullText.split(',').map((part, idx, arr) => (
+                                  <span key={`${col.key}-${idx}`}>
+                                    {part.trim()}
+                                    {idx < arr.length - 1 ? (
+                                      <span className={styles.comma}>, </span>
+                                    ) : null}
+                                  </span>
+                                ))}
+                                {flagArrow}
+                              </span>
                             </td>
                           );
                         })}
@@ -558,10 +629,52 @@ export default function InvestigationCumulativeModal({
         </div>
       </div>
 
+      {/* Full-text popup for long results */}
+      {textPreview && (
+        <div
+          className={styles.textOverlay}
+          onClick={(e) => {
+            e.stopPropagation();
+            closeTextPreview();
+          }}
+          role="presentation"
+        >
+          <div
+            className={styles.textPopup}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Full result"
+          >
+            <div className={styles.textPopupHeader}>
+              <div>
+                <div className={styles.textPopupTitle}>{textPreview.testName}</div>
+                <div className={styles.textPopupMeta}>
+                  {textPreview.dateLabel}
+                  {textPreview.timeLabel ? ` • ${textPreview.timeLabel}` : ''}
+                </div>
+              </div>
+              <button
+                type="button"
+                className={styles.textPopupClose}
+                onClick={closeTextPreview}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            <div className={styles.textPopupBody}>{textPreview.text}</div>
+          </div>
+        </div>
+      )}
+
       {preview && (
         <div
           className={styles.lightbox}
-          onClick={closePreview}
+          onClick={(e) => {
+            e.stopPropagation();
+            closePreview();
+          }}
           role="presentation"
         >
           <div

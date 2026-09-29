@@ -1754,6 +1754,7 @@ export default function ProgressSheetViewPageTimeClient() {
       ['Date', reportDate],
       ['Day', String(dayNumber)],
       ['Bed No', formatValue(patient.organisation_icu_bed_number)],
+      ['ICU', patient.organisation_icu_name ],
       ['Tele ICU Date', formatPdfDate(patient.tele_icu_date)],
       ['Tele ICU Time', formatPdfTime(patient.tele_icu_time)],
       ['Consultant Name', capitalizeText(patient.doctor_full_name)],
