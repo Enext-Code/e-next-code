@@ -479,7 +479,18 @@ function isRedirectResponse(response: Response): boolean {
 }
 
 function getErrorMessage(data: any, status: number): string {
-  if (typeof data?.message === 'string' && data.message) return data.message;
+  const fieldErrors = data?.data?.errors;
+  if (Array.isArray(fieldErrors) && fieldErrors.length) {
+    const details = fieldErrors
+      .map((error: { field?: string; message?: string }) =>
+        error?.field && error?.message ? `${error.field}: ${error.message}` : error?.message
+      )
+      .filter(Boolean);
+    if (details.length) return details.join('. ');
+  }
+  if (typeof data?.message === 'string' && data.message && data.message !== 'Validation error') {
+    return data.message;
+  }
   if (typeof data?.detail === 'string' && data.detail) return data.detail;
   if (typeof data?.detail?.message === 'string') return data.detail.message;
   if (status === 0 || status === 301 || status === 302 || status === 307 || status === 308) {

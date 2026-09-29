@@ -41,14 +41,16 @@ async def create_opd_patient(
     - patient_name: Full name of the patient
     - age: Age of the patient
     - gender: Gender (male/female/other)
-    - uhid: Unique Health Identification Number
     - consultant_user_id: User ID of the consultant doctor
     
     Optional fields:
+    - uhid: Unique Health Identification Number
     - doc_number: Document/Registration number
     - episode_no: Episode number
     - allergy: Patient allergies
     - vitals: Vital signs
+    - presenting_complaint: Presenting complaint
+    - diagnosis: Diagnosis
     - patient_history: Medical history details
     - general_examination: General examination findings
     - systemic_examination: Systemic examination findings

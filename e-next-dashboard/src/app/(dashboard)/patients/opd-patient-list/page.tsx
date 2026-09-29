@@ -22,6 +22,8 @@ interface OPDPatient {
   episode_no: string;
   allergy: string;
   vitals: string;
+  presenting_complaint: string;
+  diagnosis: string;
   // signature: string;
   patient_history: {
     tobacco_use: string;
@@ -370,6 +372,8 @@ export default function OPDPatientListPage() {
         episode_no: editFormData.episode_no,
         allergy: editFormData.allergy,
         vitals: editFormData.vitals,
+        presenting_complaint: editFormData.presenting_complaint,
+        diagnosis: editFormData.diagnosis,
         patient_history: editFormData.patient_history,
         general_examination: editFormData.general_examination,
         systemic_examination: editFormData.systemic_examination,
@@ -779,6 +783,15 @@ export default function OPDPatientListPage() {
               </div>
 
               <div className={styles.detailSection}>
+                <h4 className={styles.detailSectionTitle}>Presenting Complaint</h4>
+                <div className={styles.detailGrid}>
+                  <div className={`${styles.detailItem} ${styles.detailValueFull}`}>
+                    <span className={styles.detailValue}>{selectedPatient.presenting_complaint || '-'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.detailSection}>
                 <h4 className={styles.detailSectionTitle}>Patient History</h4>
                 <div className={styles.detailGrid}>
                   <div className={styles.detailItem}>
@@ -823,6 +836,15 @@ export default function OPDPatientListPage() {
                   <div className={`${styles.detailItem} ${styles.detailValueFull}`}>
                     <span className={styles.detailLabel}>Systemic Examination</span>
                     <span className={styles.detailValue}>{selectedPatient.systemic_examination || '-'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.detailSection}>
+                <h4 className={styles.detailSectionTitle}>Diagnosis</h4>
+                <div className={styles.detailGrid}>
+                  <div className={`${styles.detailItem} ${styles.detailValueFull}`}>
+                    <span className={styles.detailValue}>{selectedPatient.diagnosis || '-'}</span>
                   </div>
                 </div>
               </div>
@@ -1004,7 +1026,18 @@ export default function OPDPatientListPage() {
                       name="allergy"
                       value={editFormData.allergy}
                       onChange={handleEditInputChange}
-                    />  
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.formRow}>
+                  <div className={styles.formGroup}>
+                    <label>Presenting Complaint</label>
+                    <textarea
+                      name="presenting_complaint"
+                      value={editFormData.presenting_complaint || ''}
+                      onChange={handleEditInputChange}
+                    />
                   </div>
                 </div>
 
@@ -1086,6 +1119,14 @@ export default function OPDPatientListPage() {
                     <textarea
                       name="systemic_examination"
                       value={editFormData.systemic_examination}
+                      onChange={handleEditInputChange}
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Diagnosis</label>
+                    <textarea
+                      name="diagnosis"
+                      value={editFormData.diagnosis || ''}
                       onChange={handleEditInputChange}
                     />
                   </div>

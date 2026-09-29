@@ -24,11 +24,13 @@ class OPDPatientBase(BaseModel):
     patient_name: str = Field(..., min_length=1, max_length=200, description="Full name of the patient")
     age: int = Field(..., ge=0, le=150, description="Age of the patient")
     gender: Gender = Field(..., description="Gender of the patient")
-    uhid: str = Field(..., min_length=1, max_length=100, description="Unique Health Identification Number")
+    uhid: Optional[str] = Field(None, max_length=100, description="Unique Health Identification Number")
     consultant_user_id: Optional[str] = Field(None, description="User ID of the consultant doctor (fetch user details from User API)")
     episode_no: Optional[str] = Field(None, max_length=100, description="Episode number")
     allergy: Optional[str] = Field(None, max_length=500, description="Patient allergies")
     vitals: Optional[str] = Field(None, description="Vital signs")
+    presenting_complaint: Optional[str] = Field(None, description="Presenting complaint")
+    diagnosis: Optional[str] = Field(None, description="Diagnosis")
     # signature: Optional[str] = Field(None, description="Digital signature (base64 encoded image or signature data)")
     patient_history: Optional[PatientHistorySchema] = Field(None, description="Patient medical history")
     general_examination: Optional[str] = Field(None, description="General examination findings")
@@ -66,6 +68,8 @@ class OPDPatientResponse(OPDPatientBase):
                 "episode_no": "EP001",
                 "allergy": "Penicillin",
                 "vitals": "100/70, 120/80, 98.6F",
+                "presenting_complaint": "Fever and cough for 3 days",
+                "diagnosis": "Hypertension",
                 "patient_history": {
                     "tobacco_use": "Non-smoker",
                     "alcohol_use": "Occasional",
@@ -95,12 +99,14 @@ class OPDPatientUpdate(BaseModel):
     patient_name: Optional[str] = Field(None, min_length=1, max_length=200)
     age: Optional[int] = Field(None, ge=0, le=150)
     gender: Optional[Gender] = None
-    uhid: Optional[str] = Field(None, min_length=1, max_length=100)
+    uhid: Optional[str] = Field(None, max_length=100)
     consultant_user_id: Optional[str] = Field(None)
     episode_no: Optional[str] = Field(None, max_length=100)
     allergy: Optional[str] = Field(None, max_length=500)
     # signature: Optional[str] = None
     vitals: Optional[str] = None
+    presenting_complaint: Optional[str] = None
+    diagnosis: Optional[str] = None
     patient_history: Optional[PatientHistorySchema] = None
     general_examination: Optional[str] = None
     systemic_examination: Optional[str] = None

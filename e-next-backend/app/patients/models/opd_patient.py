@@ -32,7 +32,7 @@ class OPDPatient(
     patient_name: str = Field(..., description="Full name of the patient")
     age: int = Field(..., description="Age of the patient")
     gender: Gender = Field(..., description="Gender of the patient")
-    uhid: str = Field(..., description="Unique Health Identification Number")
+    uhid: Optional[str] = Field(default=None, description="Unique Health Identification Number")
     
     # Consultant Reference (links to User table - fetch name, designation, etc. from User API)
     consultant_user_id: Optional[str] = Field(default=None, description="User ID of the consultant doctor")
@@ -41,6 +41,8 @@ class OPDPatient(
     episode_no: Optional[str] = Field(default=None, description="Episode number")
     allergy: Optional[str] = Field(default=None, description="Patient allergies")
     vitals: Optional[str] = Field(default=None, description="Vital signs")
+    presenting_complaint: Optional[str] = Field(default=None, description="Presenting complaint")
+    diagnosis: Optional[str] = Field(default=None, description="Diagnosis")
     # Digital Signature
     # signature: Optional[str] = Field(
     #     default=None, description="Digital signature (base64 encoded image or signature data)"
@@ -87,7 +89,7 @@ class OPDPatient(
     @property
     def patient_full_info(self) -> str:
         """Get patient full information summary"""
-        return f"{self.patient_name} ({self.age}/{self.gender}) - UHID: {self.uhid}"
+        return f"{self.patient_name} ({self.age}/{self.gender}) - UHID: {self.uhid or ''}"
 
     def has_allergies(self) -> bool:
         """Check if patient has any recorded allergies"""

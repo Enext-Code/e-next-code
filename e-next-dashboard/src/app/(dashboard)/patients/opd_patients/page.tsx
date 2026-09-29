@@ -23,6 +23,8 @@ interface FormData {
   episode_no: string;
   allergy: string;
   vitals: string;
+  presenting_complaint: string;
+  diagnosis: string;
   patient_history: {
     tobacco_use: string;
     alcohol_use: string;
@@ -57,6 +59,8 @@ export default function OPDPatientPage() {
     episode_no: '',
     allergy: '',
     vitals: '',
+    presenting_complaint: '',
+    diagnosis: '',
     patient_history: {
       tobacco_use: '',
       alcohol_use: '',
@@ -411,6 +415,8 @@ export default function OPDPatientPage() {
         episode_no: formData.episode_no,
         allergy: formData.allergy,
         vitals: formData.vitals,
+        presenting_complaint: formData.presenting_complaint,
+        diagnosis: formData.diagnosis,
         patient_history: {
           tobacco_use: formData.patient_history.tobacco_use,
           alcohol_use: formData.patient_history.alcohol_use,
@@ -449,6 +455,8 @@ export default function OPDPatientPage() {
           episode_no: '',
           allergy: '',
           vitals: '',
+          presenting_complaint: '',
+          diagnosis: '',
           patient_history: {
             tobacco_use: '',
             alcohol_use: '',
@@ -820,6 +828,21 @@ export default function OPDPatientPage() {
             </div>
           </div>
 
+          {/* Presenting Complaint */}
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>Presenting Complaint</h3>
+            <div className={styles.formGroup}>
+              <textarea
+                id="presenting_complaint"
+                name="presenting_complaint"
+                value={formData.presenting_complaint}
+                onChange={handleInputChange}
+                placeholder="Enter presenting complaint"
+                className={styles.input}
+              />
+            </div>
+          </div>
+
           {/* Patient History Section */}
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Patient History</h3>
@@ -905,6 +928,7 @@ export default function OPDPatientPage() {
               </div>
             {/* </div> */}
           </div>
+
           {/* Examination Section */}
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Examination</h3>
@@ -934,6 +958,25 @@ export default function OPDPatientPage() {
                 />
               </div>
             </div>
+          </div>
+
+          {/* Diagnosis Section */}
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>Diagnosis</h3>
+            
+            {/* <div className={styles.formRowTwo}> */}
+            <div className={styles.formGroup}>
+               {/* <label htmlFor="diagnosis">Diagnosis</label> */}
+                <textarea
+                  id="diagnosis"
+                  name="diagnosis"
+                  value={formData.diagnosis}
+                  onChange={handleInputChange}
+                  placeholder="Enter diagnosis"
+                  className={styles.input}
+                />
+              </div>
+            {/* </div> */}
           </div>
 
           {/* Procedures Section */}

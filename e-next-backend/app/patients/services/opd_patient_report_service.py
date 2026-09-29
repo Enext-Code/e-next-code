@@ -151,6 +151,19 @@ class OPDPatientReportService:
         
         # Format vitals
         vitals_text = opd_patient.vitals if opd_patient.vitals else "N/A"
+
+        presenting_complaint_text = (
+            opd_patient.presenting_complaint.replace("\n", "<br>")
+            if opd_patient.presenting_complaint
+            else "N/A"
+        )
+
+        # Format diagnosis
+        diagnosis_text = (
+            opd_patient.diagnosis.replace("\n", "<br>")
+            if opd_patient.diagnosis
+            else "N/A"
+        )
         
         # Format patient history
         tobacco = opd_patient.patient_history.tobacco_use if opd_patient.patient_history else "No"
@@ -412,6 +425,12 @@ class OPDPatientReportService:
     
     <!-- Divider -->
     <div class="divider"></div>
+
+    <!-- Presenting Complaint -->
+    <div class="section">
+        <span class="patient-label">Presenting Complaint:</span><br>
+        <div class="section-content">{presenting_complaint_text}</div>
+    </div>
     
     <!-- Allergy -->
     <div class="allergy">
@@ -461,6 +480,12 @@ class OPDPatientReportService:
     <div class="section">
         <span class="patient-label">Systemic Examination:</span><br>
         <div class="section-content">{systemic_exam}</div>
+    </div>
+
+    <!-- Diagnosis -->
+    <div class="section">
+        <span class="patient-label">Diagnosis:</span><br>
+        <div class="section-content">{diagnosis_text}</div>
     </div>
     
     <!-- Procedure -->

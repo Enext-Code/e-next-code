@@ -1,5 +1,19 @@
 import logging
+import os
 from contextlib import asynccontextmanager
+
+if os.name == "nt":
+    # WeasyPrint 69 looks in mingw64 by default. This machine has Pango in ucrt64.
+    _dll_dirs = [
+        r"C:\msys64\ucrt64\bin",
+        r"C:\msys64\mingw64\bin",
+        r"C:\Program Files\GTK3-Runtime Win64\bin",
+    ]
+    _configured = [path for path in os.environ.get("WEASYPRINT_DLL_DIRECTORIES", "").split(";") if path]
+    for _dll_dir in _dll_dirs:
+        if _dll_dir not in _configured:
+            _configured.append(_dll_dir)
+    os.environ["WEASYPRINT_DLL_DIRECTORIES"] = ";".join(_configured)
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
