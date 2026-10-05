@@ -1,4 +1,5 @@
 import logging
+import re
 
 from bson import ObjectId
 
@@ -304,6 +305,27 @@ class UserService:
                     }
                 }
             )
+        if params.search and params.search.strip():
+            for token in params.search.strip().split():
+                escaped = re.escape(token)
+                profile_filters.append(
+                    {
+                        "$or": [
+                            {
+                                "current_profile.first_name": {
+                                    "$regex": escaped,
+                                    "$options": "i",
+                                }
+                            },
+                            {
+                                "current_profile.last_name": {
+                                    "$regex": escaped,
+                                    "$options": "i",
+                                }
+                            },
+                        ]
+                    }
+                )
 
         # Pipeline with filters
         pipeline = [

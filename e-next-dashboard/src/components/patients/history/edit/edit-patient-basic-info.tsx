@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import styles from '@/styles/patient-details/history-sheet/edit-patient-basic-info.module.css';
@@ -52,6 +52,11 @@ interface ICDCode {
   description: string;
 }
 
+const getDoctorName = (doctor: Doctor) =>
+  doctor.primary_profile?.full_name ||
+  `${doctor.primary_profile?.first_name || ''} ${doctor.primary_profile?.last_name || ''}`.trim() ||
+  'Dr.';
+
 const INSURANCE_OPTIONS = [
   'TPA',
   'Ayushman Bharat',
@@ -74,7 +79,11 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
   const [consultants, setConsultants] = useState<Consultant[]>([]);
   const [availableBeds, setAvailableBeds] = useState<Bed[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingDoctors, setLoadingDoctors] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [doctorInput, setDoctorInput] = useState('');
+  const [doctorFilter, setDoctorFilter] = useState('');
+  const [showDoctorDropdown, setShowDoctorDropdown] = useState(false);
   const [icdSearchTerm, setIcdSearchTerm] = useState('');
   const [icdCodes, setIcdCodes] = useState<ICDCode[]>([]);
   const [selectedIcdCodes, setSelectedIcdCodes] = useState<ICDCode[]>([]);
@@ -83,6 +92,10 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
   const [showAddIcdModal, setShowAddIcdModal] = useState(false);
   const [originalData, setOriginalData] = useState<any>(null);
   const icdSearchContainerRef = useRef<HTMLDivElement>(null);
+  const doctorSearchContainerRef = useRef<HTMLDivElement>(null);
+  const doctorFetchId = useRef(0);
+  const admittingConsultantRef = useRef('');
+  const selectedDoctorNameRef = useRef('');
   const isSuperAdmin = user?.type === 'superadmin';
 
   // Form state
@@ -160,16 +173,28 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
       ) {
         setShowIcdDropdown(false);
       }
+      if (
+        doctorSearchContainerRef.current &&
+        !doctorSearchContainerRef.current.contains(event.target as Node)
+      ) {
+        setShowDoctorDropdown(false);
+        setDoctorFilter('');
+        if (admittingConsultantRef.current) {
+          setDoctorInput(selectedDoctorNameRef.current);
+        } else {
+          setDoctorInput('');
+        }
+      }
     };
 
-    if (showIcdDropdown) {
+    if (showIcdDropdown || showDoctorDropdown) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showIcdDropdown]);
+  }, [showIcdDropdown, showDoctorDropdown]);
 
   const loadPatientData = async () => {
     if (!patientId) return;
@@ -229,6 +254,10 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
           address: patient.address || '',
           consultant_id: patient.consultant_id || ''
         });
+
+        const doctorName = patient.doctor_full_name || '';
+        selectedDoctorNameRef.current = doctorName;
+        setDoctorInput(doctorName);
 
         setFormData(prev => ({
           ...prev,
@@ -299,17 +328,92 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
     }
   };
 
-  const loadDoctors = async (centerId: string) => {
+  const loadDoctors = useCallback(async (centerId: string, search = '') => {
+    const fetchId = ++doctorFetchId.current;
     try {
-      const response = await patientService.getDoctors(centerId);
+      setLoadingDoctors(true);
+      const term = search.trim();
+      const response = await patientService.getDoctors(centerId, {
+        limit: 500,
+        search: term,
+      });
+      if (fetchId !== doctorFetchId.current) return;
       if (response.success && response.data) {
-        setDoctors(response.data.items);
-        // console.log('Loaded doctors:', response.data.items);
+        const incoming = response.data.items || [];
+        setDoctors(prev => {
+          const base = term ? prev : [];
+          const merged = new Map(base.map(doctor => [doctor.id, doctor]));
+          incoming.forEach(doctor => merged.set(doctor.id, doctor));
+          return [...merged.values()].sort((a, b) =>
+            getDoctorName(a).localeCompare(getDoctorName(b))
+          );
+        });
+      } else if (!term) {
+        setDoctors([]);
       }
     } catch (err) {
+      if (fetchId !== doctorFetchId.current) return;
       console.error('Error loading doctors:', err);
       setError('Failed to load doctors');
+      setDoctors([]);
+    } finally {
+      if (fetchId === doctorFetchId.current) {
+        setLoadingDoctors(false);
+      }
     }
+  }, []);
+
+  const debouncedLoadDoctors = useMemo(
+    () => debounce((centerId: string, search: string) => {
+      void loadDoctors(centerId, search);
+    }, 300),
+    [loadDoctors]
+  );
+
+  useEffect(() => () => {
+    debouncedLoadDoctors.cancel();
+  }, [debouncedLoadDoctors]);
+
+  useEffect(() => {
+    admittingConsultantRef.current = formData.admittingConsultant;
+  }, [formData.admittingConsultant]);
+
+  useEffect(() => {
+    if (!formData.admittingConsultant || doctorInput || showDoctorDropdown) return;
+    const match = doctors.find(doctor => doctor.id === formData.admittingConsultant);
+    if (!match) return;
+    const name = getDoctorName(match);
+    selectedDoctorNameRef.current = name;
+    setDoctorInput(name);
+  }, [doctors, formData.admittingConsultant, doctorInput, showDoctorDropdown]);
+
+  const visibleDoctors = doctorFilter.trim()
+    ? doctors.filter(doctor =>
+        getDoctorName(doctor).toLowerCase().includes(doctorFilter.trim().toLowerCase())
+      )
+    : doctors;
+
+  const handleDoctorInputChange = (value: string) => {
+    setDoctorInput(value);
+    setDoctorFilter(value);
+    setShowDoctorDropdown(true);
+    selectedDoctorNameRef.current = '';
+    setFormData(prev => (
+      prev.admittingConsultant ? { ...prev, admittingConsultant: '' } : prev
+    ));
+    if (formData.selectedCenter) {
+      debouncedLoadDoctors(formData.selectedCenter, value);
+    }
+  };
+
+  const handleDoctorSelect = (doctor: Doctor) => {
+    const name = getDoctorName(doctor);
+    debouncedLoadDoctors.cancel();
+    selectedDoctorNameRef.current = name;
+    setDoctorInput(name);
+    setDoctorFilter('');
+    setShowDoctorDropdown(false);
+    setFormData(prev => ({ ...prev, admittingConsultant: doctor.id }));
   };
 
   const loadAvailableBeds = async (icuId: string) => {
@@ -567,25 +671,54 @@ export default function EditPatientBasicInfo({ patientId }: EditPatientBasicInfo
         <div className={styles.formRow}>
           <div className={styles.formGroup}>
             <label>Admitting Consultant</label>
-            <select
-              name="admittingConsultant"
-              value={formData.admittingConsultant}
-              onChange={handleInputChange}
-              className={styles.select}
-              disabled={!formData.selectedCenter}
-            >
-              <option value="">Select Doctor</option>
-              {doctors.map(doctor => {
-                const name = doctor.primary_profile?.full_name || 
-                           `${doctor.primary_profile?.first_name || ''} ${doctor.primary_profile?.last_name || ''}`.trim() ||
-                           'Dr.';
-                return (
-                  <option key={doctor.id} value={doctor.id}>
-                    {name}
-                  </option>
-                );
-              })}
-            </select>
+            <div className={styles.icdSearchContainer} ref={doctorSearchContainerRef}>
+              <input
+                type="text"
+                className={styles.input}
+                placeholder={
+                  !formData.selectedCenter
+                    ? 'Select center first'
+                    : loadingDoctors
+                      ? 'Loading doctors...'
+                      : 'Search admitting consultant'
+                }
+                value={doctorInput}
+                disabled={!formData.selectedCenter}
+                onFocus={() => {
+                  if (!formData.selectedCenter) return;
+                  setDoctorFilter('');
+                  setShowDoctorDropdown(true);
+                }}
+                onChange={(e) => handleDoctorInputChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') setShowDoctorDropdown(false);
+                }}
+                autoComplete="off"
+              />
+              {showDoctorDropdown && formData.selectedCenter && (
+                <div className={styles.icdDropdown}>
+                  {loadingDoctors && doctors.length === 0 ? (
+                    <div className={styles.searchingMessage}>Loading doctors...</div>
+                  ) : visibleDoctors.length === 0 ? (
+                    <div className={styles.searchingMessage}>No doctors found</div>
+                  ) : (
+                    visibleDoctors.map(doctor => {
+                      const name = getDoctorName(doctor);
+                      const isSelected = doctor.id === formData.admittingConsultant;
+                      return (
+                        <div
+                          key={doctor.id}
+                          className={`${styles.icdOption} ${isSelected ? styles.icdOptionActive : ''}`}
+                          onClick={() => handleDoctorSelect(doctor)}
+                        >
+                          <span className={styles.icdCode}>{name}</span>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className={styles.formGroup}>

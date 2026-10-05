@@ -265,6 +265,10 @@
   background-color: #f9fafb;
 }
 
+.icdOptionActive {
+  background-color: #eff6ff;
+}
+
 .icdOption:last-child {
   border-bottom: none;
 }

@@ -1,16 +1,16 @@
 .pageHeader {
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.65rem;
 }
 
 .pageHeader h1 {
   font-size: 1.5rem;
   font-weight: 600;
   color: #1f2937;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.25rem 0;
 }
 
 .formContainer {
-  padding: 1.5rem;
+  padding: 0.75rem 1.15rem;
   background: white;
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -19,13 +19,13 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0.45rem;
 }
 
 .section {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  padding: 1.25rem;
+  padding: 0.6rem 0.9rem;
   background: #fafafa;
 }
 
@@ -33,34 +33,49 @@
   font-size: 1rem;
   font-weight: 600;
   color: #374151;
-  margin: 0 0 1rem 0;
-  padding-bottom: 0.5rem;
+  margin: 0 0 0.45rem 0;
+  padding-bottom: 0.25rem;
   border-bottom: 2px solid #f97316;
 }
 
 .formRow {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 0.6rem;
+  margin-bottom: 0.45rem;
 }
 
-.formRow:last-child {
+.formRow:last-child,
+.formRowThree:last-child,
+.formRowTwo:last-child {
   margin-bottom: 0;
 }
 
 .formRowThree {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 0.6rem;
+  margin-bottom: 0.45rem;
 }
 
 .formRowTwo {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 0.6rem;
+  margin-bottom: 0.45rem;
+}
+
+.formRowAge {
+  grid-template-columns: auto 1fr 1fr 1fr;
+}
+
+.ageGroup {
+  width: fit-content;
+}
+
+.ageInput {
+  width: 4.5rem;
+  max-width: 4.5rem;
 }
 
 .formGroup {
@@ -127,7 +142,8 @@
   display: flex;
   gap: 1.5rem;
   align-items: center;
-  padding-top: 0.25rem;
+  min-height: 38px;
+  padding: 0.5rem 0.75rem;
 }
 
 .radioLabel {
@@ -197,10 +213,10 @@
 .formActions {
   display: flex;
   justify-content: flex-end;
-  gap: 1rem;
-  padding-top: 1.5rem;
+  gap: 0.75rem;
+  padding-top: 0.6rem;
   border-top: 1px solid #e5e7eb;
-  margin-top: 0.5rem;
+  margin-top: 0.15rem;
 }
 
 .cancelButton {
@@ -390,7 +406,8 @@
 @media (max-width: 640px) {
   .formRow,
   .formRowThree,
-  .formRowTwo {
+  .formRowTwo,
+  .formRowAge {
     grid-template-columns: 1fr;
   }
   

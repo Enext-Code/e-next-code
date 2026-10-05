@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import List, Optional
+import re
 
 from bson import ObjectId
 
@@ -10,6 +11,75 @@ from app.utils import decrypt_user_type
 
 from ..models import OPDPatient
 from ..schemas import OPDPatientCreate, OPDPatientResponse, OPDPatientUpdate
+
+_CAPITALIZE_FIELDS = {
+    "doc_number",
+    "patient_name",
+    "uhid",
+    "episode_no",
+    "allergy",
+    "vitals",
+    "presenting_complaint",
+    "diagnosis",
+    "general_examination",
+    "systemic_examination",
+    "followup_note",
+}
+
+_HISTORY_FIELDS = {
+    "tobacco_use",
+    "alcohol_use",
+    "substance_use",
+    "past_illness",
+    "past_procedures",
+}
+
+
+def _capitalize_token(token: str) -> str:
+    for index, char in enumerate(token):
+        if char.isalpha():
+            return token[:index] + char.upper() + token[index + 1 :]
+        if char.isdigit():
+            return token
+    return token
+
+
+def _capitalize_text(value: Optional[str]) -> Optional[str]:
+    if value is None or value == "":
+        return value
+    return "".join(
+        part if not part or part.isspace() else _capitalize_token(part)
+        for part in re.split(r"(\s+)", value)
+    )
+
+
+def _uppercase_text(value: Optional[str]) -> Optional[str]:
+    if value is None or value == "":
+        return value
+    return value.upper()
+
+
+def _normalize_opd_text(data: dict) -> dict:
+    for field in _CAPITALIZE_FIELDS:
+        if field in data and isinstance(data[field], str):
+            data[field] = _capitalize_text(data[field])
+
+    if "treatment_note" in data and isinstance(data["treatment_note"], str):
+        data["treatment_note"] = _uppercase_text(data["treatment_note"])
+
+    if "procedures" in data and isinstance(data["procedures"], list):
+        data["procedures"] = [
+            _capitalize_text(item) if isinstance(item, str) else item
+            for item in data["procedures"]
+        ]
+
+    history = data.get("patient_history")
+    if isinstance(history, dict):
+        for field in _HISTORY_FIELDS:
+            if field in history and isinstance(history[field], str):
+                history[field] = _capitalize_text(history[field])
+
+    return data
 
 
 class OPDPatientService:
@@ -52,8 +122,9 @@ class OPDPatientService:
                 raise NotFoundError(f"Consultant user with ID {opd_patient_data.consultant_user_id} not found")
 
         # Create OPD patient
+        payload = _normalize_opd_text(opd_patient_data.model_dump())
         opd_patient = await OPDPatient.create(
-            **opd_patient_data.model_dump(),
+            **payload,
             organisation_id=effective_organisation_id,
             created_by=str(current_user["sub"]),
             updated_by=str(current_user["sub"]),
@@ -284,7 +355,7 @@ class OPDPatientService:
                 raise NotFoundError(f"Consultant user with ID {opd_patient_data.consultant_user_id} not found")
 
         # Update fields
-        update_data = opd_patient_data.model_dump(exclude_unset=True)
+        update_data = _normalize_opd_text(opd_patient_data.model_dump(exclude_unset=True))
         if update_data:
             update_data["updated_by"] = str(current_user["sub"])
             update_data["updated_by_profile"] = str(current_user["pid"])

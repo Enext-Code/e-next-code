@@ -8,6 +8,8 @@ import { API_ENDPOINTS } from '@/constants/api';
 import { userService, User } from '@/services/userService';
 import { remoteCenterService, RemoteCenter } from '@/services/remoteCenterService';
 import Breadcrumb from '@/components/common/Breadcrumb';
+import BulletTextarea from '@/components/forms/BulletTextarea';
+import { sanitizeBulletText } from '@/utils/bulletText';
 
 interface OPDPatient {
   id: string;
@@ -141,7 +143,7 @@ export default function OPDPatientListPage() {
 
   const loadDoctors = useCallback(async () => {
     try {
-      const response = await userService.list({ role_type: 'doctor' });
+      const response = await userService.list({ role_type: 'doctor', limit: 500 });
       if (response.success && response.data) {
         setDoctors(response.data.items);
       }
@@ -265,9 +267,10 @@ export default function OPDPatientListPage() {
   };
 
   const getDoctorName = (consultantId: string) => {
+    if (!consultantId) return 'N/A';
     const doctor = doctors.find(d => d.id === consultantId);
     if (doctor) {
-      return doctor.primary_profile?.full_name || 
+      return doctor.primary_profile?.full_name ||
              `${doctor.primary_profile?.first_name || ''} ${doctor.primary_profile?.last_name || ''}`.trim() ||
              doctor.email;
     }
@@ -370,16 +373,22 @@ export default function OPDPatientListPage() {
         uhid: editFormData.uhid,
         consultant_user_id: editFormData.consultant_user_id,
         episode_no: editFormData.episode_no,
-        allergy: editFormData.allergy,
-        vitals: editFormData.vitals,
-        presenting_complaint: editFormData.presenting_complaint,
-        diagnosis: editFormData.diagnosis,
-        patient_history: editFormData.patient_history,
-        general_examination: editFormData.general_examination,
-        systemic_examination: editFormData.systemic_examination,
+        allergy: sanitizeBulletText(editFormData.allergy),
+        vitals: sanitizeBulletText(editFormData.vitals),
+        presenting_complaint: sanitizeBulletText(editFormData.presenting_complaint),
+        diagnosis: sanitizeBulletText(editFormData.diagnosis),
+        patient_history: {
+          tobacco_use: sanitizeBulletText(editFormData.patient_history?.tobacco_use),
+          alcohol_use: sanitizeBulletText(editFormData.patient_history?.alcohol_use),
+          substance_use: sanitizeBulletText(editFormData.patient_history?.substance_use),
+          past_illness: sanitizeBulletText(editFormData.patient_history?.past_illness),
+          past_procedures: sanitizeBulletText(editFormData.patient_history?.past_procedures)
+        },
+        general_examination: sanitizeBulletText(editFormData.general_examination),
+        systemic_examination: sanitizeBulletText(editFormData.systemic_examination),
         procedures: editFormData.procedures,
-        treatment_note: editFormData.treatment_note,
-        followup_note: editFormData.followup_note
+        treatment_note: sanitizeBulletText(editFormData.treatment_note),
+        followup_note: sanitizeBulletText(editFormData.followup_note)
       };
 
       const updateUrl = selectedCenter 
@@ -771,14 +780,6 @@ export default function OPDPatientListPage() {
                     <span className={styles.detailLabel}>Episode No</span>
                     <span className={styles.detailValue}>{selectedPatient.episode_no || '-'}</span>
                   </div> */}
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Allergy</span>
-                    <span className={styles.detailValue}>{selectedPatient.allergy || '-'}</span>
-                  </div>
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Vitals</span>
-                    <span className={styles.detailValue}>{selectedPatient.vitals || '-'}</span>
-                  </div>
                 </div>
               </div>
 
@@ -806,9 +807,13 @@ export default function OPDPatientListPage() {
                     <span className={styles.detailLabel}>Substance Use</span>
                     <span className={styles.detailValue}>{selectedPatient.patient_history?.substance_use || '-'}</span>
                   </div>
-                  <div className={`${styles.detailItem} ${styles.detailValueFull}`}>
+                  <div className={styles.detailItem}>
                     <span className={styles.detailLabel}>Past Illness/Procedures</span>
                     <span className={styles.detailValue}>{selectedPatient.patient_history?.past_illness || '-'}</span>
+                  </div>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Allergy</span>
+                    <span className={styles.detailValue}>{selectedPatient.allergy || '-'}</span>
                   </div>
                   {/* <div className={`${styles.detailItem} ${styles.detailValueFull}`}>
                     <span className={styles.detailLabel}>Past Procedures</span>
@@ -1020,20 +1025,12 @@ export default function OPDPatientListPage() {
                       onChange={handleEditInputChange}
                     />
                   </div> */}
-                  <div className={styles.formGroup}>
-                    <label>Allergy</label>
-                    <textarea
-                      name="allergy"
-                      value={editFormData.allergy}
-                      onChange={handleEditInputChange}
-                    />
-                  </div>
                 </div>
 
                 <div className={styles.formRow}>
                   <div className={styles.formGroup}>
                     <label>Presenting Complaint</label>
-                    <textarea
+                    <BulletTextarea
                       name="presenting_complaint"
                       value={editFormData.presenting_complaint || ''}
                       onChange={handleEditInputChange}
@@ -1044,7 +1041,7 @@ export default function OPDPatientListPage() {
                 <div className={styles.formRow}>
                   <div className={styles.formGroup}>
                     <label>Tobacco Use</label>
-                    <textarea
+                    <BulletTextarea
                       name="patient_history.tobacco_use"
                       value={editFormData.patient_history?.tobacco_use || ''}
                       onChange={handleEditInputChange}
@@ -1052,7 +1049,7 @@ export default function OPDPatientListPage() {
                   </div>
                   <div className={styles.formGroup}>
                     <label>Alcohol Use</label>
-                    <textarea
+                    <BulletTextarea
                       name="patient_history.alcohol_use"
                       value={editFormData.patient_history?.alcohol_use || ''}
                       onChange={handleEditInputChange}
@@ -1060,7 +1057,7 @@ export default function OPDPatientListPage() {
                   </div>
                   <div className={styles.formGroup}>
                     <label>Substance Use</label>
-                    <textarea
+                    <BulletTextarea
                       name="patient_history.substance_use"
                       value={editFormData.patient_history?.substance_use || ''}
                       onChange={handleEditInputChange}
@@ -1071,9 +1068,17 @@ export default function OPDPatientListPage() {
                 <div className={styles.formRow}>
                   <div className={styles.formGroup}>
                     <label>Past Illness</label>
-                    <textarea
+                    <BulletTextarea
                       name="patient_history.past_illness"
                       value={editFormData.patient_history?.past_illness || ''}
+                      onChange={handleEditInputChange}
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Allergy</label>
+                    <BulletTextarea
+                      name="allergy"
+                      value={editFormData.allergy || ''}
                       onChange={handleEditInputChange}
                     />
                   </div>
@@ -1087,7 +1092,7 @@ export default function OPDPatientListPage() {
                   </div> */}
                   <div className={styles.formGroup}>
                     <label>General Examination</label>
-                    <textarea
+                    <BulletTextarea
                       name="general_examination"
                       value={editFormData.general_examination}
                       onChange={handleEditInputChange}
@@ -1095,8 +1100,7 @@ export default function OPDPatientListPage() {
                   </div>
                   <div className={styles.formGroup}>
                     <label>Vitals</label>
-                    <textarea
-                      // type="text"
+                    <BulletTextarea
                       name="vitals"
                       value={editFormData.vitals}
                       onChange={handleEditInputChange}
@@ -1116,7 +1120,7 @@ export default function OPDPatientListPage() {
                 <div className={styles.formRow}>
                   <div className={styles.formGroup}>
                     <label>Systemic Examination</label>
-                    <textarea
+                    <BulletTextarea
                       name="systemic_examination"
                       value={editFormData.systemic_examination}
                       onChange={handleEditInputChange}
@@ -1124,7 +1128,7 @@ export default function OPDPatientListPage() {
                   </div>
                   <div className={styles.formGroup}>
                     <label>Diagnosis</label>
-                    <textarea
+                    <BulletTextarea
                       name="diagnosis"
                       value={editFormData.diagnosis || ''}
                       onChange={handleEditInputChange}
@@ -1132,7 +1136,7 @@ export default function OPDPatientListPage() {
                   </div>
                   <div className={styles.formGroup}>
                     <label>Treatment Note</label>
-                    <textarea
+                    <BulletTextarea
                       name="treatment_note"
                       value={editFormData.treatment_note}
                       onChange={handleEditInputChange}
@@ -1140,7 +1144,7 @@ export default function OPDPatientListPage() {
                   </div>
                   <div className={styles.formGroup}>
                     <label>Follow-up Note</label>
-                    <textarea
+                    <BulletTextarea
                       name="followup_note"
                       value={editFormData.followup_note}
                       onChange={handleEditInputChange}

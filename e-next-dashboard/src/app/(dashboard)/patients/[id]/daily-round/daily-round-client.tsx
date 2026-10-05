@@ -1230,9 +1230,9 @@ export default function ProgressSheetViewPageTimeClient() {
       y += 6;
     };
 
-    addClinicalSection('Current Issue', plan.current_issue, false);
+    addClinicalSection('Current Issue', plan.current_issue, true);
     addClinicalSection('Current Treatment', plan.current_treatment, true);
-    addClinicalSection(planHeading, plan.prescription, false);
+    addClinicalSection(planHeading, plan.prescription, true);
 
     const planAt = getPlanSavedAt(plan);
     const planDay = patient.admission_date

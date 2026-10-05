@@ -1,6 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO
+from pathlib import Path
 from typing import Optional
+from zoneinfo import ZoneInfo
+
+LETTERHEAD_DIR = Path(__file__).resolve().parent.parent / "assets"
 
 from app.base.models import NotFoundError
 
@@ -10,6 +14,64 @@ from ..schemas import OPDPatientResponse
 
 class OPDPatientReportService:
     """Service for generating OPD patient reports"""
+
+    _IST = ZoneInfo("Asia/Kolkata")
+
+    @staticmethod
+    def _format_visit_datetime(
+        visit_date: Optional[datetime],
+        created_at: Optional[datetime] = None,
+    ) -> str:
+        """Format visit date and time in IST as DD.MM.YYYY, HH:MM AM/PM."""
+        if not visit_date and not created_at:
+            return ""
+
+        date_source = visit_date or created_at
+        date_part = date_source.strftime("%d.%m.%Y")
+
+        time_source = visit_date
+        is_midnight = (
+            visit_date is not None
+            and visit_date.hour == 0
+            and visit_date.minute == 0
+            and visit_date.second == 0
+        )
+        if is_midnight and created_at:
+            time_source = created_at
+
+        if time_source is None:
+            return date_part
+
+        if time_source.tzinfo is not None:
+            local_time = time_source.astimezone(OPDPatientReportService._IST)
+        elif created_at is not None and time_source is created_at:
+            local_time = time_source.replace(tzinfo=timezone.utc).astimezone(
+                OPDPatientReportService._IST
+            )
+        else:
+            local_time = time_source
+
+        return f"{date_part}, {local_time.strftime('%I:%M %p')}"
+
+    @staticmethod
+    def _html_text(value: Optional[str], empty: str = "N/A") -> str:
+        if not value or not str(value).strip():
+            return empty
+        return str(value).replace("\n", "<br>")
+
+    @staticmethod
+    def _yes_no(value: Optional[str], empty: str = "No") -> str:
+        if not value or not str(value).strip():
+            return empty
+        text = " ".join(str(value).replace("•", " ").replace("-", " ").split())
+        if not text:
+            return empty
+        lowered = text.lower()
+        if lowered in ("yes", "y"):
+            return "Yes"
+        if lowered in ("no", "n"):
+            return "No"
+        return text
 
     @staticmethod
     async def generate_pdf_report(
@@ -70,7 +132,10 @@ class OPDPatientReportService:
             
             # Generate PDF from HTML using weasyprint
             # WeasyPrint handles all CSS including print media queries
-            HTML(string=html_content).write_pdf(buffer)
+            HTML(
+                string=html_content,
+                base_url=LETTERHEAD_DIR.as_uri() + "/",
+            ).write_pdf(buffer)
             
             # Reset buffer position
             buffer.seek(0)
@@ -139,56 +204,53 @@ class OPDPatientReportService:
                                 logger = logging.getLogger(__name__)
                                 logger.warning(f"Failed to get presigned URL for consultant signature: {str(e)}")
 
-        # Format date
-        visit_date_str = opd_patient.visit_date.strftime("%d.%m.%Y") if opd_patient.visit_date else ""
+        # Format date and time (IST). Date-only visits use created_at for the clock.
+        visit_date_str = OPDPatientReportService._format_visit_datetime(
+            opd_patient.visit_date,
+            getattr(opd_patient, "created_at", None),
+        )
         
         # Format gender
         gender_str = opd_patient.gender.value if opd_patient.gender else ""
         age_gender = f"{opd_patient.age} Y/{gender_str}"
         
-        # Format allergy
-        allergy_text = opd_patient.allergy if opd_patient.allergy else "No known allergy"
-        
-        # Format vitals
-        vitals_text = opd_patient.vitals if opd_patient.vitals else "N/A"
-
-        presenting_complaint_text = (
-            opd_patient.presenting_complaint.replace("\n", "<br>")
-            if opd_patient.presenting_complaint
-            else "N/A"
+        allergy_text = OPDPatientReportService._html_text(
+            opd_patient.allergy, "No known allergy"
         )
-
-        # Format diagnosis
-        diagnosis_text = (
-            opd_patient.diagnosis.replace("\n", "<br>")
-            if opd_patient.diagnosis
-            else "N/A"
+        vitals_text = OPDPatientReportService._html_text(opd_patient.vitals)
+        presenting_complaint_text = OPDPatientReportService._html_text(
+            opd_patient.presenting_complaint
         )
-        
-        # Format patient history
-        tobacco = opd_patient.patient_history.tobacco_use if opd_patient.patient_history else "No"
-        alcohol = opd_patient.patient_history.alcohol_use if opd_patient.patient_history else "No"
-        substance = opd_patient.patient_history.substance_use if opd_patient.patient_history else "No"
-        
-        # Format past illness/procedures
-        past_illness = ""
-        if opd_patient.patient_history and opd_patient.patient_history.past_illness:
-            past_illness = opd_patient.patient_history.past_illness.replace('\n', '<br>')
-        
+        diagnosis_text = OPDPatientReportService._html_text(opd_patient.diagnosis)
+
+        tobacco = OPDPatientReportService._yes_no(
+            opd_patient.patient_history.tobacco_use if opd_patient.patient_history else None,
+        )
+        alcohol = OPDPatientReportService._yes_no(
+            opd_patient.patient_history.alcohol_use if opd_patient.patient_history else None,
+        )
+        substance = OPDPatientReportService._yes_no(
+            opd_patient.patient_history.substance_use if opd_patient.patient_history else None,
+        )
+        past_illness = OPDPatientReportService._html_text(
+            opd_patient.patient_history.past_illness if opd_patient.patient_history else None,
+            "None",
+        )
         past_procedures = ""
         if opd_patient.patient_history and opd_patient.patient_history.past_procedures:
-            past_procedures = opd_patient.patient_history.past_procedures.replace('\n', '<br>')
-        
-        # Format procedures
+            past_procedures = OPDPatientReportService._html_text(
+                opd_patient.patient_history.past_procedures, ""
+            )
+
         procedures_text = ", ".join(opd_patient.procedures) if opd_patient.procedures else "N/A"
-        
-        # Format treatment and followup
-        treatment_note = opd_patient.treatment_note if opd_patient.treatment_note else "N/A"
-        followup_note = opd_patient.followup_note if opd_patient.followup_note else "N/A"
-        
-        # Format examination
-        general_exam = opd_patient.general_examination if opd_patient.general_examination else "NAD"
-        systemic_exam = opd_patient.systemic_examination if opd_patient.systemic_examination else "NAD"
+        treatment_note = OPDPatientReportService._html_text(opd_patient.treatment_note)
+        followup_note = OPDPatientReportService._html_text(opd_patient.followup_note)
+        general_exam = OPDPatientReportService._html_text(
+            opd_patient.general_examination, "NAD"
+        )
+        systemic_exam = OPDPatientReportService._html_text(
+            opd_patient.systemic_examination, "NAD"
+        )
         
         # Get patient ID for document number
         patient_id_str = str(opd_patient.id) if opd_patient.id else ""
@@ -202,15 +264,9 @@ class OPDPatientReportService:
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OPD Patient Assessment Report</title>
     <style>
-        @media print {{
-            @page {{
-                size: A4;
-                margin: 0;
-            }}
-            body {{
-                margin: 0;
-                padding: 20px;
-            }}
+        @page {{
+            size: A4;
+            margin: 0;
         }}
         
         * {{
@@ -219,22 +275,43 @@ class OPDPatientReportService:
             box-sizing: border-box;
         }}
         
-        body {{
+        html, body {{
             font-family: Arial, Helvetica, sans-serif;
             font-size: 9pt;
             line-height: 1.4;
             color: #000;
-            background: #fff;
-            padding: 20px 50px;
-            max-width: 210mm;
-            margin: 0 auto;
+            background: transparent;
+            margin: 0;
+            padding: 0;
+        }}
+
+        .letterhead-wrap {{
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 210mm;
+            height: 297mm;
+            overflow: hidden;
+            z-index: -1;
+        }}
+
+        .letterhead {{
+            width: 210mm;
+            height: 297mm;
+            display: block;
+        }}
+
+        .page-content {{
+            padding: 44mm 16mm 54mm 16mm;
         }}
         
         .header {{
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 18px;
+            margin-top: -24mm;
+            margin-bottom: 4mm;
+            min-height: 22mm;
         }}
         
         .date {{
@@ -249,23 +326,23 @@ class OPDPatientReportService:
             text-align: center;
             font-size: 14pt;
             font-weight: bold;
-            margin-bottom: 18px;
+            margin-bottom: 8px;
         }}
         
         .divider {{
             border-top: 1px solid #000;
-            margin: 12px 0;
+            margin: 8px 0;
         }}
         
         .patient-info {{
-            margin-bottom: 12px;
+            margin-bottom: 6px;
             display: flex;
             border: 0px solid #000;
         }}
         
         .patient-column {{
             flex: 1;
-            padding: 12px;
+            padding: 4px 8px;
             border-right: 0px solid #000;
         }}
         
@@ -275,7 +352,7 @@ class OPDPatientReportService:
         
         .patient-field {{
             display: flex;
-            margin-bottom: 12px;
+            margin-bottom: 6px;
             align-items: baseline;
         }}
         
@@ -294,51 +371,76 @@ class OPDPatientReportService:
         }}
         
         .section {{
-            margin-top: 15px;
-            margin-bottom: 15px;
+            margin-top: 8px;
+            margin-bottom: 8px;
         }}
-        
+
+        .section-box {{
+            margin: 8px 0 10px 0;
+        }}
+
         .section-title {{
             font-weight: bold;
             font-size: 10pt;
-            margin-bottom: 12px;
+            margin-bottom: 6px;
+            padding-bottom: 2px;
+            border-bottom: 1px solid #ccc;
+        }}
+
+        .two-col {{
+            display: flex;
+            gap: 22px;
+            align-items: flex-start;
+        }}
+
+        .col {{
+            flex: 1;
+            min-width: 0;
+        }}
+
+        .col-right {{
+            padding-left: 18mm;
         }}
         
         .section-content {{
             font-size: 9pt;
-            line-height: 1.6;
+            line-height: 1.55;
             white-space: pre-wrap;
+            margin-top: 2px;
         }}
         
-        .allergy {{
-            margin-bottom: 15px;
+        .allergy-row {{
+            margin-top: 8px;
         }}
         
         .history-row {{
             display: flex;
-            gap: 50px;
-            margin-bottom: 12px;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 20px;
+            margin-bottom: 8px;
         }}
         
         .history-item {{
-            display: flex;
-            gap: 5px;
+            white-space: nowrap;
         }}
         
         .past-illness {{
-            margin-top: 12px;
-            margin-bottom: 15px;
-            line-height: 1.6;
+            margin-top: 4px;
+            line-height: 1.55;
         }}
         
         .signature {{
-            margin-top: 30px;
+            margin-top: 14px;
+            margin-left: auto;
+            width: 38%;
+            text-align: right;
         }}
         
         .signature-name {{
             font-weight: bold;
-            font-size: 9pt;
-            margin-top: 10px;
+            font-size: 10pt;
+            margin-top: 4px;
         }}
         
         .signature-designation {{
@@ -347,16 +449,22 @@ class OPDPatientReportService:
         }}
         
         .signature-image {{
-            max-width: 200px;
-            max-height: 80px;
-            margin-top: 10px;
-            margin-bottom: 5px;
+            max-width: 210px;
+            max-height: 90px;
+            width: auto;
+            height: auto;
+            display: block;
+            margin-left: auto;
+            margin-right: 0;
+            margin-top: 2px;
+            margin-bottom: 2px;
         }}
         
         .header-left {{
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            justify-content: center;
+            gap: 6px;
         }}
         
         .logo-image {{
@@ -369,6 +477,10 @@ class OPDPatientReportService:
     </style>
 </head>
 <body>
+    <div class="letterhead-wrap">
+        <img class="letterhead" src="springer_letterhead.jpg" alt="" />
+    </div>
+    <div class="page-content">
     <!-- Header -->
     <div class="header">
         <div class="header-left">
@@ -376,9 +488,6 @@ class OPDPatientReportService:
             <div class="doc-number">
                 <span>Document Number:</span> {patient_id_str}
             </div>
-        </div>
-        <div>
-            <img src="https://enext-assets.s3.ap-south-1.amazonaws.com/assets/icons/WhatsApp+Image+2025-12-13+at+16.49.10.jpeg" alt="Logo" class="logo-image" />
         </div>
     </div>
     
@@ -426,81 +535,76 @@ class OPDPatientReportService:
     <!-- Divider -->
     <div class="divider"></div>
 
-    <!-- Presenting Complaint -->
-    <div class="section">
-        <span class="patient-label">Presenting Complaint:</span><br>
-        <div class="section-content">{presenting_complaint_text}</div>
+    <div class="section-box">
+        <div class="two-col">
+            <div class="col">
+                <span class="patient-label">Presenting Complaint:</span>
+                <div class="section-content">{presenting_complaint_text}</div>
+            </div>
+            <div class="col col-right">
+                <span class="patient-label">Vitals:</span>
+                <div class="section-content">{vitals_text}</div>
+            </div>
+        </div>
     </div>
-    
-    <!-- Allergy -->
-    <div class="allergy">
-        <span class="patient-label">Allergy:</span>
-        <span class="patient-value">{allergy_text}</span>
-    </div>
-    
-    <!-- Vitals -->
-    <div class="allergy">
-        <span class="patient-label">Vitals:</span>
-        <span class="patient-value">{vitals_text}</span>
-    </div>
-    
-    <!-- Patient History -->
-    <div class="section">
+
+    <div class="section-box">
         <div class="section-title">Patient History</div>
-        
         <div class="history-row">
             <div class="history-item">
                 <span class="patient-label">Tobacco Use:</span>
-                <span class="patient-value">{tobacco or "No"}</span>
+                <span class="patient-value">{tobacco}</span>
             </div>
             <div class="history-item">
-                <span class="patient-label">Alcohol:</span>
-                <span class="patient-value">{alcohol or "No"}</span>
+                <span class="patient-label">Alcohol Use:</span>
+                <span class="patient-value">{alcohol}</span>
             </div>
             <div class="history-item">
                 <span class="patient-label">Substance Use:</span>
-                <span class="patient-value">{substance or "No"}</span>
+                <span class="patient-value">{substance}</span>
             </div>
         </div>
-        
-        <div class="past-illness">
-            <span class="patient-label">Past Illness/Procedures:</span><br>
-            <div class="section-content">{past_illness if past_illness else "None"}</div>
-            {f'<div class="section-content">{past_procedures}</div>' if past_procedures else ''}
+        <div class="two-col">
+            <div class="col">
+                <span class="patient-label">Past Illness/Procedures:</span>
+                <div class="section-content">{past_illness}</div>
+                {f'<div class="section-content">{past_procedures}</div>' if past_procedures else ''}
+            </div>
+            <div class="col col-right">
+                <span class="patient-label">Allergy:</span>
+                <div class="section-content">{allergy_text}</div>
+            </div>
         </div>
     </div>
-    
-    <!-- General Examination -->
-    <div class="section">
-         <span class="patient-label">General Examination:</span><br>
-        <div class="section-content">{general_exam}</div>
-    </div>
-    
-    <!-- Systemic Examination -->
-    <div class="section">
-        <span class="patient-label">Systemic Examination:</span><br>
-        <div class="section-content">{systemic_exam}</div>
+
+    <div class="section-box">
+        <div class="section-title">Examination</div>
+        <div class="two-col">
+            <div class="col">
+                <span class="patient-label">General Examination:</span>
+                <div class="section-content">{general_exam}</div>
+            </div>
+            <div class="col">
+                <span class="patient-label">Systemic Examination:</span>
+                <div class="section-content">{systemic_exam}</div>
+            </div>
+        </div>
     </div>
 
-    <!-- Diagnosis -->
     <div class="section">
-        <span class="patient-label">Diagnosis:</span><br>
+        <span class="patient-label">Diagnosis:</span>
         <div class="section-content">{diagnosis_text}</div>
     </div>
-    
-    <!-- Procedure -->
 
-    
-    <!-- Treatment Note -->
-    <div class="section">
-        <span class="patient-label">Treatment Note:</span><br>
-        <div class="section-content">{treatment_note}</div>
-    </div>
-    
-    <!-- Follow-up Note -->
-    <div class="section">
-        <span class="patient-label">Follow-up Note:</span><br>
-        <div class="section-content">{followup_note}</div>
+    <div class="two-col">
+        <div class="col">
+            <span class="patient-label">Treatment Note:</span>
+            <div class="section-content">{treatment_note}</div>
+        </div>
+        <div class="col col-right">
+            <span class="patient-label">Follow-up Note:</span>
+            <div class="section-content">{followup_note}</div>
+        </div>
     </div>
     
     <!-- Signature -->
@@ -508,6 +612,7 @@ class OPDPatientReportService:
         {f'<img src="{consultant_signature_url}" alt="Signature" class="signature-image" />' if consultant_signature_url else ''}
         <div class="signature-name">{ "Dr. " + consultant if consultant else "Dr. [Name]"}</div>
         {f'<div class="signature-designation">{consultant_speciality}</div>' if consultant_speciality else ''}
+    </div>
     </div>
 </body>
 </html>

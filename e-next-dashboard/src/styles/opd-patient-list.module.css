@@ -663,6 +663,7 @@
 .detailValue {
   font-size: 0.875rem;
   color: #1f2937;
+  white-space: pre-wrap;
 }
 
 .detailValueFull {

@@ -435,9 +435,15 @@ export const patientService = {
     });
   },
 
-  getDoctors: async (centerId: string) => {
+  getDoctors: async (
+    centerId: string,
+    options?: { limit?: number; search?: string }
+  ) => {
+    const limit = options?.limit ?? 500;
+    const search = options?.search?.trim();
+    const searchQuery = search ? `&search=${encodeURIComponent(search)}` : '';
     return fetchApi<DoctorListResponse>(
-      API_ENDPOINTS.USER.DOCTORS(centerId)
+      `${API_ENDPOINTS.USER.DOCTORS(centerId)}&limit=${limit}${searchQuery}`
     );
   },
 
