@@ -158,6 +158,8 @@ class ProgressEntrySchema(BaseModel):
     catheter: Optional[CatheterSectionSchema] = None
     recorded_by: Optional[str] = None
     recorded_at: Optional[datetime] = None
+    created_by_name: Optional[str] = None
+    updated_by_name: Optional[str] = None
 
 
 class CreatePatientProgressSheetSchema(BaseModel):

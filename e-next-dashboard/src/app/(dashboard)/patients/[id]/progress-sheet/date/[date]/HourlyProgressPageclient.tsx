@@ -30,6 +30,7 @@ export default function HourlyProgressPageClient() {
   const [progressSheet, setProgressSheet] = useState<ProgressSheet | null>(null);
   const [loadingSheet, setLoadingSheet] = useState(false);
   const [filledHours, setFilledHours] = useState<string[]>([]);
+  const [entryAudits, setEntryAudits] = useState<Record<string, { createdBy: string; updatedBy: string }>>({});
   const isEnsuringSheetRef = useRef(false);
   const hasEnsuredForDateRef = useRef<string | null>(null);
   const BedIcon = ({ bedNumber }: { bedNumber: number }) => (
@@ -60,6 +61,7 @@ export default function HourlyProgressPageClient() {
     isEnsuringSheetRef.current = false;
     setProgressSheet(null);
     setFilledHours([]);
+    setEntryAudits({});
   }, [params.date]);
 
   useEffect(() => {
@@ -108,9 +110,18 @@ export default function HourlyProgressPageClient() {
         setProgressSheet(sheet);
         if (response.data?.entries) {
           const hours = response.data.entries.map((entry: ProgressSheetEntry) => entry.time);
+          const audits: Record<string, { createdBy: string; updatedBy: string }> = {};
+          response.data.entries.forEach((entry: ProgressSheetEntry) => {
+            audits[entry.time] = {
+              createdBy: entry.created_by_name || '—',
+              updatedBy: entry.updated_by_name || '—',
+            };
+          });
           setFilledHours(hours);
+          setEntryAudits(audits);
         } else {
           setFilledHours([]);
+          setEntryAudits({});
         }
         return sheet;
       } else {
@@ -274,6 +285,7 @@ export default function HourlyProgressPageClient() {
             <div className={styles.timeGrid}>
               {timeSlots.map((slot, index) => {
                 const isFilled = isHourFilled(slot.time);
+                const audit = isFilled ? entryAudits[slot.time] : undefined;
                 return (
                   <button
                     key={index}
@@ -284,6 +296,12 @@ export default function HourlyProgressPageClient() {
                    <img src="https://enext-assets.s3.ap-south-1.amazonaws.com/assets/icons/Group+1321315459.svg" alt="clock" className={styles.clockIcon} />
                     {/* <span className={styles.clockIcon}>⏰</span> */}
                     <span className={styles.timeText}>{slot.displayTime}</span>
+                    {audit && (
+                      <span className={styles.auditTip}>
+                        <span>Created by: {audit.createdBy}</span>
+                        <span>Updated by: {audit.updatedBy}</span>
+                      </span>
+                    )}
                   </button>
                 );
               })}

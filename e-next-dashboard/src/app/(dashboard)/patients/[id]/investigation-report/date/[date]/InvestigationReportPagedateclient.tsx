@@ -29,6 +29,8 @@ interface TimeSlot {
   displayTime: string;
   isSelected: boolean;
   report_id: string;
+  createdBy: string;
+  updatedBy: string;
 }
 
 interface SensitivityTest {
@@ -60,6 +62,12 @@ export default function InvestigationReportPageClient({ params }: { params: Page
   const [showAddForm, setShowAddForm] = useState(false);
   const [availableParameters, setAvailableParameters] = useState<AvailableParameters | null>(null);
   const [activeTab, setActiveTab] = useState('bloodAnalysis');
+  const [auditTip, setAuditTip] = useState<{
+    x: number;
+    y: number;
+    createdBy: string;
+    updatedBy: string;
+  } | null>(null);
 
   useEffect(() => {
     loadPatientDetails();
@@ -148,7 +156,9 @@ export default function InvestigationReportPageClient({ params }: { params: Page
             time: `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`,
             displayTime: `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`,
             isSelected: false,
-            report_id: report.report_id
+            report_id: report.report_id,
+            createdBy: report.created_by_name || '—',
+            updatedBy: report.updated_by_name || '—',
           };
           
           // console.log('Final time slot:', timeSlot);
@@ -519,11 +529,30 @@ export default function InvestigationReportPageClient({ params }: { params: Page
               key={index}
               className={`${styles.timeSlot} ${slot.isSelected ? styles.selected : ''}`}
               onClick={() => handleTimeSelect(slot)}
+              onMouseEnter={(event) => {
+                const rect = event.currentTarget.getBoundingClientRect();
+                setAuditTip({
+                  x: rect.left + rect.width / 2,
+                  y: rect.top,
+                  createdBy: slot.createdBy,
+                  updatedBy: slot.updatedBy,
+                });
+              }}
+              onMouseLeave={() => setAuditTip(null)}
             >
               <span className={styles.timeText}>{slot.displayTime}</span>
             </button>
           ))}
         </div>
+        {auditTip && (
+          <div
+            className={styles.auditTip}
+            style={{ left: auditTip.x, top: auditTip.y }}
+          >
+            <span>Created by: {auditTip.createdBy}</span>
+            <span>Updated by: {auditTip.updatedBy}</span>
+          </div>
+        )}
 
         {selectedReport && availableParameters && (
           <div className={styles.sections}>

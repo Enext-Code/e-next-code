@@ -1,4 +1,4 @@
-"""Map monitor observation codes to e-next vitals. Mindray first; other vendors later."""
+"""Mindray observation codes only. Philips codes belong in vendors/philips.py."""
 
 from typing import Dict, Optional, Tuple
 
@@ -49,6 +49,7 @@ CODE_MAP: Dict[str, Tuple[str, int]] = {
 PROGRESS_SHEET_LABELS = {
     "heart_rate": "Heart Rate",
     "spo2": "SpO2",
+    "respiratory_rate": "Resp",
     "systolic": "Systolic",
     "diastolic": "Diastolic",
     "temp_oral": "Temp Oral",

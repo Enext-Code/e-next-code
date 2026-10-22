@@ -49,6 +49,16 @@ export const icuService = {
     });
   },
 
+  update: async (
+    id: string,
+    data: { organisation_id: string; name: string; total_beds: number }
+  ) => {
+    return fetchApi<ICU>(API_ENDPOINTS.ICU.UPDATE(id), {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  },
+
   delete: async (id: string) => {
     return fetchApi<ICU>(API_ENDPOINTS.ICU.DELETE(id), {
       method: 'DELETE'

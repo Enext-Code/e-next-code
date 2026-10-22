@@ -13,6 +13,30 @@ export interface VitalsData {
     "Systolic": number | null;
     "Diastolic": number | null;
     "SpO2": number | null;
+    "Resp"?: number | null;
+  };
+}
+
+const EMPTY_VITALS: VitalsData["values"] = {
+  "Heart Rate": null,
+  "Rythm": null,
+  "Temp Oral": null,
+  "CVP": null,
+  "RBS": null,
+  "Systolic": null,
+  "Diastolic": null,
+  "SpO2": null,
+  "Resp": null,
+};
+
+function normalizeVitals(initialValues?: Partial<VitalsData> | null): VitalsData {
+  const values = initialValues?.values;
+  return {
+    values: {
+      ...EMPTY_VITALS,
+      ...(values ?? {}),
+      Resp: values?.Resp ?? null,
+    },
   };
 }
 
@@ -29,7 +53,7 @@ const VitalsForm: React.FC<VitalsFormProps> = ({
   time,
   onSubmit,
 }) => {
-  const [formValues, setFormValues] = React.useState<VitalsData>(initialValues);
+  const [formValues, setFormValues] = React.useState<VitalsData>(() => normalizeVitals(initialValues));
   const [isLoading, setIsLoading] = React.useState(false);
 
   const handleInputChange = (field: keyof VitalsData['values'], value: string) => {
@@ -88,6 +112,10 @@ const VitalsForm: React.FC<VitalsFormProps> = ({
             <div className={styles.row}>
               <label>SpO2:</label>
               <span>{formValues.values["SpO2"] ?? "-"}{formValues.values["SpO2"] !== null ? " %" : ""}</span>
+            </div>
+            <div className={styles.row}>
+              <label>Resp:</label>
+              <span>{formValues.values["Resp"] ?? "-"}{formValues.values["Resp"] != null ? " /min" : ""}</span>
             </div>
           </div>
 
@@ -199,6 +227,18 @@ const VitalsForm: React.FC<VitalsFormProps> = ({
               className={styles.input}
               min="40"
               max="250"
+            />
+          </div>
+          <div className={styles.formGroup}>
+            <label>Resp:</label>
+            <input
+              type="number"
+              value={formValues.values["Resp"] ?? ""}
+              onChange={(e) => handleInputChange("Resp", e.target.value)}
+              placeholder="18"
+              className={styles.input}
+              min="0"
+              max="80"
             />
           </div>
         </div>

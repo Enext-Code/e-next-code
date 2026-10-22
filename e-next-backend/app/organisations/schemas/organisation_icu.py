@@ -51,3 +51,6 @@ class OrganisationICUUpdate(BaseModel):
 
     organisation_id: Optional[str] = None
     name: Optional[str] = None
+    total_beds: Optional[int] = Field(
+        default=None, description="Desired number of beds", gt=0
+    )

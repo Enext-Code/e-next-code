@@ -220,6 +220,28 @@
   white-space: nowrap;
 }
 
+.auditTip {
+  position: fixed;
+  z-index: 30;
+  transform: translate(-50%, calc(-100% - 8px));
+  min-width: 160px;
+  padding: 8px 10px;
+  background: #1f1f1f;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  text-align: left;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.auditTip span {
+  display: block;
+}
+
 .timeSlot.selected {
   background-color: #ff9f43;
   color: white;

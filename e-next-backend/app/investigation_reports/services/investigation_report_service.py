@@ -1,12 +1,13 @@
 import logging
 import mimetypes
 from datetime import UTC, datetime, timedelta
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from bson import ObjectId
 from fastapi import UploadFile
 
 from app.accounts.enums import UserType
+from app.accounts.models import UserProfile
 from app.base.models import NotFoundError, ValidationError
 from app.core import cache
 from app.core.s3 import s3
@@ -43,8 +44,8 @@ class InvestigationReportService:
     """Investigation Report service"""
 
     CACHE_KEY_PREFIX = "investigation_report"
-    LIST_CACHE_KEY_PREFIX = "investigation_report_list"
-    PATIENT_REPORTS_CACHE_KEY_PREFIX = "patient_investigation_reports"
+    LIST_CACHE_KEY_PREFIX = "investigation_report_list_v2"
+    PATIENT_REPORTS_CACHE_KEY_PREFIX = "patient_investigation_reports_v2"
     CACHE_TIMEOUT = timedelta(minutes=30)
 
     @staticmethod
@@ -61,6 +62,81 @@ class InvestigationReportService:
         await cache.delete_pattern(
             f"{InvestigationReportService.LIST_CACHE_KEY_PREFIX}:*"
         )
+
+    @staticmethod
+    def _person_name(first_name: Optional[str], last_name: Optional[str]) -> Optional[str]:
+        name = " ".join(part for part in (first_name, last_name) if part).strip()
+        return name or None
+
+    @staticmethod
+    async def _report_actor_names(
+        reports: List[dict],
+    ) -> Dict[str, Tuple[Optional[str], Optional[str]]]:
+        """Resolve created-by and updated-by display names for a page of reports."""
+        profile_ids = set()
+        user_ids = set()
+        for report in reports:
+            for field_name in ("created_by_profile", "updated_by_profile"):
+                value = report.get(field_name)
+                if value and value != "hl7-listener":
+                    profile_ids.add(str(value))
+            for field_name in ("created_by", "updated_by"):
+                value = report.get(field_name)
+                if value and value != "hl7-listener":
+                    user_ids.add(str(value))
+
+        by_profile: Dict[str, str] = {}
+        by_user: Dict[str, str] = {}
+        object_ids = []
+        for profile_id in profile_ids:
+            try:
+                object_ids.append(ObjectId(profile_id))
+            except Exception:
+                continue
+        if object_ids:
+            profiles = await UserProfile.find({"_id": {"$in": object_ids}}, limit=500)
+            for profile in profiles:
+                name = InvestigationReportService._person_name(
+                    profile.first_name, profile.last_name
+                )
+                if not name:
+                    continue
+                by_profile[str(profile.id)] = name
+                if profile.user_id:
+                    by_user[str(profile.user_id)] = name
+
+        missing_users = [user_id for user_id in user_ids if user_id not in by_user]
+        if missing_users:
+            profiles = await UserProfile.find(
+                {"user_id": {"$in": missing_users}},
+                limit=500,
+            )
+            for profile in profiles:
+                name = InvestigationReportService._person_name(
+                    profile.first_name, profile.last_name
+                )
+                if profile.user_id and name and str(profile.user_id) not in by_user:
+                    by_user[str(profile.user_id)] = name
+
+        def resolve(user_id: Optional[str], profile_id: Optional[str]) -> Optional[str]:
+            if user_id == "hl7-listener" or profile_id == "hl7-listener":
+                return "Mindray"
+            if profile_id and by_profile.get(str(profile_id)):
+                return by_profile[str(profile_id)]
+            if user_id and by_user.get(str(user_id)):
+                return by_user[str(user_id)]
+            return None
+
+        names: Dict[str, Tuple[Optional[str], Optional[str]]] = {}
+        for report in reports:
+            report_id = report.get("report_id")
+            if not report_id:
+                continue
+            names[str(report_id)] = (
+                resolve(report.get("created_by"), report.get("created_by_profile")),
+                resolve(report.get("updated_by"), report.get("updated_by_profile")),
+            )
+        return names
 
     @staticmethod
     def _enhance_investigation_value(
@@ -920,6 +996,9 @@ class InvestigationReportService:
         result = result[0] if result else {"metadata": [{"total": 0}], "data": []}
 
         total = result["metadata"][0]["total"] if result["metadata"] else 0
+        actor_names = await InvestigationReportService._report_actor_names(
+            result["data"]
+        )
         reports = [
             InvestigationReportSummaryResponse(
                 id=str(report["_id"]),
@@ -934,6 +1013,8 @@ class InvestigationReportService:
                 arterial_parameters_count=report.get("arterial_parameters_count", 0),
                 created_at=report["created_at"],
                 updated_at=report["updated_at"],
+                created_by_name=actor_names.get(report["report_id"], (None, None))[0],
+                updated_by_name=actor_names.get(report["report_id"], (None, None))[1],
             ).model_dump(mode="json")
             for report in result["data"]
         ]
@@ -1143,9 +1224,15 @@ class InvestigationReportService:
         result = result[0] if result else {"metadata": [{"total": 0}], "data": []}
 
         total = result["metadata"][0]["total"] if result["metadata"] else 0
+        actor_names = await InvestigationReportService._report_actor_names(
+            result["data"]
+        )
         reports = []
 
         for report in result["data"]:
+            created_name, updated_name = actor_names.get(
+                report["report_id"], (None, None)
+            )
             summary = InvestigationReportSummaryResponse(
                 id=str(report["_id"]),
                 report_id=report["report_id"],
@@ -1159,6 +1246,8 @@ class InvestigationReportService:
                 arterial_parameters_count=report.get("arterial_parameters_count", 0),
                 created_at=report["created_at"],
                 updated_at=report["updated_at"],
+                created_by_name=created_name,
+                updated_by_name=updated_name,
             ).model_dump(mode="json")
 
             # Add patient info if available

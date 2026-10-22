@@ -35,6 +35,13 @@ export default function ICUPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [icuToDelete, setIcuToDelete] = useState<{ id: string; name: string } | null>(null);
 
+  // Edit modal states
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [icuToEdit, setIcuToEdit] = useState<ICU | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', beds: '' });
+  const [isUpdatingICU, setIsUpdatingICU] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
   // Create ICU loading state
   const [isCreatingICU, setIsCreatingICU] = useState(false);
 
@@ -160,6 +167,55 @@ export default function ICUPage() {
       setError('Failed to create ICU');
     } finally {
       setIsCreatingICU(false);
+    }
+  };
+
+  const handleEditClick = (icu: ICU) => {
+    setIcuToEdit(icu);
+    setEditForm({ name: icu.name, beds: String(icu.total_beds) });
+    setEditError(null);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditClose = () => {
+    if (isUpdatingICU) return;
+    setIsEditModalOpen(false);
+    setIcuToEdit(null);
+    setEditError(null);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!icuToEdit) return;
+
+    const beds = parseInt(editForm.beds, 10);
+    if (!editForm.name.trim() || !Number.isFinite(beds) || beds < 1) {
+      setEditError('Enter an ICU name and at least 1 bed.');
+      return;
+    }
+
+    setIsUpdatingICU(true);
+    setEditError(null);
+
+    try {
+      const response = await icuService.update(icuToEdit.id, {
+        organisation_id: icuToEdit.organisation_id,
+        name: editForm.name.trim(),
+        total_beds: beds,
+      });
+
+      if (response.success) {
+        setIsEditModalOpen(false);
+        setIcuToEdit(null);
+        loadICUs(selectedCenter, 1);
+      } else {
+        setEditError(response.message || 'Failed to update ICU');
+      }
+    } catch (err) {
+      console.error('Error updating ICU:', err);
+      setEditError(err instanceof Error ? err.message : 'Failed to update ICU');
+    } finally {
+      setIsUpdatingICU(false);
     }
   };
 
@@ -321,13 +377,26 @@ export default function ICUPage() {
                   <td>{icu.name}</td>
                   <td>{icu.total_beds}</td>
                   <td>
-                    <button onClick={() => {/* Handle edit */}}></button>
-                    <button 
-                      onClick={() => handleDeleteClick(icu)}
-                      className={styles.deleteButton}
-                    >
-                      🗑️
-                    </button>
+                    <div className={styles.actionButtons}>
+                      <button
+                        type="button"
+                        onClick={() => handleEditClick(icu)}
+                        className={styles.editButton}
+                        aria-label={`Edit ${icu.name}`}
+                        title="Edit"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteClick(icu)}
+                        className={styles.deleteButton}
+                        aria-label={`Delete ${icu.name}`}
+                        title="Delete"
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -352,6 +421,54 @@ export default function ICUPage() {
         title="Delete ICU"
         message={`Are you sure you want to delete ${icuToDelete?.name || 'this ICU'}? This action cannot be undone.`}
       />
+      {isEditModalOpen && (
+        <div className={styles.modalOverlay} onClick={handleEditClose}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>Edit ICU</h2>
+            <form onSubmit={handleEditSubmit}>
+              <div className={styles.formGroup}>
+                <label>ICU Name</label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
+                  placeholder="Enter ICU name"
+                  required
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Number of Beds</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={editForm.beds}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, beds: e.target.value }))}
+                  placeholder="Enter number of beds"
+                  required
+                />
+              </div>
+              {editError && <div className={styles.modalError}>{editError}</div>}
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={styles.cancelButton}
+                  onClick={handleEditClose}
+                  disabled={isUpdatingICU}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={styles.saveButton}
+                  disabled={isUpdatingICU}
+                >
+                  {isUpdatingICU ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 } 

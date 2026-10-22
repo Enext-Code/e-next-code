@@ -25,6 +25,8 @@ export interface InvestigationReportListItem {
   microbiology_parameters_count: number;
   created_at: string;
   updated_at: string;
+  created_by_name?: string | null;
+  updated_by_name?: string | null;
 }
 
 // Investigation Report Interfaces for Detailed View

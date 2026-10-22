@@ -127,6 +127,8 @@ class InvestigationReportSummaryResponse(BaseModel):
     microbiology_parameters_count: int = 0
     created_at: datetime
     updated_at: datetime
+    created_by_name: Optional[str] = None
+    updated_by_name: Optional[str] = None
 
 
 class InvestigationReportDetailResponse(BaseModel):

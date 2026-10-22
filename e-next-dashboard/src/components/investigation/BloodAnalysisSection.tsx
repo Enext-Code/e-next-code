@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BloodAnalysisValues, Parameter } from '@/types/investigation';
-import { bloodParameterOrder, qualitativeBloodParameterSet } from '@/constants/bloodParameters';
+import { bloodParameterOrder, qualitativeBloodParameterOptions, qualitativeBloodParameterSet } from '@/constants/bloodParameters';
 import styles from '@/styles/investigation-report/Blood-analysis-report.module.css';
 import EditButton from '../common/EditButton';
 
@@ -91,8 +91,9 @@ const BloodAnalysisSection: React.FC<BloodAnalysisSectionProps> = ({
     }
 
     if (qualitativeBloodParameterSet.has(paramName)) {
+      const normalized = String(value).toLowerCase();
       return {
-        isHigh: String(value).toLowerCase() === 'reactive',
+        isHigh: normalized === 'reactive' || normalized === 'positive',
         isLow: false
       };
     }
@@ -153,6 +154,7 @@ const BloodAnalysisSection: React.FC<BloodAnalysisSectionProps> = ({
             const info = parameterInfo[parameter.value] || parameterInfo[parameter.display_name];
             const { isHigh, isLow } = checkAbnormalValue(parameter.value, value);
             const isQualitative = qualitativeBloodParameterSet.has(parameter.value);
+            const qualitativeOptions = qualitativeBloodParameterOptions[parameter.value] || [];
             
             return (
               <div key={index} className={styles.tableRow}>
@@ -166,8 +168,9 @@ const BloodAnalysisSection: React.FC<BloodAnalysisSectionProps> = ({
                         className={styles.input}
                       >
                         <option value="">Select</option>
-                        <option value="Non-reactive">Non-reactive</option>
-                        <option value="Reactive">Reactive</option>
+                        {qualitativeOptions.map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
                       </select>
                     ) : (
                       <input

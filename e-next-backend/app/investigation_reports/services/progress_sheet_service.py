@@ -1,10 +1,11 @@
 import logging
 from datetime import UTC, datetime, timedelta
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from bson import ObjectId
 
 from app.accounts.enums import UserType
+from app.accounts.models import UserProfile
 from app.base.models import NotFoundError, ValidationError
 from app.core import cache
 from app.patients.models import Patient
@@ -101,10 +102,106 @@ class ProgressSheetService:
         return progress_sheet, existing_entry
 
     @staticmethod
+    def _person_name(first_name: Optional[str], last_name: Optional[str]) -> Optional[str]:
+        name = " ".join(part for part in (first_name, last_name) if part).strip()
+        return name or None
+
+    @staticmethod
+    def _actor_label(actor_id: Optional[str]) -> Optional[str]:
+        if actor_id == "hl7-listener":
+            return "Mindray"
+        return None
+
+    @staticmethod
+    def _stamp_entry(entry: ProgressEntry, current_user: dict) -> None:
+        """Keep the first writer, and record whoever last changed this hour."""
+        user_id = str(current_user.get("sub") or "") or None
+        profile_id = str(current_user.get("pid") or "") or None
+        if not entry.created_by:
+            previous = entry.recorded_by
+            entry.created_by = previous or user_id
+            if not entry.created_by_profile and (not previous or previous == user_id):
+                entry.created_by_profile = profile_id
+        entry.updated_by = user_id
+        entry.updated_by_profile = profile_id
+        entry.recorded_by = user_id
+        entry.recorded_at = datetime.now(UTC)
+
+    @staticmethod
+    async def _load_actor_names(
+        entries: List[ProgressEntry],
+    ) -> Tuple[Dict[str, str], Dict[str, str]]:
+        profile_ids = set()
+        user_ids = set()
+        for entry in entries:
+            for profile_id in (entry.created_by_profile, entry.updated_by_profile):
+                if profile_id and profile_id != "hl7-listener":
+                    profile_ids.add(str(profile_id))
+            for user_id in (
+                entry.created_by or entry.recorded_by,
+                entry.updated_by or entry.recorded_by,
+            ):
+                if user_id and user_id != "hl7-listener":
+                    user_ids.add(str(user_id))
+
+        by_profile: Dict[str, str] = {}
+        by_user: Dict[str, str] = {}
+        object_ids = []
+        for profile_id in profile_ids:
+            try:
+                object_ids.append(ObjectId(profile_id))
+            except Exception:
+                continue
+        if object_ids:
+            profiles = await UserProfile.find({"_id": {"$in": object_ids}}, limit=500)
+            for profile in profiles:
+                name = ProgressSheetService._person_name(
+                    profile.first_name, profile.last_name
+                )
+                if not name:
+                    continue
+                by_profile[str(profile.id)] = name
+                if profile.user_id:
+                    by_user[str(profile.user_id)] = name
+
+        missing_users = [user_id for user_id in user_ids if user_id not in by_user]
+        if missing_users:
+            profiles = await UserProfile.find(
+                {"user_id": {"$in": missing_users}},
+                limit=500,
+            )
+            for profile in profiles:
+                name = ProgressSheetService._person_name(
+                    profile.first_name, profile.last_name
+                )
+                if profile.user_id and name and str(profile.user_id) not in by_user:
+                    by_user[str(profile.user_id)] = name
+        return by_profile, by_user
+
+    @staticmethod
+    def _resolve_actor_name(
+        user_id: Optional[str],
+        profile_id: Optional[str],
+        by_profile: Dict[str, str],
+        by_user: Dict[str, str],
+    ) -> Optional[str]:
+        special = ProgressSheetService._actor_label(
+            user_id
+        ) or ProgressSheetService._actor_label(profile_id)
+        if special:
+            return special
+        if profile_id and by_profile.get(str(profile_id)):
+            return by_profile[str(profile_id)]
+        if user_id and by_user.get(str(user_id)):
+            return by_user[str(user_id)]
+        return None
+
+    @staticmethod
     async def _convert_entries_to_schema(
         entries: List[ProgressEntry],
     ) -> List[ProgressEntrySchema]:
         """Convert entries to schema objects"""
+        by_profile, by_user = await ProgressSheetService._load_actor_names(entries)
         entries_schema = []
         for entry in entries:
             entry_dict = {
@@ -262,6 +359,20 @@ class ProgressSheetService:
                     )
                     if entry.parameters.catheter
                     else None
+                ),
+                "recorded_by": entry.recorded_by,
+                "recorded_at": entry.recorded_at,
+                "created_by_name": ProgressSheetService._resolve_actor_name(
+                    entry.created_by or entry.recorded_by,
+                    entry.created_by_profile,
+                    by_profile,
+                    by_user,
+                ),
+                "updated_by_name": ProgressSheetService._resolve_actor_name(
+                    entry.updated_by or entry.recorded_by,
+                    entry.updated_by_profile,
+                    by_profile,
+                    by_user,
                 ),
             }
             entries_schema.append(entry_dict)
@@ -960,8 +1071,7 @@ class ProgressSheetService:
                     if existing_entry:
                         # Update existing entry
                         existing_entry.parameters.gcs = gcs_data.values
-                        existing_entry.recorded_by = str(current_user["sub"])
-                        existing_entry.recorded_at = datetime.now(UTC)
+                        ProgressSheetService._stamp_entry(existing_entry, current_user)
                     else:
                         new_entry = ProgressEntry(
                             time=time,
@@ -969,6 +1079,7 @@ class ProgressSheetService:
                             recorded_by=str(current_user["sub"]),
                             recorded_at=datetime.now(UTC),
                         )
+                        ProgressSheetService._stamp_entry(new_entry, current_user)
                         progress_sheet_obj.entries.append(new_entry)
 
                     # Update audit fields
@@ -1143,8 +1254,7 @@ class ProgressSheetService:
                             total_output=fluid_data.total_output,
                             cumulative_balance=fluid_data.cumulative_balance,
                         )
-                        existing_entry.recorded_by = str(current_user["sub"])
-                        existing_entry.recorded_at = datetime.now(UTC)
+                        ProgressSheetService._stamp_entry(existing_entry, current_user)
                     else:
                         new_entry = ProgressEntry(
                             time=time,
@@ -1168,6 +1278,7 @@ class ProgressSheetService:
                             recorded_by=str(current_user["sub"]),
                             recorded_at=datetime.now(UTC),
                         )
+                        ProgressSheetService._stamp_entry(new_entry, current_user)
                         progress_sheet.entries.append(new_entry)
 
                     # Update audit fields
@@ -1226,8 +1337,7 @@ class ProgressSheetService:
                     if existing_entry:
                         # Update existing entry
                         existing_entry.parameters.vitals = vitals_data.values
-                        existing_entry.recorded_by = str(current_user["sub"])
-                        existing_entry.recorded_at = datetime.now(UTC)
+                        ProgressSheetService._stamp_entry(existing_entry, current_user)
                     else:
                         new_entry = ProgressEntry(
                             time=time,
@@ -1237,6 +1347,7 @@ class ProgressSheetService:
                             recorded_by=str(current_user["sub"]),
                             recorded_at=datetime.now(UTC),
                         )
+                        ProgressSheetService._stamp_entry(new_entry, current_user)
                         progress_sheet.entries.append(new_entry)
 
                     # Update audit fields
@@ -1294,8 +1405,7 @@ class ProgressSheetService:
                     if existing_entry:
                         # Update existing entry
                         existing_entry.parameters.blood_gas = blood_gas_data.values
-                        existing_entry.recorded_by = str(current_user["sub"])
-                        existing_entry.recorded_at = datetime.now(UTC)
+                        ProgressSheetService._stamp_entry(existing_entry, current_user)
                     else:
                         new_entry = ProgressEntry(
                             time=time,
@@ -1305,6 +1415,7 @@ class ProgressSheetService:
                             recorded_by=str(current_user["sub"]),
                             recorded_at=datetime.now(UTC),
                         )
+                        ProgressSheetService._stamp_entry(new_entry, current_user)
                         progress_sheet.entries.append(new_entry)
 
                     # Update audit fields
@@ -1362,8 +1473,7 @@ class ProgressSheetService:
                     if existing_entry:
                         # Update existing entry
                         existing_entry.parameters.respiratory = respiratory_data.values
-                        existing_entry.recorded_by = str(current_user["sub"])
-                        existing_entry.recorded_at = datetime.now(UTC)
+                        ProgressSheetService._stamp_entry(existing_entry, current_user)
                     else:
                         new_entry = ProgressEntry(
                             time=time,
@@ -1373,6 +1483,7 @@ class ProgressSheetService:
                             recorded_by=str(current_user["sub"]),
                             recorded_at=datetime.now(UTC),
                         )
+                        ProgressSheetService._stamp_entry(new_entry, current_user)
                         progress_sheet.entries.append(new_entry)
 
                     # Update audit fields
@@ -1440,8 +1551,7 @@ class ProgressSheetService:
                             )
                             for entry in catheter_data.entries
                         ]
-                        existing_entry.recorded_by = str(current_user["sub"])
-                        existing_entry.recorded_at = datetime.now(UTC)
+                        ProgressSheetService._stamp_entry(existing_entry, current_user)
                     else:
                         new_entry = ProgressEntry(
                             time=time,
@@ -1461,6 +1571,7 @@ class ProgressSheetService:
                             recorded_by=str(current_user["sub"]),
                             recorded_at=datetime.now(UTC),
                         )
+                        ProgressSheetService._stamp_entry(new_entry, current_user)
                         progress_sheet.entries.append(new_entry)
 
                     # Update audit fields

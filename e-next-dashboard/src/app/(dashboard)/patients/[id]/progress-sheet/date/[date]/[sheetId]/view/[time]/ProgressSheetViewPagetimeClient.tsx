@@ -337,15 +337,19 @@ export default function ProgressSheetViewPageTimeClient() {
   const renderVitalsContent = () => {
     if (!entry) return null;
 
-    const vitalsData: VitalsData = entry.vitals ?? {
+    const saved = entry.vitals?.values ?? {};
+    const vitalsData: VitalsData = {
       values: {
-        "Heart Rate": null,
-        "Rythm": null,
-        "Temp Oral": null,
-        "CVP": null,
-        "Systolic": null,
-        "Diastolic": null
-      }
+        "Heart Rate": saved["Heart Rate"] ?? null,
+        "Rythm": saved["Rythm"] ?? null,
+        "Temp Oral": saved["Temp Oral"] ?? null,
+        "CVP": saved["CVP"] ?? null,
+        "RBS": saved["RBS"] ?? null,
+        "Systolic": saved["Systolic"] ?? null,
+        "Diastolic": saved["Diastolic"] ?? null,
+        "SpO2": saved["SpO2"] ?? null,
+        "Resp": saved["Resp"] ?? null,
+      },
     };
 
     if (isEditing) {

@@ -46,6 +46,11 @@ class Settings(BaseSettings):
     AWS_MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
     AWS_ALLOWED_FILE_TYPES: List[str] = ["image/jpeg", "image/png", "application/pdf"]
 
+    # Mindray eGateway pushes HL7 here. Philips will use the same port.
+    HL7_MLLP_ENABLED: bool = True
+    HL7_MLLP_HOST: str = "0.0.0.0"
+    HL7_MLLP_PORT: int = 7700
+
     @property
     def CELERY_BROKER_URL(self) -> str:
         """Celery broker URL"""

@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 from bson import ObjectId
 
 from app.accounts.enums import UserType
-from app.base.models import DuplicateError, NotFoundError
+from app.base.models import DuplicateError, NotFoundError, ValidationError
 from app.utils import decrypt_user_type
 
 from ..filters import OrganisationICUFilterParams
@@ -247,6 +247,7 @@ class OrganisationICUService:
                 try:
                     updated_by = str(current_user["sub"])
                     updated_by_profile = str(current_user["pid"])
+                    desired_beds = organisation_icu_data.pop("total_beds", None)
 
                     update_data = {
                         **organisation_icu_data,
@@ -277,15 +278,115 @@ class OrganisationICUService:
                                 "is_deleted": False,
                             }
                         )
+                        if not organisation:
+                            raise NotFoundError("Organisation not found")
+
+                    if "name" in update_data:
+                        organisation_id = update_data.get(
+                            "organisation_id", existing.organisation_id
+                        )
+                        duplicate = await OrganisationICU.find_one(
+                            {
+                                "organisation_id": organisation_id,
+                                "name": update_data["name"],
+                                "is_active": True,
+                                "is_deleted": False,
+                                "_id": {"$ne": ObjectId(organisation_icu_id)},
+                            }
+                        )
+                        if duplicate:
+                            raise DuplicateError("Organisation ICU already exists")
 
                     await existing.update(update_data)
 
+                    if desired_beds is not None:
+                        await OrganisationICUService._sync_icu_beds(
+                            organisation_icu_id,
+                            desired_beds,
+                            updated_by,
+                            updated_by_profile,
+                        )
+
                     # Commit transaction
                     await session.commit_transaction()
-                    return existing
                 except Exception as e:
-                    await session.abort_transaction()
+                    if session.in_transaction:
+                        await session.abort_transaction()
                     raise e
+
+        return await OrganisationICUService.get_organisation_icu(organisation_icu_id)
+
+    @staticmethod
+    async def _sync_icu_beds(
+        organisation_icu_id: str,
+        desired_beds: int,
+        updated_by: str,
+        updated_by_profile: str,
+    ) -> None:
+        """Add or remove beds so the ICU matches the requested count."""
+        bed_collection = OrganisationICUBed.get_collection()
+        active_filter = {
+            "organisation_icu_id": organisation_icu_id,
+            "is_active": True,
+            "is_deleted": False,
+        }
+        active_beds = await bed_collection.find(active_filter).to_list(length=None)
+        current = len(active_beds)
+        if desired_beds == current:
+            return
+
+        now = datetime.now(UTC)
+        if desired_beds > current:
+            highest = (
+                await bed_collection.find({"organisation_icu_id": organisation_icu_id})
+                .sort("bed_number", -1)
+                .limit(1)
+                .to_list(length=1)
+            )
+            next_number = (highest[0]["bed_number"] if highest else 0) + 1
+            beds_to_create = [
+                {
+                    "organisation_icu_id": organisation_icu_id,
+                    "bed_number": next_number + offset,
+                    "is_available": True,
+                    "created_by": updated_by,
+                    "created_by_profile": updated_by_profile,
+                    "updated_by": updated_by,
+                    "updated_by_profile": updated_by_profile,
+                    "is_active": True,
+                    "is_deleted": False,
+                    "created_at": now,
+                    "updated_at": now,
+                }
+                for offset in range(desired_beds - current)
+            ]
+            await bed_collection.insert_many(beds_to_create)
+            return
+
+        removable = sorted(
+            [bed for bed in active_beds if bed.get("is_available")],
+            key=lambda bed: bed.get("bed_number", 0),
+            reverse=True,
+        )
+        to_remove = current - desired_beds
+        if len(removable) < to_remove:
+            occupied = current - len(removable)
+            raise ValidationError(
+                f"Cannot reduce beds to {desired_beds}. {occupied} bed(s) are currently occupied."
+            )
+
+        await bed_collection.update_many(
+            {"_id": {"$in": [bed["_id"] for bed in removable[:to_remove]]}},
+            {
+                "$set": {
+                    "is_active": False,
+                    "is_deleted": True,
+                    "updated_by": updated_by,
+                    "updated_by_profile": updated_by_profile,
+                    "updated_at": now,
+                }
+            },
+        )
 
     @staticmethod
     async def delete_organisation_icu(

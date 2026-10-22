@@ -7,8 +7,9 @@ from app.organisations.models import Organisation, OrganisationICU, Organisation
 from app.patients.enums import PatientStatus
 from app.patients.models import Patient
 
-from .hl7.parser import decode_hl7, parse_hl7_datetime, resolve_progress_sheet_slot
+from .hl7.parser import parse_hl7_datetime, resolve_progress_sheet_slot
 from .models import MonitorBedSnapshot
+from .vendors import VendorNotReady, decode_monitor_message
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,13 @@ def _norm(value: str) -> str:
 class MonitorIngestService:
     @staticmethod
     async def ingest(raw_hl7: str, current_user: dict) -> MonitorBedSnapshot:
-        decoded = decode_hl7(raw_hl7)
+        try:
+            decoded = decode_monitor_message(raw_hl7)
+        except VendorNotReady as exc:
+            raise ValidationError(
+                message=str(exc),
+                error_code="HL7_VENDOR_NOT_READY",
+            ) from exc
         message = decoded["messages"][0]
         location = message.get("location") or {}
         hospital_name = (location.get("hospital") or "").strip()
@@ -72,6 +79,25 @@ class MonitorIngestService:
 
         observed_at = message.get("observed_at") or message.get("sent_at")
         progress_sheet_vitals = message.get("progress_sheet_vitals") or {}
+        existing = await MonitorBedSnapshot.find_one(
+            {
+                "organisation_icu_bed_id": bed.id,
+                "is_deleted": False,
+            }
+        )
+        carried_bp = MonitorIngestService._snapshot_blood_pressure(existing)
+        if patient and (
+            "Systolic" not in carried_bp or "Diastolic" not in carried_bp
+        ):
+            seeded = await MonitorIngestService._latest_sheet_blood_pressure(
+                str(patient.id)
+            )
+            for label, value in seeded.items():
+                carried_bp.setdefault(label, value)
+        if progress_sheet_vitals.get("Systolic") not in (None, ""):
+            carried_bp["Systolic"] = str(progress_sheet_vitals["Systolic"])
+        if progress_sheet_vitals.get("Diastolic") not in (None, ""):
+            carried_bp["Diastolic"] = str(progress_sheet_vitals["Diastolic"])
         sheet_fields = {
             "progress_sheet_id": None,
             "progress_sheet_date": None,
@@ -84,6 +110,7 @@ class MonitorIngestService:
                 progress_sheet_vitals=progress_sheet_vitals,
                 observed_at=observed_at,
                 current_user=current_user,
+                carried_bp=carried_bp,
             )
         else:
             sheet_fields["progress_sheet_note"] = (
@@ -106,18 +133,14 @@ class MonitorIngestService:
             "observed_at": observed_at,
             "vitals": message.get("vitals") or {},
             "progress_sheet_vitals": progress_sheet_vitals,
+            "last_systolic": carried_bp.get("Systolic"),
+            "last_diastolic": carried_bp.get("Diastolic"),
             "raw_hl7": raw_hl7,
             "updated_by": str(current_user.get("sub") or ""),
             "updated_by_profile": str(current_user.get("pid") or ""),
             **sheet_fields,
         }
 
-        existing = await MonitorBedSnapshot.find_one(
-            {
-                "organisation_icu_bed_id": bed.id,
-                "is_deleted": False,
-            }
-        )
         if existing:
             await existing.update(payload)
             logger.info(
@@ -208,11 +231,68 @@ class MonitorIngestService:
             return value
 
     @staticmethod
+    def _snapshot_blood_pressure(
+        snapshot: Optional[MonitorBedSnapshot],
+    ) -> Dict[str, str]:
+        if snapshot is None:
+            return {}
+        carried: Dict[str, str] = {}
+        if snapshot.last_systolic not in (None, ""):
+            carried["Systolic"] = str(snapshot.last_systolic)
+        if snapshot.last_diastolic not in (None, ""):
+            carried["Diastolic"] = str(snapshot.last_diastolic)
+        return carried
+
+    @staticmethod
+    def _reading(values: Any, label: str):
+        if not isinstance(values, dict):
+            return None
+        if label in values and values[label] not in (None, ""):
+            return values[label]
+        for key, value in values.items():
+            name = key.value if hasattr(key, "value") else str(key)
+            if name == label and value not in (None, ""):
+                return value
+        return None
+
+    @staticmethod
+    async def _latest_sheet_blood_pressure(patient_id: str) -> Dict[str, str]:
+        from app.investigation_reports.models.progress_sheet import (
+            PatientProgressSheet,
+        )
+
+        sheets = await PatientProgressSheet.find(
+            {"patient_id": patient_id, "is_deleted": False},
+            limit=14,
+            sort=[("date", -1)],
+        )
+        for sheet in sheets:
+            entries = sorted(
+                sheet.entries or [],
+                key=lambda entry: entry.time or "",
+                reverse=True,
+            )
+            for entry in entries:
+                vitals = entry.parameters.vitals if entry.parameters else None
+                systolic = MonitorIngestService._reading(vitals, "Systolic")
+                diastolic = MonitorIngestService._reading(vitals, "Diastolic")
+                if systolic is None and diastolic is None:
+                    continue
+                found: Dict[str, str] = {}
+                if systolic is not None:
+                    found["Systolic"] = str(systolic)
+                if diastolic is not None:
+                    found["Diastolic"] = str(diastolic)
+                return found
+        return {}
+
+    @staticmethod
     async def _write_progress_sheet(
         patient: Patient,
         progress_sheet_vitals: Dict[str, str],
         observed_at: Optional[str],
         current_user: dict,
+        carried_bp: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Optional[str]]:
         from app.investigation_reports.enums import VitalParameter
         from app.investigation_reports.schemas.progress_sheet import VitalsSectionSchema
@@ -267,6 +347,15 @@ class MonitorIngestService:
                 if param in preserve:
                     continue
                 merged[param] = MonitorIngestService._as_vital_value(value)
+
+            for label, value in (carried_bp or {}).items():
+                try:
+                    param = VitalParameter(label)
+                except ValueError:
+                    continue
+                if param in merged or value in (None, ""):
+                    continue
+                merged[param] = MonitorIngestService._as_vital_value(str(value))
 
             await ProgressSheetService.add_vitals_entry(
                 sheet_id=sheet.sheet_id,

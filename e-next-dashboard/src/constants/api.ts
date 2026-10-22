@@ -17,6 +17,7 @@ export const API_ENDPOINTS = {
     LIST: `/api/v1/organisations/organisation-icus`,
     CREATE: `/api/v1/organisations/organisation-icus/with-beds`,
     DETAIL: (id: string) => `/api/v1/organisations/organisation-icus/?icu_id=${id}`,
+    UPDATE: (id: string) => `/api/v1/organisations/organisation-icus?organisation_icu_id=${id}`,
     DELETE: (id: string) => `/api/v1/organisations/organisation-icus?organisation_icu_id=${id}`,
     BEDS: {
       AVAILABLE: (icuId: string) => `/api/v1/organisations/organisation-icu-beds/available-beds?organisation_icu_id=${icuId}`,

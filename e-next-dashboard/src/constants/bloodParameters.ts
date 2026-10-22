@@ -27,6 +27,7 @@ export const bloodParameterOrder: string[] = [
   'PT',
   'INR',
   'aPTT',
+  'Fibrinogen',
   'Albumin',
   'Total Bilirubin',
   'Direct Bilirubin',
@@ -49,6 +50,7 @@ export const bloodParameterOrder: string[] = [
   'Magnesium',
   'CPK Total',
   'CPK-MB',
+  'NT-proBNP',
   'Troponin I',
   'T3 Total',
   'T4 Total',
@@ -62,11 +64,51 @@ export const bloodParameterOrder: string[] = [
   'HIV',
   'HBsAg',
   'HCV',
+  'Total Cholesterol',
+  'HDL Cholesterol',
+  'LDL Cholesterol',
+  'VLDL Cholesterol',
+  'Triglycerides',
+  'LDH',
+  'Dengue NSI',
+  'Dengue IGM',
+  'Dengue IGG',
+  'Malaric Parasite',
+  'Leptospira IGM',
+  'Scrub Typhus',
+  'Widal',
 ];
 
-export const qualitativeBloodParameters = ['HIV', 'HBsAg', 'HCV'] as const;
+export const qualitativeBloodParameters = [
+  'HIV',
+  'HBsAg',
+  'HCV',
+  'Dengue NSI',
+  'Dengue IGM',
+  'Dengue IGG',
+  'Malaric Parasite',
+  'Leptospira IGM',
+  'Scrub Typhus',
+  'Widal',
+] as const;
 
 export const qualitativeBloodParameterSet = new Set<string>(qualitativeBloodParameters);
+
+const reactiveResultOptions = ['Non-reactive', 'Reactive'];
+const positiveResultOptions = ['Negative', 'Positive'];
+
+export const qualitativeBloodParameterOptions: { [key: string]: string[] } = {
+  HIV: reactiveResultOptions,
+  HBsAg: reactiveResultOptions,
+  HCV: reactiveResultOptions,
+  'Dengue NSI': positiveResultOptions,
+  'Dengue IGM': positiveResultOptions,
+  'Dengue IGG': positiveResultOptions,
+  'Malaric Parasite': positiveResultOptions,
+  'Leptospira IGM': positiveResultOptions,
+  'Scrub Typhus': positiveResultOptions,
+  Widal: positiveResultOptions,
+};
 
 export const bloodParameterInfo: { [key: string]: ParameterInfo } = {
   "Haemoglobin": {
@@ -405,6 +447,55 @@ export const bloodParameterInfo: { [key: string]: ParameterInfo } = {
     min_value: 140,
     max_value: 280,
   },
+  "Dengue NSI": {
+    display_name: "Dengue NSI",
+    reference_range: "Negative",
+    units: null,
+    min_value: null,
+    max_value: null,
+  },
+  "Dengue IGM": {
+    display_name: "Dengue IGM",
+    reference_range: "Negative",
+    units: null,
+    min_value: null,
+    max_value: null,
+  },
+  "Dengue IGG": {
+    display_name: "Dengue IGG",
+    reference_range: "Negative",
+    units: null,
+    min_value: null,
+    max_value: null,
+  },
+  "Malaric Parasite": {
+    display_name: "Malaric Parasite",
+    reference_range: "Negative",
+    units: null,
+    min_value: null,
+    max_value: null,
+  },
+  "Leptospira IGM": {
+    display_name: "Leptospira IGM",
+    reference_range: "Negative",
+    units: null,
+    min_value: null,
+    max_value: null,
+  },
+  "Scrub Typhus": {
+    display_name: "Scrub Typhus",
+    reference_range: "Negative",
+    units: null,
+    min_value: null,
+    max_value: null,
+  },
+  "Widal": {
+    display_name: "Widal",
+    reference_range: "Negative",
+    units: null,
+    min_value: null,
+    max_value: null,
+  },
   "Pro-BNP": {
     display_name: "Pro-BNP",
     reference_range: "< 125",
@@ -414,10 +505,10 @@ export const bloodParameterInfo: { [key: string]: ParameterInfo } = {
   },
   "NT-proBNP": {
     display_name: "NT-proBNP",
-    reference_range: "< 300",
+    reference_range: "< 450",
     units: "pg/mL",
     min_value: null,
-    max_value: 300,
+    max_value: 450,
   },
   "Myoglobin": {
     display_name: "Myoglobin",

@@ -25,6 +25,8 @@ class MonitorBedSnapshot(
     observed_at: Optional[str] = None
     vitals: Dict[str, Any] = Field(default_factory=dict)
     progress_sheet_vitals: Dict[str, str] = Field(default_factory=dict)
+    last_systolic: Optional[str] = None
+    last_diastolic: Optional[str] = None
     progress_sheet_id: Optional[str] = None
     progress_sheet_date: Optional[str] = None
     progress_sheet_time: Optional[str] = None

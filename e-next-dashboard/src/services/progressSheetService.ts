@@ -47,6 +47,8 @@ export interface ProgressSheetEntry {
     catheter: any | null;
     recorded_by: string | null;
     recorded_at: string | null;
+    created_by_name?: string | null;
+    updated_by_name?: string | null;
   }
   
 export interface ProgressSheet {

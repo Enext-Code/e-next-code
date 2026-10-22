@@ -40,12 +40,16 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Lifespan for the app."""
 
+    hl7_server = None
     try:
         # Start the app
         logger.info("Starting up the application")
         await MongoDB.connect_to_database()
         await s3.initialize()
         await ensure_superadmin()
+        from app.integrations.mllp import start_mllp_server, stop_mllp_server
+
+        hl7_server = await start_mllp_server()
 
         yield
 
@@ -55,6 +59,9 @@ async def lifespan(app: FastAPI):
 
     finally:
         logger.info("Shutting down the application")
+        from app.integrations.mllp import stop_mllp_server
+
+        await stop_mllp_server(hl7_server)
         await MongoDB.close_database_connection()
 
 

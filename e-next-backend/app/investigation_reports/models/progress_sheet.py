@@ -142,6 +142,10 @@ class ProgressEntry(BaseModel):
     parameters: ProgressParameterGroup
     recorded_by: Optional[str] = None
     recorded_at: Optional[datetime] = None
+    created_by: Optional[str] = None
+    created_by_profile: Optional[str] = None
+    updated_by: Optional[str] = None
+    updated_by_profile: Optional[str] = None
 
 
 class PatientProgressSheet(

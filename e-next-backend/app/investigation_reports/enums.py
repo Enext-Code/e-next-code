@@ -41,6 +41,9 @@ class BloodAnalysisParameter(str, Enum):
     INR = "INR"
     APTT = "aPTT"
 
+    # Fibrinogen
+    FIBRINOGEN = "Fibrinogen"
+
     # Liver Function Tests
     ALBUMIN = "Albumin"
     TOTAL_BILIRUBIN = "Total Bilirubin"
@@ -67,6 +70,7 @@ class BloodAnalysisParameter(str, Enum):
     # Cardiac Markers
     CPK_TOTAL = "CPK Total"
     CPK_MB = "CPK-MB"
+    NT_PRO_BNP = "NT-proBNP"
     TROPONIN_I = "Troponin I"
 
     # Thyroid Function
@@ -84,7 +88,20 @@ class BloodAnalysisParameter(str, Enum):
     HIV = "HIV"
     HBSAG = "HBsAg"
     HCV = "HCV"
-
+    TOTAL_CHOLESTEROL = "Total Cholesterol"
+    HDL_CHOLESTEROL = "HDL Cholesterol"
+    LDL_CHOLESTEROL = "LDL Cholesterol"
+    VLDL_CHOLESTEROL = "VLDL Cholesterol"
+    TRIGLYCERIDES = "Triglycerides"
+    LDH = "LDH"
+    DENGUE_NSI = "Dengue NSI"
+    DENGUE_IGM = "Dengue IGM"
+    DENGUE_IGG = "Dengue IGG"
+    MALARIC_PARASITE = "Malaric Parasite"
+    LEPTOSPIRA_IGM = "Leptospira IGM"
+    SCRUB_TYPHUS = "Scrub Typhus"
+    WIDAL = "Widal"
+   
 
 # Radiology Types and Subtypes
 class RadiologyType(str, Enum):
@@ -541,6 +558,13 @@ BLOOD_PARAMETER_INFO: Dict[BloodAnalysisParameter, ParameterInfo] = {
     #     min_value=1.0,
     #     max_value=2.1,
     # ),
+    BloodAnalysisParameter.NT_PRO_BNP: ParameterInfo(
+        display_name="NT-proBNP",
+        reference_range="< 450",
+        units="pg/mL",
+        min_value=None,
+        max_value=450,
+    ),
     BloodAnalysisParameter.TROPONIN_I: ParameterInfo(
         display_name="Troponin I",
         reference_range="< 0.04",
@@ -569,26 +593,68 @@ BLOOD_PARAMETER_INFO: Dict[BloodAnalysisParameter, ParameterInfo] = {
         min_value=0,
         max_value=25,
     ),
-    # BloodAnalysisParameter.LDH: ParameterInfo(
-    #     display_name="LDH",
-    #     reference_range="140 - 280",
-    #     units="U/L",
-    #     min_value=140,
-    #     max_value=280,
-    # ),
+    BloodAnalysisParameter.LDH: ParameterInfo(
+        display_name="LDH",
+        reference_range="140 - 280",
+        units="U/L",
+        min_value=140,
+        max_value=280,
+    ),
+    BloodAnalysisParameter.DENGUE_NSI: ParameterInfo(
+        display_name="Dengue NSI",
+        reference_range="Negative",
+        units=None,
+        min_value=None,
+        max_value=None,
+    ),
+    BloodAnalysisParameter.DENGUE_IGM: ParameterInfo(
+        display_name="Dengue IGM",
+        reference_range="Negative",
+        units=None,
+        min_value=None,
+        max_value=None,
+    ),
+    BloodAnalysisParameter.DENGUE_IGG: ParameterInfo(
+        display_name="Dengue IGG",
+        reference_range="Negative",
+        units=None,
+        min_value=None,
+        max_value=None,
+    ),
+    BloodAnalysisParameter.MALARIC_PARASITE: ParameterInfo(
+        display_name="Malaric Parasite",
+        reference_range="Negative",
+        units=None,
+        min_value=None,
+        max_value=None,
+    ),
+    BloodAnalysisParameter.LEPTOSPIRA_IGM: ParameterInfo(
+        display_name="Leptospira IGM",
+        reference_range="Negative",
+        units=None,
+        min_value=None,
+        max_value=None,
+    ),
+    BloodAnalysisParameter.SCRUB_TYPHUS: ParameterInfo(
+        display_name="Scrub Typhus",
+        reference_range="Negative",
+        units=None,
+        min_value=None,
+        max_value=None,
+    ),
+    BloodAnalysisParameter.WIDAL: ParameterInfo(
+        display_name="Widal",
+        reference_range="Negative",
+        units=None,
+        min_value=None,
+        max_value=None,
+    ),
     # BloodAnalysisParameter.PRO_BNP: ParameterInfo(
     #     display_name="Pro-BNP",
     #     reference_range="< 125",
     #     units="pg/mL",
     #     min_value=None,
     #     max_value=125,
-    # ),
-    # BloodAnalysisParameter.NT_PRO_BNP: ParameterInfo(
-    #     display_name="NT-proBNP",
-    #     reference_range="< 300",
-    #     units="pg/mL",
-    #     min_value=None,
-    #     max_value=300,
     # ),
     # BloodAnalysisParameter.MYOGLOBIN: ParameterInfo(
     #     display_name="Myoglobin",
@@ -618,6 +684,15 @@ BLOOD_PARAMETER_INFO: Dict[BloodAnalysisParameter, ParameterInfo] = {
         min_value=30,
         max_value=40,
     ),
+
+      BloodAnalysisParameter.FIBRINOGEN: ParameterInfo(
+        display_name="Fibrinogen",
+        reference_range="200 - 400",
+        units="mg/dL",
+        min_value=200,
+        max_value=400,
+    ),
+
     BloodAnalysisParameter.INR: ParameterInfo(
         display_name="INR",
         reference_range="0.8 - 1.1",
@@ -625,13 +700,7 @@ BLOOD_PARAMETER_INFO: Dict[BloodAnalysisParameter, ParameterInfo] = {
         min_value=0.8,
         max_value=1.1,
     ),
-    # BloodAnalysisParameter.FIBRINOGEN: ParameterInfo(
-    #     display_name="Fibrinogen",
-    #     reference_range="200 - 400",
-    #     units="mg/dL",
-    #     min_value=200,
-    #     max_value=400,
-    # ),
+  
     # BloodAnalysisParameter.D_DIMER: ParameterInfo(
     #     display_name="D-Dimer",
     #     reference_range="< 500",
@@ -709,41 +778,7 @@ BLOOD_PARAMETER_INFO: Dict[BloodAnalysisParameter, ParameterInfo] = {
     #     min_value=None,
     #     max_value=20,
     # ),
-    # BloodAnalysisParameter.TOTAL_CHOLESTEROL: ParameterInfo(
-    #     display_name="Total Cholesterol",
-    #     reference_range="< 200",
-    #     units="mg/dL",
-    #     min_value=None,
-    #     max_value=200,
-    # ),
-    # BloodAnalysisParameter.LDL_CHOLESTEROL: ParameterInfo(
-    #     display_name="LDL Cholesterol",
-    #     reference_range="< 100",
-    #     units="mg/dL",
-    #     min_value=None,
-    #     max_value=100,
-    # ),
-    # BloodAnalysisParameter.HDL_CHOLESTEROL: ParameterInfo(
-    #     display_name="HDL Cholesterol",
-    #     reference_range="40 - 60",
-    #     units="mg/dL",
-    #     min_value=40,
-    #     max_value=60,
-    # ),
-    # BloodAnalysisParameter.VLDL_CHOLESTEROL: ParameterInfo(
-    #     display_name="VLDL Cholesterol",
-    #     reference_range="5 - 40",
-    #     units="mg/dL",
-    #     min_value=5,
-    #     max_value=40,
-    # ),
-    # BloodAnalysisParameter.TRIGLYCERIDES: ParameterInfo(
-    #     display_name="Triglycerides",
-    #     reference_range="< 150",
-    #     units="mg/dL",
-    #     min_value=None,
-    #     max_value=150,
-    # ),
+    
     # BloodAnalysisParameter.FASTING_GLUCOSE: ParameterInfo(
     #     display_name="Fasting Glucose",
     #     reference_range="70 - 99",
@@ -834,6 +869,41 @@ BLOOD_PARAMETER_INFO: Dict[BloodAnalysisParameter, ParameterInfo] = {
         units=None,
         min_value=None,
         max_value=None,
+    ),
+    BloodAnalysisParameter.TOTAL_CHOLESTEROL: ParameterInfo(
+        display_name="Total Cholesterol",
+        reference_range="< 200",
+        units="mg/dL",
+        min_value=None,
+        max_value=200,
+    ),
+    BloodAnalysisParameter.LDL_CHOLESTEROL: ParameterInfo(
+        display_name="LDL Cholesterol",
+        reference_range="< 100",
+        units="mg/dL",
+        min_value=None,
+        max_value=100,
+    ),
+    BloodAnalysisParameter.HDL_CHOLESTEROL: ParameterInfo(
+        display_name="HDL Cholesterol",
+        reference_range="40 - 60",
+        units="mg/dL",
+        min_value=40,
+        max_value=60,
+    ),
+    BloodAnalysisParameter.VLDL_CHOLESTEROL: ParameterInfo(
+        display_name="VLDL Cholesterol",
+        reference_range="5 - 40",
+        units="mg/dL",
+        min_value=5,
+        max_value=40,
+    ),
+    BloodAnalysisParameter.TRIGLYCERIDES: ParameterInfo(
+        display_name="Triglycerides",
+        reference_range="< 150",
+        units="mg/dL",
+        min_value=None,
+        max_value=150,
     ),
     # BloodAnalysisParameter.FERRITIN: ParameterInfo(
     #     display_name="Ferritin",
@@ -1659,6 +1729,7 @@ class VitalParameter(str, Enum):
     CVP = "CVP"
     RBS = "RBS"
     SPO2 = "SpO2"
+    RESP = "Resp"
     SYSTOLIC = "Systolic"
     DIASTOLIC = "Diastolic"
 
@@ -1705,6 +1776,13 @@ VITAL_PARAMETER_INFO: Dict[VitalParameter, ParameterInfo] = {
         units="%",
         min_value=95,
         max_value=100,
+    ),
+    VitalParameter.RESP: ParameterInfo(
+        display_name="Resp",
+        reference_range="12 - 20",
+        units="/min",
+        min_value=12,
+        max_value=20,
     ),
     VitalParameter.SYSTOLIC: ParameterInfo(
         display_name="Systolic",

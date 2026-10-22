@@ -688,15 +688,19 @@ export default function ProgressSheetViewPageTimeClient() {
   const renderVitalsContent = () => {
     if (!entry) return null;
 
-    const vitalsData: VitalsData = entry.vitals ?? {
+    const saved = entry.vitals?.values ?? {};
+    const vitalsData: VitalsData = {
       values: {
-        "Heart Rate": null,
-        "Rythm": null,
-        "Temp Oral": null,
-        "CVP": null,
-        "Systolic": null,
-        "Diastolic": null
-      }
+        "Heart Rate": saved["Heart Rate"] ?? null,
+        "Rythm": saved["Rythm"] ?? null,
+        "Temp Oral": saved["Temp Oral"] ?? null,
+        "CVP": saved["CVP"] ?? null,
+        "RBS": saved["RBS"] ?? null,
+        "Systolic": saved["Systolic"] ?? null,
+        "Diastolic": saved["Diastolic"] ?? null,
+        "SpO2": saved["SpO2"] ?? null,
+        "Resp": saved["Resp"] ?? null,
+      },
     };
 
     return (
@@ -1748,6 +1752,7 @@ export default function ProgressSheetViewPageTimeClient() {
       ['Patient Age', String(patient.age) || 'NIL'],
       ['Patient Gender', capitalizeText(patient.gender)],
       ['Patient MLC/Non-MLC Number', patient.mlc_or_non_mlc_number || 'NIL', [220, 38, 38]],
+      ['Insurance/on-Insurance', capitalizeText(patient.insurance) || 'NIL'],
       ['Date of Admission', formatPdfDate(patient.admission_date)],
       ['Time of Admission', formatPdfTime(patient.admission_time)],
       ['Organisation', formatValue(organisationName)],
@@ -1870,6 +1875,7 @@ export default function ProgressSheetViewPageTimeClient() {
       ['Temp (F) (Oral)', vitals['Temp Oral'] != null ? `${vitals['Temp Oral']} °F` : 'NIL'],
       ['RBS', vitals['RBS'] != null ? `${vitals['RBS']} mmHg` : 'NIL'],
       ['SpO2', vitals['SpO2'] != null ? `${vitals['SpO2']} %` : 'NIL'],
+      ['Resp', vitals['Resp'] != null ? `${vitals['Resp']} /min` : 'NIL'],
     ]);
     addSubHeading('Blood Pressure');
     addKeyValueRows([
