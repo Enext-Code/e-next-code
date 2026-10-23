@@ -814,6 +814,22 @@ export default function ProgressSheetViewPageTimeClient() {
       .trim();
   };
 
+  const toPdfFilePart = (value: unknown): string =>
+    sanitizePdfText(value)
+      .replace(/[\\/:*?"<>|]+/g, ' ')
+      .replace(/\s+/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_|_$/g, '')
+      .slice(0, 80);
+
+  const buildPdfDownloadName = (prefix: string, hospitalName: string, extraParts: string[] = []) => {
+    const patientName = toPdfFilePart(`${patient?.first_name || ''} ${patient?.last_name || ''}`);
+    const hospital = toPdfFilePart(hospitalName);
+    const uniqueId = toPdfFilePart(patient?.unique_id);
+    const parts = [prefix, patientName, hospital, uniqueId, ...extraParts.map(toPdfFilePart)].filter(Boolean);
+    return `${parts.join('-')}.pdf`;
+  };
+
   const formatValue = (value: unknown): string => {
     if (value === null || value === undefined) return 'NIL';
     if (typeof value === 'boolean') return value ? 'Yes' : 'No';
@@ -1390,14 +1406,16 @@ export default function ProgressSheetViewPageTimeClient() {
     }
 
     doc.save(
-      `Emergency-Plan-${formatPlanDate(plan.date).replace(/\//g, '-')}-${planDayNo}-${
-        patient.unique_id || 'patient'
-      }.pdf`
+      buildPdfDownloadName('Emergency-Plan', organisationName, [
+        formatPlanDate(plan.date).replace(/\//g, '-'),
+        String(planDayNo),
+      ])
     );
   };
 
-  const downloadFullDailyRoundPDF = async () => {
+  const downloadFullDailyRoundPDF = async (options?: { todayPlansOnly?: boolean }) => {
     if (!patient || !entry) return;
+    const todayPlansOnly = Boolean(options?.todayPlansOnly);
 
     let organisationName = '';
     if (patient.organisation_id) {
@@ -2338,14 +2356,40 @@ export default function ProgressSheetViewPageTimeClient() {
     drawDivider();
 
     // ——— Plans (match Previous Prescriptions UI) ———
-    addHeading('PREVIOUS PRESCRIPTIONS / PLAN OF THE DAY');
-    if (planData.length === 0) {
+    // Today PDF keeps every other section, but Plan of the Day is only today's IST date.
+    const todayDateKey = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    const plansForPdf = planData
+      .map((plan, index) => ({ plan, index }))
+      .filter(({ plan }) => {
+        if (!todayPlansOnly) return true;
+        const planAt = parsePlanUtcDate(plan.date);
+        if (Number.isNaN(planAt.getTime())) return false;
+        return planAt.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) === todayDateKey;
+      });
+
+    addHeading(todayPlansOnly ? 'PLAN OF THE DAY' : 'PREVIOUS PRESCRIPTIONS / PLAN OF THE DAY');
+    if (todayPlansOnly) {
+      ensureSpace(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(35, 55, 90);
+      doc.text(`Date: ${reportDate}`, marginX, y);
+      doc.setTextColor(0);
+      y += 7;
+    }
+    if (plansForPdf.length === 0) {
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(9);
-      doc.text('No daily round sheets found for this patient.', marginX, y);
+      doc.text(
+        todayPlansOnly
+          ? `No plan of the day found for ${reportDate}.`
+          : 'No daily round sheets found for this patient.',
+        marginX,
+        y
+      );
       y += 8;
     } else {
-      planData.forEach((plan, index) => {
+      plansForPdf.forEach(({ plan, index }, listIndex) => {
         ensureSpace(36);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
@@ -2418,7 +2462,7 @@ export default function ProgressSheetViewPageTimeClient() {
         y += 5.5;
         doc.setTextColor(0);
 
-        if (index < planData.length - 1) drawDivider();
+        if (listIndex < plansForPdf.length - 1) drawDivider();
       });
     }
 
@@ -2496,8 +2540,10 @@ export default function ProgressSheetViewPageTimeClient() {
       doc.setTextColor(0);
     }
 
-    const safeName = `${patient.first_name}_${patient.last_name}`.replace(/\s+/g, '_');
-    doc.save(`Daily-Round-${patient.unique_id || safeName}-${reportDate.replace(/\//g, '-')}.pdf`);
+    const filePrefix = todayPlansOnly ? 'Daily-Round-Today-Plan' : 'Daily-Round';
+    doc.save(
+      buildPdfDownloadName(filePrefix, organisationName, [reportDate.replace(/\//g, '-')])
+    );
   };
 
   const handleEditCancel = () => {
@@ -3060,15 +3106,24 @@ export default function ProgressSheetViewPageTimeClient() {
         </div>
 
         <div className={styles.pageDownloadBar}>
-          <button
-            type="button"
-            className={styles.downloadFullSheetButton}
-            onClick={downloadFullDailyRoundPDF}
-          >
-            Download Daily Round Sheet (PDF)
-          </button>
+          <div className={styles.pageDownloadActions}>
+            <button
+              type="button"
+              className={styles.downloadFullSheetButton}
+              onClick={() => downloadFullDailyRoundPDF()}
+            >
+              Download Complete Round Sheet (PDF)
+            </button>
+            <button
+              type="button"
+              className={styles.downloadFullSheetButton}
+              onClick={() => downloadFullDailyRoundPDF({ todayPlansOnly: true })}
+            >
+              Download Current Round Sheet (PDF)
+            </button>
+          </div>
           <p className={styles.pageDownloadHint}>
-            Downloads the same fields shown on this page: patient details, health history, GCS, input/output, vitals, respiratory, catheters, and all plans of day.
+            Both PDFs include the same daily round sheet. The second one keeps only today's date in Plan of the Day, with the date shown on that section.
           </p>
         </div>
 
