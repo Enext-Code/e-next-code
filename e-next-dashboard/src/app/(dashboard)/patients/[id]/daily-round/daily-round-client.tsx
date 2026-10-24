@@ -896,8 +896,23 @@ export default function ProgressSheetViewPageTimeClient() {
       : planAt.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' });
   };
 
-  const getPlanHeading = (plan: DailyRoundSheetData, index: number) =>
-    `Plan of day ${getPlanDayNumber(index)} — ${formatPlanDate(plan.date)}`;
+  const formatPlanTime = (value: string) => {
+    const planAt = parsePlanUtcDate(value);
+    return Number.isNaN(planAt.getTime())
+      ? '—'
+      : planAt.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+          timeZone: 'Asia/Kolkata',
+        });
+  };
+
+  const getPlanHeading = (plan: DailyRoundSheetData, index: number) => {
+    // Same clock as the footer next to Entered by: last save, not the original create time.
+    const savedAt = plan.updated_at || plan.date;
+    return `Plan of day (Order No. ${getPlanDayNumber(index)}) — ${formatPlanDate(savedAt)} — ${(formatPlanTime(savedAt))}`;
+  };
 
   const getLoggedInUserId = (): string | null => {
     if (user?.id) return user.id;
@@ -1295,17 +1310,17 @@ export default function ProgressSheetViewPageTimeClient() {
     doc.text(progressLabel, marginX, y);
     doc.setFont('helvetica', 'normal');
     doc.text(formatValue(plan.progress_sheet_id), marginX + doc.getTextWidth(progressLabel), y);
-    if (enteredBy) {
-      const enteredLabel = 'Entered by: ';
-      doc.setFont('helvetica', 'bold');
-      const enteredLabelW = doc.getTextWidth(enteredLabel);
-      doc.setFont('helvetica', 'normal');
-      const enteredValueW = doc.getTextWidth(enteredBy);
-      doc.setFont('helvetica', 'bold');
-      doc.text(enteredLabel, pageWidth - marginX - enteredLabelW - enteredValueW, y);
-      doc.setFont('helvetica', 'normal');
-      doc.text(enteredBy, pageWidth - marginX - enteredValueW, y);
-    }
+    // if (enteredBy) {
+    //   const enteredLabel = 'Entered by: ';
+    //   doc.setFont('helvetica', 'bold');
+    //   const enteredLabelW = doc.getTextWidth(enteredLabel);
+    //   doc.setFont('helvetica', 'normal');
+    //   const enteredValueW = doc.getTextWidth(enteredBy);
+    //   doc.setFont('helvetica', 'bold');
+    //   doc.text(enteredLabel, pageWidth - marginX - enteredLabelW - enteredValueW, y);
+    //   doc.setFont('helvetica', 'normal');
+    //   doc.text(enteredBy, pageWidth - marginX - enteredValueW, y);
+    // }
     y += 5.5;
 
     doc.setFont('helvetica', 'bold');
@@ -1770,7 +1785,7 @@ export default function ProgressSheetViewPageTimeClient() {
       ['Patient Age', String(patient.age) || 'NIL'],
       ['Patient Gender', capitalizeText(patient.gender)],
       ['Patient MLC/Non-MLC Number', patient.mlc_or_non_mlc_number || 'NIL', [220, 38, 38]],
-      ['Insurance/on-Insurance', capitalizeText(patient.insurance) || 'NIL'],
+      ['Insurance/Non-Insurance', capitalizeText(patient.insurance) || 'NIL'],
       ['Date of Admission', formatPdfDate(patient.admission_date)],
       ['Time of Admission', formatPdfTime(patient.admission_time)],
       ['Organisation', formatValue(organisationName)],
@@ -2441,17 +2456,17 @@ export default function ProgressSheetViewPageTimeClient() {
         doc.text(progressLabel, marginX, y);
         doc.setFont('helvetica', 'normal');
         doc.text(formatValue(plan.progress_sheet_id), marginX + doc.getTextWidth(progressLabel), y);
-        if (enteredBy) {
-          const enteredLabel = 'Entered by: ';
-          doc.setFont('helvetica', 'bold');
-          const enteredLabelW = doc.getTextWidth(enteredLabel);
-          doc.setFont('helvetica', 'normal');
-          const enteredValueW = doc.getTextWidth(enteredBy);
-          doc.setFont('helvetica', 'bold');
-          doc.text(enteredLabel, pageWidth - marginX - enteredLabelW - enteredValueW, y);
-          doc.setFont('helvetica', 'normal');
-          doc.text(enteredBy, pageWidth - marginX - enteredValueW, y);
-        }
+        // if (enteredBy) {
+        //   const enteredLabel = 'Entered by: ';
+        //   doc.setFont('helvetica', 'bold');
+        //   const enteredLabelW = doc.getTextWidth(enteredLabel);
+        //   doc.setFont('helvetica', 'normal');
+        //   const enteredValueW = doc.getTextWidth(enteredBy);
+        //   doc.setFont('helvetica', 'bold');
+        //   doc.text(enteredLabel, pageWidth - marginX - enteredLabelW - enteredValueW, y);
+        //   doc.setFont('helvetica', 'normal');
+        //   doc.text(enteredBy, pageWidth - marginX - enteredValueW, y);
+        // }
         y += 5.5;
 
         doc.setFont('helvetica', 'bold');
@@ -2540,7 +2555,7 @@ export default function ProgressSheetViewPageTimeClient() {
       doc.setTextColor(0);
     }
 
-    const filePrefix = todayPlansOnly ? 'Daily-Round-Today-Plan' : 'Daily-Round';
+    const filePrefix = todayPlansOnly ? 'Daily-Round-Sheet' : 'Daily-Round-Sheet';
     doc.save(
       buildPdfDownloadName(filePrefix, organisationName, [reportDate.replace(/\//g, '-')])
     );
