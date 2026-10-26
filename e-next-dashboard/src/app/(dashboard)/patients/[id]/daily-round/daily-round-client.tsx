@@ -2371,15 +2371,25 @@ export default function ProgressSheetViewPageTimeClient() {
     drawDivider();
 
     // ——— Plans (match Previous Prescriptions UI) ———
-    // Today PDF keeps every other section, but Plan of the Day is only today's IST date.
-    const todayDateKey = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    // Current PDF keeps every other section, and Plan of the Day for today plus yesterday (IST).
+    const toIstDateKey = (value: Date) =>
+      value.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    const todayDateKey = toIstDateKey(new Date());
+    const [todayYear, todayMonth, todayDay] = todayDateKey.split('-').map(Number);
+    const yesterdayDateKey = toIstDateKey(new Date(Date.UTC(todayYear, todayMonth - 1, todayDay - 1)));
+    const formatIstKey = (key: string) => {
+      const [year, month, day] = key.split('-');
+      return `${day}/${month}/${year}`;
+    };
+    const currentDateKeys = new Set([yesterdayDateKey, todayDateKey]);
+    const currentDateLabel = `${formatIstKey(yesterdayDateKey)} and ${formatIstKey(todayDateKey)}`;
     const plansForPdf = planData
       .map((plan, index) => ({ plan, index }))
       .filter(({ plan }) => {
         if (!todayPlansOnly) return true;
         const planAt = parsePlanUtcDate(plan.date);
         if (Number.isNaN(planAt.getTime())) return false;
-        return planAt.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) === todayDateKey;
+        return currentDateKeys.has(toIstDateKey(planAt));
       });
 
     addHeading(todayPlansOnly ? 'PLAN OF THE DAY' : 'PREVIOUS PRESCRIPTIONS / PLAN OF THE DAY');
@@ -2388,7 +2398,7 @@ export default function ProgressSheetViewPageTimeClient() {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
       doc.setTextColor(35, 55, 90);
-      doc.text(`Date: ${reportDate}`, marginX, y);
+      // doc.text(`Date: ${currentDateLabel}`, marginX, y);
       doc.setTextColor(0);
       y += 7;
     }
@@ -2397,7 +2407,7 @@ export default function ProgressSheetViewPageTimeClient() {
       doc.setFontSize(9);
       doc.text(
         todayPlansOnly
-          ? `No plan of the day found for ${reportDate}.`
+          ? `No plan of the day found for ${currentDateLabel}.`
           : 'No daily round sheets found for this patient.',
         marginX,
         y
@@ -3138,7 +3148,7 @@ export default function ProgressSheetViewPageTimeClient() {
             </button>
           </div>
           <p className={styles.pageDownloadHint}>
-            Both PDFs include the same daily round sheet. The second one keeps only today's date in Plan of the Day, with the date shown on that section.
+            Both PDFs include the same daily round sheet. Current Round Sheet keeps Plan of the Day for today and yesterday.
           </p>
         </div>
 
