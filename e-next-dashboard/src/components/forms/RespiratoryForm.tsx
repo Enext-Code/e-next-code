@@ -2,12 +2,13 @@
 
 import React from 'react';
 import styles from '@/styles/respiratory.module.css';
+import { Fio2Unit, displayStoredFio2, formatFio2ForSave, parseStoredFio2 } from '@/components/forms/fio2Value';
 
 export interface RespiratoryData {
   values: {
     "Vent Mode": string | null;
     "Rate": number | null;
-    "FiO2": number | null;
+    "FiO2": number | string | null;
     "PEEP": number | null;
     "Set": number | null;
     "Dalta P (P Plat PEEP)": number | null;
@@ -58,6 +59,10 @@ const RESPIRATORY_SECTIONS = {
   }
 } as const;
 
+const Fio2FieldLabel = ({ unit }: { unit: Fio2Unit }) => (
+  unit === "O2" ? <>O<sub>2</sub></> : <>FiO<sub>2</sub></>
+);
+
 const RespiratoryForm: React.FC<RespiratoryFormProps> = ({
   initialValues,
   isViewMode = false,
@@ -66,6 +71,17 @@ const RespiratoryForm: React.FC<RespiratoryFormProps> = ({
 }) => {
   const [formValues, setFormValues] = React.useState<RespiratoryData>(initialValues);
   const [isLoading, setIsLoading] = React.useState(false);
+  const initialFio2 = parseStoredFio2(initialValues?.values?.["FiO2"]);
+  const [fio2Unit, setFio2Unit] = React.useState<Fio2Unit>(initialFio2.unit);
+  const [fio2Amount, setFio2Amount] = React.useState(initialFio2.amount);
+  const incomingKey = JSON.stringify(initialValues?.values ?? null);
+
+  React.useEffect(() => {
+    setFormValues(initialValues);
+    const parsed = parseStoredFio2(initialValues?.values?.["FiO2"]);
+    setFio2Unit(parsed.unit);
+    setFio2Amount(parsed.amount);
+  }, [incomingKey]);
 
   const handleInputChange = (field: keyof RespiratoryData['values'], value: string) => {
     setFormValues(prev => ({
@@ -82,7 +98,13 @@ const RespiratoryForm: React.FC<RespiratoryFormProps> = ({
     e.preventDefault();
     setIsLoading(true);
     try {
-      await onSubmit(time, formValues);
+      await onSubmit(time, {
+        ...formValues,
+        values: {
+          ...formValues.values,
+          FiO2: formatFio2ForSave(fio2Unit, fio2Amount),
+        },
+      });
     } catch (error) {
       console.error('Error submitting respiratory data:', error);
     } finally {
@@ -124,8 +146,8 @@ const RespiratoryForm: React.FC<RespiratoryFormProps> = ({
                 <div className={styles.sectionTitle}>{section.title}</div>
                 {section.parameters.map((param) => (
                   <div key={param.name} className={styles.row}>
-                    <label>{param.name}:</label>
-                    <span>{formValues.values[param.name as keyof RespiratoryData['values']] ?? "-"}</span>
+                    <label>{param.name === "FiO2" ? <Fio2FieldLabel unit={parseStoredFio2(initialValues?.values?.["FiO2"]).unit} /> : param.name}:</label>
+                    <span>{param.name === "FiO2" ? displayStoredFio2(initialValues?.values?.["FiO2"]) : (formValues.values[param.name as keyof RespiratoryData['values']] ?? "-")}</span>
                   </div>
                 ))}
               </div>
@@ -195,7 +217,29 @@ const RespiratoryForm: React.FC<RespiratoryFormProps> = ({
               <div key={sectionKey} className={styles.section}>
                 <div className={styles.sectionTitle}>{section.title}</div>
                 <div className={styles.inputGroup}>
-                  {section.parameters.map((param) => (
+                  {section.parameters.map((param) => param.name === "FiO2" ? (
+                    <div key={param.name} className={styles.formGroup}>
+                      <label><Fio2FieldLabel unit={fio2Unit} /></label>
+                      <div className={styles.fio2Row}>
+                        <select
+                          value={fio2Unit}
+                          onChange={(e) => setFio2Unit(e.target.value as Fio2Unit)}
+                          className={`${styles.input} ${styles.fio2Unit}`}
+                        >
+                          <option value="FiO2">FiO₂</option>
+                          <option value="O2">O₂</option>
+                        </select>
+                        <input
+                          type="number"
+                          value={fio2Amount}
+                          onChange={(e) => setFio2Amount(e.target.value)}
+                          placeholder={param.placeholder}
+                          className={`${styles.input} ${styles.fio2Amount}`}
+                        />
+                        <span className={styles.unitSuffix}>{fio2Unit === "O2" ? "Litre" : "%"}</span>
+                      </div>
+                    </div>
+                  ) : (
                     <div key={param.name} className={styles.formGroup}>
                       <label>{param.name}</label>
                       {param.type === "select" ? (

@@ -36,6 +36,7 @@ interface DailyRoundSheetData {
 import FluidForm, { FluidData } from '@/components/forms/FluidForm';
 import VitalsForm, { VitalsData } from '@/components/daily-round-progress-sheet/VitalsForm';
 import RespiratoryForm, { RespiratoryData } from '@/components/daily-round-progress-sheet/RespiratoryForm';
+import { displayStoredFio2, parseStoredFio2 } from '@/components/forms/fio2Value';
 import CatheterForm, { CatheterData } from '@/components/daily-round-progress-sheet/CatheterForm';
 import CatheterEditModal from '@/components/forms/CatheterEditModal';
 import ConfirmationModal from '@/components/common/ConfirmationModal';
@@ -1937,7 +1938,7 @@ export default function ProgressSheetViewPageTimeClient() {
       addKeyValueRows([
         ['Vent Mode', formatValue(resp['Vent Mode'])],
         ['Rate', formatValue(resp['Rate'])],
-        ['FiO2', formatValue(resp['FiO2'])],
+        [parseStoredFio2(resp['FiO2'] as number | string | null).unit === 'O2' ? 'O2' : 'FiO2', displayStoredFio2(resp['FiO2'] as number | string | null)],
         ['PEEP', formatValue(resp['PEEP'])],
         ['I PAP', formatValue(resp['I PAP'])],
         ['E PAP', formatValue(resp['E PAP'])],

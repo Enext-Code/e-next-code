@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { InvestigationReportData } from '@/services/investigationReportService';
 import { bloodParameterOrder } from '@/constants/bloodParameters';
 import { arterialParameterOrder } from '@/constants/arterialBloodGasParameters';
@@ -27,6 +27,15 @@ export type CumulativeRow = {
 
 /** Cells with more words than this show a short preview; click opens full text. */
 const PREVIEW_WORD_LIMIT = 1;
+
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 5;
+const ZOOM_STEP = 0.5;
+
+function clampZoom(value: number): number {
+  const stepped = Math.round(value * 100) / 100;
+  return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, stepped));
+}
 
 /** Returns "first three words…" if text is longer than the limit, else null. */
 function getShortPreview(text: string): string | null {
@@ -399,6 +408,53 @@ export default function InvestigationCumulativeModal({
   const { columns, dateGroups, rows } = buildCumulativeTable(reports);
   const [preview, setPreview] = useState<{ urls: string[]; index: number } | null>(null);
   const [textPreview, setTextPreview] = useState<TextPreviewState | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [baseSize, setBaseSize] = useState<{ w: number; h: number } | null>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const pendingScroll = useRef<{ left: number; top: number } | null>(null);
+  const dragRef = useRef<{ x: number; y: number; scrollLeft: number; scrollTop: number } | null>(null);
+
+  const resetZoom = () => {
+    pendingScroll.current = { left: 0, top: 0 };
+    setZoom(1);
+  };
+
+  const anchorZoom = (current: number, next: number, anchorX: number, anchorY: number) => {
+    const stage = stageRef.current;
+    if (!stage || next === current) return;
+    if (next <= MIN_ZOOM) {
+      pendingScroll.current = { left: 0, top: 0 };
+      return;
+    }
+    const ratio = next / current;
+    pendingScroll.current = {
+      left: (stage.scrollLeft + anchorX) * ratio - anchorX,
+      top: (stage.scrollTop + anchorY) * ratio - anchorY,
+    };
+  };
+
+  const changeZoom = (delta: number) => {
+    const stage = stageRef.current;
+    setZoom((current) => {
+      const next = clampZoom(current + delta);
+      anchorZoom(
+        current,
+        next,
+        stage ? stage.clientWidth / 2 : 0,
+        stage ? stage.clientHeight / 2 : 0,
+      );
+      return next;
+    });
+  };
+
+  const measureImage = () => {
+    const img = imageRef.current;
+    const stage = stageRef.current;
+    if (!img || !stage || !img.naturalWidth || !img.naturalHeight) return;
+    const fit = Math.min(stage.clientWidth / img.naturalWidth, stage.clientHeight / img.naturalHeight);
+    setBaseSize({ w: img.naturalWidth * fit, h: img.naturalHeight * fit });
+  };
 
   // Esc closes the full-text popup first (before the main modal)
   useEffect(() => {
@@ -413,18 +469,61 @@ export default function InvestigationCumulativeModal({
     return () => window.removeEventListener('keydown', onKey, true);
   }, [textPreview]);
 
+  useLayoutEffect(() => {
+    const stage = stageRef.current;
+    const pending = pendingScroll.current;
+    if (!stage || !pending) return;
+    stage.scrollLeft = pending.left;
+    stage.scrollTop = pending.top;
+    pendingScroll.current = null;
+  }, [zoom]);
+
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!preview || !stage) return;
+
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      let dy = event.deltaY;
+      if (event.deltaMode === 1) dy *= 32;
+      else if (event.deltaMode === 2) dy *= stage.clientHeight;
+      const amount = Math.max(-0.45, Math.min(0.45, -dy / 220));
+      if (!amount) return;
+
+      const rect = stage.getBoundingClientRect();
+      const anchorX = event.clientX - rect.left;
+      const anchorY = event.clientY - rect.top;
+      setZoom((current) => {
+        const next = clampZoom(current + amount);
+        anchorZoom(current, next, anchorX, anchorY);
+        return next;
+      });
+    };
+
+    stage.addEventListener('wheel', onWheel, { passive: false });
+    return () => stage.removeEventListener('wheel', onWheel);
+  }, [preview]);
+
   if (!isOpen) return null;
 
   const openPreview = (urls: string[], index: number) => {
+    setBaseSize(null);
+    resetZoom();
     setPreview({ urls, index });
   };
 
-  const closePreview = () => setPreview(null);
+  const closePreview = () => {
+    resetZoom();
+    setPreview(null);
+  };
 
   const closeTextPreview = () => setTextPreview(null);
 
   const showPrev = () => {
     if (!preview) return;
+    setBaseSize(null);
+    resetZoom();
     setPreview({
       ...preview,
       index: (preview.index - 1 + preview.urls.length) % preview.urls.length,
@@ -433,6 +532,8 @@ export default function InvestigationCumulativeModal({
 
   const showNext = () => {
     if (!preview) return;
+    setBaseSize(null);
+    resetZoom();
     setPreview({
       ...preview,
       index: (preview.index + 1) % preview.urls.length,
@@ -702,11 +803,55 @@ export default function InvestigationCumulativeModal({
                 ‹
               </button>
             )}
-            <img
-              src={preview.urls[preview.index]}
-              alt={`Preview ${preview.index + 1}`}
-              className={styles.lightboxImage}
-            />
+            <div
+              ref={stageRef}
+              className={`${styles.lightboxStage} ${zoom > MIN_ZOOM ? styles.lightboxStageZoomed : ''}`}
+              onPointerDown={(event) => {
+                if (zoom <= MIN_ZOOM || event.button !== 0) return;
+                const stage = stageRef.current;
+                if (!stage) return;
+                dragRef.current = {
+                  x: event.clientX,
+                  y: event.clientY,
+                  scrollLeft: stage.scrollLeft,
+                  scrollTop: stage.scrollTop,
+                };
+                stage.setPointerCapture(event.pointerId);
+              }}
+              onPointerMove={(event) => {
+                const drag = dragRef.current;
+                const stage = stageRef.current;
+                if (!drag || !stage) return;
+                stage.scrollLeft = drag.scrollLeft - (event.clientX - drag.x);
+                stage.scrollTop = drag.scrollTop - (event.clientY - drag.y);
+              }}
+              onPointerUp={() => {
+                dragRef.current = null;
+              }}
+              onPointerCancel={() => {
+                dragRef.current = null;
+              }}
+            >
+              <img
+                ref={imageRef}
+                key={preview.urls[preview.index]}
+                src={preview.urls[preview.index]}
+                alt={`Preview ${preview.index + 1}`}
+                className={styles.lightboxImage}
+                draggable={false}
+                onLoad={measureImage}
+                style={
+                  baseSize
+                    ? {
+                        width: baseSize.w * zoom,
+                        height: baseSize.h * zoom,
+                        maxWidth: 'none',
+                        maxHeight: 'none',
+                      }
+                    : undefined
+                }
+              />
+            </div>
             {preview.urls.length > 1 && (
               <button
                 type="button"
@@ -717,11 +862,33 @@ export default function InvestigationCumulativeModal({
                 ›
               </button>
             )}
-            {preview.urls.length > 1 && (
-              <div className={styles.lightboxCounter}>
-                {preview.index + 1} / {preview.urls.length}
-              </div>
-            )}
+            <div className={styles.zoomBar}>
+              <button
+                type="button"
+                className={styles.zoomButton}
+                onClick={() => changeZoom(-ZOOM_STEP)}
+                disabled={zoom <= MIN_ZOOM}
+                aria-label="Zoom out"
+              >
+                −
+              </button>
+              <span className={styles.zoomLabel}>{Math.round(zoom * 100)}%</span>
+              <button
+                type="button"
+                className={styles.zoomButton}
+                onClick={() => changeZoom(ZOOM_STEP)}
+                disabled={zoom >= MAX_ZOOM}
+                aria-label="Zoom in"
+              >
+                +
+              </button>
+              {preview.urls.length > 1 && (
+                <span className={styles.lightboxCounter}>
+                  {preview.index + 1} / {preview.urls.length}
+                </span>
+              )}
+              <span className={styles.zoomHint}>Scroll to zoom · Drag to move</span>
+            </div>
           </div>
         </div>
       )}

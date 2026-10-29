@@ -77,6 +77,7 @@ export const bloodParameterOrder: string[] = [
   'Leptospira IGM',
   'Scrub Typhus',
   'Widal',
+  'HbA1c',
 ];
 
 export const qualitativeBloodParameters = [
@@ -687,10 +688,10 @@ export const bloodParameterInfo: { [key: string]: ParameterInfo } = {
   },
   "HbA1c": {
     display_name: "HbA1c",
-    reference_range: "4.0 - 5.6",
+    reference_range: "< 5.7", 
     units: "%",
-    min_value: 4.0,
-    max_value: 5.6,
+    min_value: null,
+    max_value: 5.7,
   },
   "Insulin": {
     display_name: "Insulin",

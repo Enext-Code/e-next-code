@@ -101,6 +101,7 @@ class BloodAnalysisParameter(str, Enum):
     LEPTOSPIRA_IGM = "Leptospira IGM"
     SCRUB_TYPHUS = "Scrub Typhus"
     WIDAL = "Widal"
+    HBA1C = "HbA1c"
    
 
 # Radiology Types and Subtypes
@@ -247,6 +248,12 @@ class MicrobiologyParameter(str, Enum):
     URINE_RE = "Urine R/E"
     CSF_CULTURE = "CSF-Culture"
     CSF_BIOCHEM = "CSF-Biochem"
+    ASCITIC_FLUID_GRAM_STAIN = "Ascitic Fluid-Gram Stain"
+    ASCITIC_FLUID_ROUTINE = "Ascitic Fluid-Routine"
+    ASCITIC_FLUID_CULTURE_CS = "Ascitic Fluid-Culture C/S"
+    BAL_GRAM_STAIN = "BAL-Gram Stain"
+    BAL_CULTURE_CS = "BAL-Culture C/S"
+    BAL_ROUTINE = "BAL-Routine"
 
 
 # Parameter metadata
@@ -800,13 +807,13 @@ BLOOD_PARAMETER_INFO: Dict[BloodAnalysisParameter, ParameterInfo] = {
     #     min_value=70,
     #     max_value=140,
     # ),
-    # BloodAnalysisParameter.HBA1C: ParameterInfo(
-    #     display_name="HbA1c",
-    #     reference_range="4.0 - 5.6",
-    #     units="%",
-    #     min_value=4.0,
-    #     max_value=5.6,
-    # ),
+    BloodAnalysisParameter.HBA1C: ParameterInfo(
+        display_name="HbA1c",
+        reference_range="< 5.7",
+        units="%",
+        min_value=None,
+        max_value=5.7,
+    ),
     # BloodAnalysisParameter.INSULIN: ParameterInfo(
     #     display_name="Insulin",
     #     reference_range="2.6 - 24.9",
@@ -1364,6 +1371,48 @@ MICROBIOLOGY_PARAMETER_INFO: Dict[MicrobiologyParameter, ParameterInfo] = {
     MicrobiologyParameter.CSF_BIOCHEM: ParameterInfo(
         display_name="CSF-Biochem",
         reference_range="No Growth",
+        units=None,
+        min_value=None,
+        max_value=None,
+    ),
+    MicrobiologyParameter.ASCITIC_FLUID_GRAM_STAIN: ParameterInfo(
+        display_name="Ascitic Fluid-Gram Stain",
+        reference_range="No Pathogenic Organisms",
+        units=None,
+        min_value=None,
+        max_value=None,
+    ),
+    MicrobiologyParameter.ASCITIC_FLUID_ROUTINE: ParameterInfo(
+        display_name="Ascitic Fluid-Routine",
+        reference_range="No Significant Finding",
+        units=None,
+        min_value=None,
+        max_value=None,
+    ),
+    MicrobiologyParameter.ASCITIC_FLUID_CULTURE_CS: ParameterInfo(
+        display_name="Ascitic Fluid-Culture C/S",
+        reference_range="No Growth",
+        units=None,
+        min_value=None,
+        max_value=None,
+    ),
+    MicrobiologyParameter.BAL_GRAM_STAIN: ParameterInfo(
+        display_name="BAL-Gram Stain",
+        reference_range="No Pathogenic Organisms",
+        units=None,
+        min_value=None,
+        max_value=None,
+    ),
+    MicrobiologyParameter.BAL_CULTURE_CS: ParameterInfo(
+        display_name="BAL-Culture C/S",
+        reference_range="No Growth",
+        units=None,
+        min_value=None,
+        max_value=None,
+    ),
+    MicrobiologyParameter.BAL_ROUTINE: ParameterInfo(
+        display_name="BAL-Routine",
+        reference_range="No Significant Finding",
         units=None,
         min_value=None,
         max_value=None,

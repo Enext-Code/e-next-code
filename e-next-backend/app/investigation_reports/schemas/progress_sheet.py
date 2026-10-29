@@ -56,6 +56,7 @@ class ColloidEntrySchema(BaseModel):
 
     name: str
     quantity: Optional[float] = None
+    unit: Optional[str] = None
 
 
 class CrystalloidEntrySchema(BaseModel):
@@ -63,6 +64,7 @@ class CrystalloidEntrySchema(BaseModel):
 
     name: str
     quantity: Optional[float] = None
+    unit: Optional[str] = None
 
 
 class OralIntakeEntrySchema(BaseModel):

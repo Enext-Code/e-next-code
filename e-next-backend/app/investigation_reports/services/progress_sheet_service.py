@@ -260,7 +260,9 @@ class ProgressSheetService:
                         colloids=(
                             [
                                 ColloidEntrySchema(
-                                    name=colloid.name, quantity=colloid.quantity
+                                    name=colloid.name,
+                                    quantity=colloid.quantity,
+                                    unit=getattr(colloid, "unit", None),
                                 )
                                 for colloid in entry.parameters.fluid.colloids
                             ]
@@ -270,7 +272,9 @@ class ProgressSheetService:
                         crystalloids=(
                             [
                                 CrystalloidEntrySchema(
-                                    name=crystalloid.name, quantity=crystalloid.quantity
+                                    name=crystalloid.name,
+                                    quantity=crystalloid.quantity,
+                                    unit=getattr(crystalloid, "unit", None),
                                 )
                                 for crystalloid in entry.parameters.fluid.crystalloids
                             ]
@@ -707,11 +711,19 @@ class ProgressSheetService:
                             for i in fluid.other_infusions
                         ] if fluid.other_infusions else [],
                         colloids=[
-                            ColloidEntrySchema(name=c.name, quantity=c.quantity)
+                            ColloidEntrySchema(
+                                name=c.name,
+                                quantity=c.quantity,
+                                unit=getattr(c, "unit", None),
+                            )
                             for c in fluid.colloids
                         ] if fluid.colloids else [],
                         crystalloids=[
-                            CrystalloidEntrySchema(name=c.name, quantity=c.quantity)
+                            CrystalloidEntrySchema(
+                                name=c.name,
+                                quantity=c.quantity,
+                                unit=getattr(c, "unit", None),
+                            )
                             for c in fluid.crystalloids
                         ] if fluid.crystalloids else [],
                         oral_intakes=[
@@ -1180,7 +1192,11 @@ class ProgressSheetService:
 
                     colloids = (
                         [
-                            ColloidEntry(name=colloid.name, quantity=colloid.quantity)
+                            ColloidEntry(
+                                name=colloid.name,
+                                quantity=colloid.quantity,
+                                unit=getattr(colloid, "unit", None),
+                            )
                             for colloid in fluid_data.colloids
                         ]
                         if fluid_data.colloids
@@ -1190,7 +1206,9 @@ class ProgressSheetService:
                     crystalloids = (
                         [
                             CrystalloidEntry(
-                                name=crystalloid.name, quantity=crystalloid.quantity
+                                name=crystalloid.name,
+                                quantity=crystalloid.quantity,
+                                unit=getattr(crystalloid, "unit", None),
                             )
                             for crystalloid in fluid_data.crystalloids
                         ]

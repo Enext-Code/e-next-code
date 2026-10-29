@@ -235,6 +235,12 @@ class Microbiology(str, Enum):
     URINE_RE = "Urine R/E"
     CSF_CULTURE = "CSF-Culture"
     CSF_BIOCHEM = "CSF-Biochem"
+    ASCITIC_FLUID_GRAM_STAIN = "Ascitic Fluid-Gram Stain"
+    ASCITIC_FLUID_ROUTINE = "Ascitic Fluid-Routine"
+    ASCITIC_FLUID_CULTURE_CS = "Ascitic Fluid-Culture C/S"
+    BAL_GRAM_STAIN = "BAL-Gram Stain"
+    BAL_CULTURE_CS = "BAL-Culture C/S"
+    BAL_ROUTINE = "BAL-Routine"
 
 
 class ArterialAnalysis(str, Enum):

@@ -58,6 +58,7 @@ class ColloidEntry(BaseModel):
 
     name: str
     quantity: Optional[float] = None
+    unit: Optional[str] = None
 
 
 class CrystalloidEntry(BaseModel):
@@ -65,6 +66,7 @@ class CrystalloidEntry(BaseModel):
 
     name: str
     quantity: Optional[float] = None
+    unit: Optional[str] = None
 
 
 class OralIntakeEntry(BaseModel):

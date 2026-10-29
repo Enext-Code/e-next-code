@@ -23,14 +23,35 @@ export interface FluidData {
   cumulative_balance: number | null;
 }
 
-const INFUSION_UNITS = ['ml', 'mg', 'mcg'] as const;
+const RATE_UNITS = ['ml/hr', 'mg/hr', 'mcg/hr'] as const;
+const LEGACY_UNITS = ['ml', 'mg', 'mcg'] as const;
+const KNOWN_UNITS = [...LEGACY_UNITS, ...RATE_UNITS] as const;
+const DEFAULT_RATE_UNIT = 'ml/hr';
 
-const getInfusionUnit = (item?: { unit?: string | null }) =>
-  item?.unit && INFUSION_UNITS.includes(item.unit as (typeof INFUSION_UNITS)[number])
-    ? item.unit
-    : 'ml';
+const getInfusionUnit = (item?: { unit?: string | null }) => {
+  const unit = item?.unit?.trim();
+  if (unit && (KNOWN_UNITS as readonly string[]).includes(unit)) return unit;
+  return 'ml';
+};
 
-const isVolumeUnit = (unit?: string | null) => getInfusionUnit({ unit }) === 'ml';
+const unitOptionsFor = (item?: { unit?: string | null }) => {
+  const current = item?.unit?.trim();
+  if (current && (LEGACY_UNITS as readonly string[]).includes(current)) {
+    return [current, ...RATE_UNITS];
+  }
+  return [...RATE_UNITS];
+};
+
+const quantityUnitLabel = (item?: { unit?: string | null }) => {
+  const unit = item?.unit?.trim();
+  if (unit === 'ml' || unit === 'ml/hr') return unit;
+  return 'ml';
+};
+
+const isVolumeUnit = (unit?: string | null) => {
+  const resolved = getInfusionUnit({ unit });
+  return resolved === 'ml' || resolved === 'ml/hr';
+};
 
 const hasFluidValue = (item: FluidItem) =>
   Boolean(item.name?.trim()) || item.quantity != null;
@@ -187,7 +208,7 @@ const FluidForm: React.FC<FluidFormProps> = ({
     if (formValues.infusions.length === 0) {
       setFormValues(prev => ({
         ...prev,
-        infusions: [{ name: "", quantity: null, unit: "ml" }]
+        infusions: [{ name: "", quantity: null, unit: DEFAULT_RATE_UNIT }]
       }));
     }
   }, []);
@@ -197,7 +218,7 @@ const FluidForm: React.FC<FluidFormProps> = ({
     if (formValues.colloids.length === 0) {
       setFormValues(prev => ({
         ...prev,
-        colloids: [{ name: "", quantity: null }]
+        colloids: [{ name: "", quantity: null, unit: DEFAULT_RATE_UNIT }]
       }));
     }
   }, []);
@@ -207,7 +228,7 @@ const FluidForm: React.FC<FluidFormProps> = ({
     if (formValues.crystalloids.length === 0) {
       setFormValues(prev => ({
         ...prev,
-        crystalloids: [{ name: "", quantity: null }]
+        crystalloids: [{ name: "", quantity: null, unit: DEFAULT_RATE_UNIT }]
       }));
     }
   }, []);
@@ -238,7 +259,7 @@ const FluidForm: React.FC<FluidFormProps> = ({
         currentInfusions[index] = {
           name: value,
           quantity: null,
-          unit: currentInfusions[index]?.unit || "ml"
+          unit: currentInfusions[index]?.unit || DEFAULT_RATE_UNIT
         };
       } else if (name === "unit") {
         if (currentInfusions[index]) {
@@ -274,7 +295,7 @@ const FluidForm: React.FC<FluidFormProps> = ({
   const addInfusion = () => {
     setFormValues(prev => ({
       ...prev,
-      infusions: [...prev.infusions, { name: "", quantity: null, unit: "ml" }]
+      infusions: [...prev.infusions, { name: "", quantity: null, unit: DEFAULT_RATE_UNIT }]
     }));
     setAdditionalInfusions(prev => prev + 1);
   };
@@ -390,7 +411,11 @@ const FluidForm: React.FC<FluidFormProps> = ({
       
       if (name === "name") {
         // If changing the colloid name, reset its quantity
-        currentColloids[index] = { name: value, quantity: null };
+        currentColloids[index] = {
+          name: value,
+          quantity: null,
+          unit: currentColloids[index]?.unit
+        };
       } else {
         // If changing quantity
         const quantity = value === "" ? null : parseFloat(value);
@@ -421,7 +446,7 @@ const FluidForm: React.FC<FluidFormProps> = ({
   const addColloid = () => {
     setFormValues(prev => ({
       ...prev,
-      colloids: [...prev.colloids, { name: "", quantity: null }]
+      colloids: [...prev.colloids, { name: "", quantity: null, unit: DEFAULT_RATE_UNIT }]
     }));
   };
 
@@ -442,7 +467,11 @@ const FluidForm: React.FC<FluidFormProps> = ({
       
       if (name === "name") {
         // If changing the crystalloid name, reset its quantity
-        currentCrystalloids[index] = { name: value, quantity: null };
+        currentCrystalloids[index] = {
+          name: value,
+          quantity: null,
+          unit: currentCrystalloids[index]?.unit
+        };
       } else {
         // If changing quantity
         const quantity = value === "" ? null : parseFloat(value);
@@ -473,7 +502,7 @@ const FluidForm: React.FC<FluidFormProps> = ({
   const addCrystalloid = () => {
     setFormValues(prev => ({
       ...prev,
-      crystalloids: [...prev.crystalloids, { name: "", quantity: null }]
+      crystalloids: [...prev.crystalloids, { name: "", quantity: null, unit: DEFAULT_RATE_UNIT }]
     }));
   };
 
@@ -679,7 +708,7 @@ const FluidForm: React.FC<FluidFormProps> = ({
                 onChange={(e) => handleInfusionChange(index, "unit", e.target.value)}
                 className={styles.unitSelect}
               >
-                {INFUSION_UNITS.map((unit) => (
+                {unitOptionsFor(infusion).map((unit) => (
                   <option key={unit} value={unit}>{unit}</option>
                 ))}
               </select>
@@ -707,7 +736,7 @@ const FluidForm: React.FC<FluidFormProps> = ({
           <button type="button" onClick={() => {
             setFormValues(prev => ({
               ...prev,
-              other_infusions: [...prev.other_infusions, { name: "", quantity: null, unit: "ml" }]
+              other_infusions: [...prev.other_infusions, { name: "", quantity: null, unit: DEFAULT_RATE_UNIT }]
             }));
           }} className={styles.addButton}>
             + Add More Infusions
@@ -799,7 +828,7 @@ const FluidForm: React.FC<FluidFormProps> = ({
                       }}
                       className={styles.unitSelect}
                     >
-                      {INFUSION_UNITS.map((unit) => (
+                      {unitOptionsFor(infusion).map((unit) => (
                         <option key={unit} value={unit}>{unit}</option>
                       ))}
                     </select>
@@ -863,7 +892,7 @@ const FluidForm: React.FC<FluidFormProps> = ({
                 className={styles.input}
               />
             )}
-            <span className={styles.unit}>ml</span>
+            <span className={styles.unit}>{quantityUnitLabel(colloid)}</span>
           </div>
         </div>
       ))}
@@ -913,7 +942,7 @@ const FluidForm: React.FC<FluidFormProps> = ({
                 className={styles.input}
               />
             )}
-            <span className={styles.unit}>ml</span>
+            <span className={styles.unit}>{quantityUnitLabel(crystalloid)}</span>
           </div>
         </div>
       ))}
