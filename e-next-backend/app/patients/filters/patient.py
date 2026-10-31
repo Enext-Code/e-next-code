@@ -1,4 +1,7 @@
+import re
 from typing import List, Optional
+
+from pydantic import field_validator
 
 from app.base.models import PaginationParams
 
@@ -20,3 +23,13 @@ class PatientFilterParams(PaginationParams):
     doctor_id: Optional[str] = None
     status: Optional[PatientStatus] = None
     statuses: Optional[List[PatientStatus]] = None
+    tele_icu_date: Optional[str] = None
+
+    @field_validator("tele_icu_date")
+    @classmethod
+    def validate_tele_icu_date(cls, value: Optional[str]) -> Optional[str]:
+        if value is None or value == "":
+            return None
+        if not re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", value):
+            raise ValueError("tele_icu_date must be in YYYY-MM format")
+        return value

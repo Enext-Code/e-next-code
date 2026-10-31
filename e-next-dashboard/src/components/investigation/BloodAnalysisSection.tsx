@@ -1,6 +1,22 @@
 import React, { useState } from 'react';
 import { BloodAnalysisValues, Parameter } from '@/types/investigation';
-import { bloodParameterOrder, qualitativeBloodParameterOptions, qualitativeBloodParameterSet } from '@/constants/bloodParameters';
+import { bloodParameterOrder, freeTextBloodParameterSet, qualitativeBloodParameterOptions, qualitativeBloodParameterSet } from '@/constants/bloodParameters';
+
+const BLOOD_GROUP_PARAMETER: Parameter = {
+  value: 'Blood Group',
+  display_name: 'Blood Group',
+};
+
+const BLOOD_GROUP_OPTIONS = [
+  'A Positive (A+)',
+  'A Negative (A-)',
+  'B Positive (B+)',
+  'B Negative (B-)',
+  'AB Positive (AB+)',
+  'AB Negative (AB-)',
+  'O Positive (O+)',
+  'O Negative (O-)',
+];
 import styles from '@/styles/investigation-report/Blood-analysis-report.module.css';
 import EditButton from '../common/EditButton';
 
@@ -34,9 +50,15 @@ const BloodAnalysisSection: React.FC<BloodAnalysisSectionProps> = ({
   const [editedValues, setEditedValues] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
 
+  const parameters = availableParameters.some(
+    (param) => param.value === BLOOD_GROUP_PARAMETER.value || param.display_name === BLOOD_GROUP_PARAMETER.display_name
+  )
+    ? availableParameters
+    : [...availableParameters, BLOOD_GROUP_PARAMETER];
+
   const handleEditClick = () => {
     const initialValues: { [key: string]: string } = {};
-    availableParameters.forEach(param => {
+    parameters.forEach(param => {
       initialValues[param.value] = values?.[param.value]?.value?.toString() || '';
     });
     setEditedValues(initialValues);
@@ -55,7 +77,7 @@ const BloodAnalysisSection: React.FC<BloodAnalysisSectionProps> = ({
       .filter(([_, value]) => value !== '')
       .map(([parameter, value]) => ({
         parameter,
-        value: qualitativeBloodParameterSet.has(parameter) || isNaN(Number(value))
+        value: freeTextBloodParameterSet.has(parameter) || qualitativeBloodParameterSet.has(parameter) || isNaN(Number(value))
           ? value
           : Number(value)
       }));
@@ -76,7 +98,7 @@ const BloodAnalysisSection: React.FC<BloodAnalysisSectionProps> = ({
     setEditedValues({});
   };
 
-  const orderedParameters = [...availableParameters].sort((a, b) => {
+  const orderedParameters = [...parameters].sort((a, b) => {
     const aIdx = bloodParameterOrder.indexOf(a.value);
     const bIdx = bloodParameterOrder.indexOf(b.value);
     const aOrder = aIdx === -1 ? 1000 : aIdx;
@@ -153,8 +175,35 @@ const BloodAnalysisSection: React.FC<BloodAnalysisSectionProps> = ({
             const value = values?.[parameter.value]?.value;
             const info = parameterInfo[parameter.value] || parameterInfo[parameter.display_name];
             const { isHigh, isLow } = checkAbnormalValue(parameter.value, value);
-            const isQualitative = qualitativeBloodParameterSet.has(parameter.value);
-            const qualitativeOptions = qualitativeBloodParameterOptions[parameter.value] || [];
+            const parameterKey = parameter.value || parameter.display_name;
+            const isBloodGroup = parameterKey === 'Blood Group' || parameter.display_name === 'Blood Group';
+            const isFreeText = freeTextBloodParameterSet.has(parameterKey);
+            const isQualitative = isBloodGroup || qualitativeBloodParameterSet.has(parameterKey);
+            const qualitativeOptions = isBloodGroup
+              ? BLOOD_GROUP_OPTIONS
+              : (qualitativeBloodParameterOptions[parameterKey] || []);
+
+            if (isFreeText) {
+              const writtenValue = value?.toString() || '';
+              return (
+                <div key={index} className={styles.tableRow}>
+                  <div className={styles.parameterName}>{parameter.display_name}</div>
+                  <div className={styles.freeTextCell}>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={editedValues[parameter.value] || ''}
+                        onChange={(e) => handleInputChange(parameter.value, e.target.value)}
+                        className={`${styles.input} ${styles.freeTextInput}`}
+                        placeholder="Enter finding"
+                      />
+                    ) : (
+                      <div className={styles.value}>{writtenValue || '-'}</div>
+                    )}
+                  </div>
+                </div>
+              );
+            }
             
             return (
               <div key={index} className={styles.tableRow}>

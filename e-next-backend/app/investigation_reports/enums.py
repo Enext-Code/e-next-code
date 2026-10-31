@@ -102,6 +102,8 @@ class BloodAnalysisParameter(str, Enum):
     SCRUB_TYPHUS = "Scrub Typhus"
     WIDAL = "Widal"
     HBA1C = "HbA1c"
+    BLOOD_GROUP = "Blood Group"
+    PERIPHERAL_BLOOD_SMEAR = "Peripheral Blood Smear"
    
 
 # Radiology Types and Subtypes
@@ -1100,6 +1102,20 @@ BLOOD_PARAMETER_INFO: Dict[BloodAnalysisParameter, ParameterInfo] = {
         units="U/L",
         min_value=0,
         max_value=160,
+    ),
+    BloodAnalysisParameter.BLOOD_GROUP: ParameterInfo(
+        display_name="Blood Group",
+        reference_range=None,
+        units=None,
+        min_value=None,
+        max_value=None,
+    ),
+    BloodAnalysisParameter.PERIPHERAL_BLOOD_SMEAR: ParameterInfo(
+        display_name="Peripheral Blood Smear",
+        reference_range=None,
+        units=None,
+        min_value=None,
+        max_value=None,
     ),
     # BloodAnalysisParameter.G6PD: ParameterInfo(
     #     display_name="G6PD",

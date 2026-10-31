@@ -1,5 +1,6 @@
 import logging
 import random
+from calendar import monthrange
 from datetime import timedelta, UTC, datetime, timezone
 
 from bson import ObjectId
@@ -862,6 +863,17 @@ class PatientService:
             filter_query["status"] = {"$in": [s.value for s in params.statuses]}
         elif params.status:
             filter_query["status"] = params.status
+        if params.tele_icu_date:
+            year_str, month_str = params.tele_icu_date.split("-")
+            year = int(year_str)
+            month = int(month_str)
+            last_day = monthrange(year, month)[1]
+            start_ist = datetime(year, month, 1, 0, 0, 0, tzinfo=IST)
+            end_ist = datetime(year, month, last_day, 23, 59, 59, 999000, tzinfo=IST)
+            filter_query["tele_icu_date"] = {
+                "$gte": start_ist.astimezone(UTC),
+                "$lte": end_ist.astimezone(UTC),
+            }
 
         skip = (params.page - 1) * params.limit
         # Default: bed number ascending (1, 2, 3...). Explicit sort_by still respected.

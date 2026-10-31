@@ -11,6 +11,17 @@ import Breadcrumb from '@/components/common/Breadcrumb';
 
 const ICU_STORAGE_KEY = 'selectedPatientIcu';
 const ICU_CENTER_STORAGE_KEY = 'selectedPatientIcuCenter';
+const MONTH_STORAGE_KEY = 'selectedPatientTeleIcuDate';
+
+const isTeleIcuDate = (value: string) => /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
+
+const formatTeleIcuDate = (value: string) => {
+  const [year, month] = value.split('-').map(Number);
+  return new Date(year, month - 1, 1).toLocaleDateString('en-IN', {
+    month: 'long',
+    year: 'numeric',
+  });
+};
 
 export default function PatientsPage() {
   const breadcrumbItems = [
@@ -42,6 +53,7 @@ export default function PatientsPage() {
   const [icus, setIcus] = useState<ICU[]>([]);
   const [selectedIcuId, setSelectedIcuId] = useState('');
   const [isIcuFilterOpen, setIsIcuFilterOpen] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState('');
   const itemsPerPage = 10;
 
   const AVAILABLE_STATUSES: { value: PatientStatus; label: string }[] = [
@@ -109,7 +121,8 @@ export default function PatientsPage() {
     append: boolean = false,
     search?: string,
     statuses?: PatientStatus[],
-    icuId?: string
+    icuId?: string,
+    teleIcuDate?: string
   ) => {
     try {
       setLoadingMorePatients(true);
@@ -121,7 +134,8 @@ export default function PatientsPage() {
         sort_order: 'desc',
         ...(search && search.trim() ? { search: search.trim() } : {}),
         ...(statuses && statuses.length > 0 ? { statuses } : {}),
-        ...(icuId ? { organisation_icu_id: icuId } : {})
+        ...(icuId ? { organisation_icu_id: icuId } : {}),
+        ...(teleIcuDate ? { tele_icu_date: teleIcuDate } : {})
       });
 
       // // console.log('Patient API response:', response);
@@ -175,6 +189,11 @@ export default function PatientsPage() {
         } catch {
           // ignore invalid JSON
         }
+      }
+
+      const savedMonth = sessionStorage.getItem(MONTH_STORAGE_KEY);
+      if (savedMonth && isTeleIcuDate(savedMonth)) {
+        setSelectedMonth(savedMonth);
       }
 
       const savedCenterId = sessionStorage.getItem('selectedPatientCenter');
@@ -233,7 +252,12 @@ export default function PatientsPage() {
           // ignore
         }
       }
-      loadPatients(selectedCenter, 1, false, '', statuses, icuId);
+      let admissionMonth = '';
+      const savedMonth = sessionStorage.getItem(MONTH_STORAGE_KEY);
+      if (savedMonth && isTeleIcuDate(savedMonth)) {
+        admissionMonth = savedMonth;
+      }
+      loadPatients(selectedCenter, 1, false, '', statuses, icuId, admissionMonth);
     }
   }, [selectedCenter]);
 
@@ -276,13 +300,13 @@ export default function PatientsPage() {
 
   const loadMorePatients = () => {
     if (!loadingMorePatients && hasMorePatients && selectedCenter) {
-      loadPatients(selectedCenter, patientPage + 1, true, patientSearchTerm, selectedStatuses, selectedIcuId);
+      loadPatients(selectedCenter, patientPage + 1, true, patientSearchTerm, selectedStatuses, selectedIcuId, selectedMonth);
     }
   };
 
   const handlePageChange = (newPage: number) => {
     if (selectedCenter && newPage >= 1 && newPage <= totalPages) {
-      loadPatients(selectedCenter, newPage, false, patientSearchTerm, selectedStatuses, selectedIcuId);
+      loadPatients(selectedCenter, newPage, false, patientSearchTerm, selectedStatuses, selectedIcuId, selectedMonth);
     }
   };
 
@@ -291,7 +315,7 @@ export default function PatientsPage() {
     if (selectedCenter) {
       setPatientPage(1);
       setPatients([]);
-      loadPatients(selectedCenter, 1, false, patientSearchTerm, selectedStatuses, selectedIcuId);
+      loadPatients(selectedCenter, 1, false, patientSearchTerm, selectedStatuses, selectedIcuId, selectedMonth);
     }
   };
 
@@ -304,7 +328,7 @@ export default function PatientsPage() {
     if (selectedCenter) {
       setPatientPage(1);
       setPatients([]);
-      loadPatients(selectedCenter, 1, false, '', selectedStatuses, selectedIcuId);
+      loadPatients(selectedCenter, 1, false, '', selectedStatuses, selectedIcuId, selectedMonth);
     }
   };
 
@@ -318,7 +342,7 @@ export default function PatientsPage() {
     if (selectedCenter) {
       setPatientPage(1);
       setPatients([]);
-      loadPatients(selectedCenter, 1, false, patientSearchTerm, newStatuses, selectedIcuId);
+      loadPatients(selectedCenter, 1, false, patientSearchTerm, newStatuses, selectedIcuId, selectedMonth);
     }
   };
 
@@ -328,7 +352,32 @@ export default function PatientsPage() {
     if (selectedCenter) {
       setPatientPage(1);
       setPatients([]);
-      loadPatients(selectedCenter, 1, false, patientSearchTerm, [], selectedIcuId);
+      loadPatients(selectedCenter, 1, false, patientSearchTerm, [], selectedIcuId, selectedMonth);
+    }
+  };
+
+  const handleMonthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const month = e.target.value;
+    setSelectedMonth(month);
+    if (month && isTeleIcuDate(month)) {
+      sessionStorage.setItem(MONTH_STORAGE_KEY, month);
+    } else {
+      sessionStorage.removeItem(MONTH_STORAGE_KEY);
+    }
+    if (selectedCenter) {
+      setPatientPage(1);
+      setPatients([]);
+      loadPatients(selectedCenter, 1, false, patientSearchTerm, selectedStatuses, selectedIcuId, month);
+    }
+  };
+
+  const handleClearMonth = () => {
+    setSelectedMonth('');
+    sessionStorage.removeItem(MONTH_STORAGE_KEY);
+    if (selectedCenter) {
+      setPatientPage(1);
+      setPatients([]);
+      loadPatients(selectedCenter, 1, false, patientSearchTerm, selectedStatuses, selectedIcuId, '');
     }
   };
 
@@ -345,7 +394,7 @@ export default function PatientsPage() {
     if (selectedCenter) {
       setPatientPage(1);
       setPatients([]);
-      loadPatients(selectedCenter, 1, false, patientSearchTerm, selectedStatuses, icuId);
+      loadPatients(selectedCenter, 1, false, patientSearchTerm, selectedStatuses, icuId, selectedMonth);
     }
   };
 
@@ -457,7 +506,11 @@ export default function PatientsPage() {
         {selectedCenter ? (
           <div className={styles.patientList}>
             <div className={styles.listHeader}>
-              <h2>Patients {totalPatients > 0 && `(${totalPatients} total)`}</h2>
+              <h2>
+                {selectedMonth
+                  ? `Patients in ${formatTeleIcuDate(selectedMonth)} (${totalPatients})`
+                  : `Patients ${totalPatients > 0 ? `(${totalPatients} total)` : ''}`}
+              </h2>
               <button 
                 className={styles.addButton}
                 onClick={handleAddNewPatient}
@@ -492,6 +545,27 @@ export default function PatientsPage() {
                   </button>
                 )}
               </form>
+            </div>
+            <div className={styles.monthFilterSection}>
+              <label className={styles.statusFilterLabel} htmlFor="tele-icu-month">
+                Tele ICU Month
+              </label>
+              <input
+                id="tele-icu-month"
+                type="month"
+                value={selectedMonth}
+                onChange={handleMonthChange}
+                className={styles.monthInput}
+              />
+              {selectedMonth && (
+                <button
+                  type="button"
+                  className={styles.statusChipClear}
+                  onClick={handleClearMonth}
+                >
+                  Clear
+                </button>
+              )}
             </div>
             <div className={styles.statusFilterSection}>
               <span className={styles.statusFilterLabel}>Filter by Status:</span>

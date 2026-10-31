@@ -129,6 +129,11 @@ const ANTIBIOTICS = [
 
 const RESULTS = ['Sensitive', 'Non-Sensitive'];
 
+const customOrganismName = (test: MicrobiologyTest) =>
+  test.organisms.find(
+    (org) => org.organism_name.trim() && !ORGANISMS.includes(org.organism_name)
+  )?.organism_name ?? null;
+
 const MicrobiologySection: React.FC<MicrobiologySectionProps> = ({
   values,
   availableParameters,
@@ -138,6 +143,7 @@ const MicrobiologySection: React.FC<MicrobiologySectionProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [tests, setTests] = useState<MicrobiologyTest[]>([]);
+  const [otherNames, setOtherNames] = useState<(string | null)[]>([null]);
   const [isLoading, setIsLoading] = useState(false);
 
   // Initialize state from existing values when available
@@ -145,6 +151,7 @@ const MicrobiologySection: React.FC<MicrobiologySectionProps> = ({
     if (values && !isEditing && values.tests && values.tests.length > 0) {
       try {
         setTests(values.tests);
+        setOtherNames(values.tests.map(customOrganismName));
       } catch (error) {
         console.error('Error initializing from existing data:', error);
       }
@@ -156,6 +163,7 @@ const MicrobiologySection: React.FC<MicrobiologySectionProps> = ({
         remarks: '',
         organisms: []
       }]);
+      setOtherNames([null]);
     }
   }, [values, isEditing]);
 
@@ -170,10 +178,12 @@ const MicrobiologySection: React.FC<MicrobiologySectionProps> = ({
       remarks: '',
       organisms: []
     }]);
+    setOtherNames(prev => [...prev, null]);
   };
 
   const removeTest = (index: number) => {
     setTests(prev => prev.filter((_, i) => i !== index));
+    setOtherNames(prev => prev.filter((_, i) => i !== index));
   };
 
   const updateTest = (index: number, field: keyof MicrobiologyTest, value: any) => {
@@ -209,6 +219,67 @@ const MicrobiologySection: React.FC<MicrobiologySectionProps> = ({
     });
 
     updateTestOrganisms(testIndex, updatedOrganisms);
+  };
+
+  const handleOtherToggle = (testIndex: number) => {
+    const isSelected = otherNames[testIndex] != null;
+
+    if (isSelected) {
+      setOtherNames(prev => prev.map((name, i) => (i === testIndex ? null : name)));
+      setTests(prev => prev.map((test, i) =>
+        i === testIndex
+          ? {
+              ...test,
+              organisms: test.organisms.filter(org => ORGANISMS.includes(org.organism_name))
+            }
+          : test
+      ));
+      return;
+    }
+
+    setOtherNames(prev => {
+      const next = [...prev];
+      while (next.length <= testIndex) next.push(null);
+      next[testIndex] = '';
+      return next;
+    });
+  };
+
+  const handleOtherNameChange = (testIndex: number, name: string) => {
+    setOtherNames(prev => {
+      const next = [...prev];
+      while (next.length <= testIndex) next.push(null);
+      next[testIndex] = name;
+      return next;
+    });
+
+    setTests(prev => prev.map((test, i) => {
+      if (i !== testIndex) return test;
+
+      const standardOrganisms = test.organisms.filter(org => ORGANISMS.includes(org.organism_name));
+      const customOrganism = test.organisms.find(org => !ORGANISMS.includes(org.organism_name));
+      const trimmedName = name.trim();
+
+      if (!trimmedName) {
+        return {
+          ...test,
+          organisms: customOrganism
+            ? [...standardOrganisms, { ...customOrganism, organism_name: '' }]
+            : standardOrganisms
+        };
+      }
+
+      return {
+        ...test,
+        organisms: [
+          ...standardOrganisms,
+          {
+            organism_name: trimmedName,
+            sensitivity_tests: customOrganism?.sensitivity_tests ?? []
+          }
+        ]
+      };
+    }));
   };
 
   const handleAddSensitivityTest = (testIndex: number, organism: string) => {
@@ -256,9 +327,13 @@ const MicrobiologySection: React.FC<MicrobiologySectionProps> = ({
   };
 
   const handleSave = async () => {
-    // Create the exact payload structure
     const payload = {
-      tests: tests
+      tests: tests.map(test => ({
+        ...test,
+        organisms: test.organisms
+          .map(org => ({ ...org, organism_name: org.organism_name.trim() }))
+          .filter(org => org.organism_name !== '')
+      }))
     };
 
     setIsLoading(true);
@@ -284,6 +359,7 @@ const MicrobiologySection: React.FC<MicrobiologySectionProps> = ({
         remarks: '',
         organisms: []
       }]);
+      setOtherNames([null]);
     }
   };
 
@@ -442,10 +518,27 @@ const MicrobiologySection: React.FC<MicrobiologySectionProps> = ({
                           {organism}
                         </label>
                       ))}
+                      <label className={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={otherNames[testIndex] != null}
+                          onChange={() => handleOtherToggle(testIndex)}
+                        />
+                        Other
+                      </label>
+                      {otherNames[testIndex] != null && (
+                        <input
+                          type="text"
+                          value={otherNames[testIndex] ?? ''}
+                          onChange={(e) => handleOtherNameChange(testIndex, e.target.value)}
+                          className={`${styles.input} ${styles.otherOrganismField}`}
+                          placeholder="Enter organism name"
+                        />
+                      )}
                     </div>
                   </div>
 
-                  {test.organisms.map((organism, organismIndex) => (
+                  {test.organisms.filter(org => org.organism_name.trim() !== '').map((organism, organismIndex) => (
                     <div key={organismIndex} className={styles.sensitivityTestSection}>
                       <h5>{organism.organism_name}</h5>
                       <div className={styles.sensitivityTests}>

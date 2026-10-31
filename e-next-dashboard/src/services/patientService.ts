@@ -173,6 +173,7 @@ export interface PatientListParams {
   organisation_icu_id?: string;
   search?: string;
   statuses?: PatientStatus[];
+  tele_icu_date?: string;
 }
 
 export interface PatientListResponse {
@@ -404,7 +405,8 @@ export const patientService = {
       sort_order: params.sort_order || 'desc',
       organisation_id: params.organisation_id,
       ...(params.organisation_icu_id ? { organisation_icu_id: params.organisation_icu_id } : {}),
-      ...(params.search ? { search: params.search } : {})
+      ...(params.search ? { search: params.search } : {}),
+      ...(params.tele_icu_date ? { tele_icu_date: params.tele_icu_date } : {})
     });
 
     // Append each status as a separate query param (e.g. ?statuses=admission&statuses=discharge)

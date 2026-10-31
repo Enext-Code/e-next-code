@@ -78,6 +78,8 @@ export const bloodParameterOrder: string[] = [
   'Scrub Typhus',
   'Widal',
   'HbA1c',
+  'Blood Group',
+  'Peripheral Blood Smear',
 ];
 
 export const qualitativeBloodParameters = [
@@ -91,12 +93,28 @@ export const qualitativeBloodParameters = [
   'Leptospira IGM',
   'Scrub Typhus',
   'Widal',
+  'Blood Group',
 ] as const;
 
 export const qualitativeBloodParameterSet = new Set<string>(qualitativeBloodParameters);
 
+/** Free-text blood tests: one written field, stored and shown as typed. */
+export const freeTextBloodParameters = ['Peripheral Blood Smear'] as const;
+
+export const freeTextBloodParameterSet = new Set<string>(freeTextBloodParameters);
+
 const reactiveResultOptions = ['Non-reactive', 'Reactive'];
 const positiveResultOptions = ['Negative', 'Positive'];
+const bloodGroupOptions = [
+  'A Positive (A+)',
+  'A Negative (A-)',
+  'B Positive (B+)',
+  'B Negative (B-)',
+  'AB Positive (AB+)',
+  'AB Negative (AB-)',
+  'O Positive (O+)',
+  'O Negative (O-)',
+];
 
 export const qualitativeBloodParameterOptions: { [key: string]: string[] } = {
   HIV: reactiveResultOptions,
@@ -109,6 +127,7 @@ export const qualitativeBloodParameterOptions: { [key: string]: string[] } = {
   'Leptospira IGM': positiveResultOptions,
   'Scrub Typhus': positiveResultOptions,
   Widal: positiveResultOptions,
+  'Blood Group': bloodGroupOptions,
 };
 
 export const bloodParameterInfo: { [key: string]: ParameterInfo } = {
@@ -692,6 +711,20 @@ export const bloodParameterInfo: { [key: string]: ParameterInfo } = {
     units: "%",
     min_value: null,
     max_value: 5.7,
+  },
+  "Blood Group": {
+    display_name: "Blood Group",
+    reference_range: "",
+    units: null,
+    min_value: null,
+    max_value: null,
+  },
+  "Peripheral Blood Smear": {
+    display_name: "Peripheral Blood Smear",
+    reference_range: "",
+    units: null,
+    min_value: null,
+    max_value: null,
   },
   "Insulin": {
     display_name: "Insulin",
